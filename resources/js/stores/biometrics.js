@@ -56,8 +56,9 @@ export async function checkBiometricSupport() {
 
 export async function refreshBiometricStatus() {
     if (!authState.user) {
-        biometricsState.enabled = false;
-        return false;
+        const localEnabled = isBiometricEnabledLocal();
+        biometricsState.enabled = localEnabled;
+        return localEnabled;
     }
 
     try {
