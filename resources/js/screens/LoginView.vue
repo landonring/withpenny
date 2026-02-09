@@ -8,10 +8,18 @@
             </div>
 
             <div v-if="biometricAvailable" class="bio-card">
-                <p class="card-sub">Use Face ID or Touch ID to continue quickly.</p>
-                <button class="primary-button" type="button" :disabled="biometricBusy" @click="handleBiometricLogin">
+                <p class="card-sub">
+                    {{ biometricsState.enabled ? 'Use Face ID or Touch ID to continue quickly.' : 'Face ID is ready when you are.' }}
+                </p>
+                <button
+                    class="primary-button"
+                    type="button"
+                    :disabled="biometricBusy || !biometricsState.enabled"
+                    @click="handleBiometricLogin"
+                >
                     {{ biometricBusy ? 'Checking…' : 'Continue with Face ID' }}
                 </button>
+                <p v-if="!biometricsState.enabled" class="muted">Sign in once to enable Face ID on this device.</p>
                 <p v-if="biometricError" class="form-error">{{ biometricError }}</p>
             </div>
 
@@ -76,7 +84,7 @@ const showPassword = ref(false);
 const biometricError = ref('');
 const biometricBusy = ref(false);
 
-const biometricAvailable = computed(() => biometricsState.supported && biometricsState.enabled);
+const biometricAvailable = computed(() => biometricsState.supported);
 
 const handleSubmit = async () => {
     error.value = '';
@@ -109,8 +117,8 @@ const handleBiometricLogin = async () => {
 };
 
 onMounted(async () => {
-    await checkBiometricSupport();
     biometricsState.enabled = isBiometricEnabledLocal();
+    await checkBiometricSupport();
 });
 
 </script>
