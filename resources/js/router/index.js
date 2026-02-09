@@ -16,6 +16,7 @@ import AddSpendingView from '../screens/AddSpendingView.vue';
 import EditTransactionView from '../screens/EditTransactionView.vue';
 import ReceiptReviewView from '../screens/ReceiptReviewView.vue';
 import ProfileView from '../screens/ProfileView.vue';
+import NotFoundView from '../screens/NotFoundView.vue';
 import LoginView from '../screens/LoginView.vue';
 import SignupView from '../screens/SignupView.vue';
 import { authState, ensureAuthReady } from '../stores/auth';
@@ -45,6 +46,7 @@ const routes = [
     { path: '/scan/review/:id', name: 'receipts-review', component: ReceiptReviewView, meta: { requiresAuth: true, hideNav: true, hideHeader: true } },
     { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true, hideNav: true } },
     { path: '/register', name: 'register', component: SignupView, meta: { guestOnly: true, hideNav: true } },
+    { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView, meta: { hideNav: true } },
 ];
 
 const router = createRouter({
