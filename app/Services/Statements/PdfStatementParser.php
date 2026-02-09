@@ -43,8 +43,12 @@ class PdfStatementParser
                 return (string) $pdf->getText();
             } catch (\Throwable $error) {
                 Log::warning('pdf_parse_failed', ['error' => $error->getMessage()]);
-                return '';
             }
+        }
+
+        $ocrText = $this->ocrPdf($path);
+        if ($ocrText !== '') {
+            return $ocrText;
         }
 
         return '';
@@ -214,5 +218,53 @@ class PdfStatementParser
             || str_contains($normalized, 'closing balance')
             || str_contains($normalized, 'total ending balance')
             || str_contains($normalized, 'ending balance');
+    }
+
+    private function ocrPdf(string $path): string
+    {
+        $pdftoppm = trim((string) shell_exec('command -v pdftoppm'));
+        $tesseract = trim((string) shell_exec('command -v tesseract'));
+
+        if ($pdftoppm === '' || $tesseract === '') {
+            return '';
+        }
+
+        $tmpDir = storage_path('app/tmp/'.Str::uuid());
+        if (! is_dir($tmpDir) && ! mkdir($tmpDir, 0775, true) && ! is_dir($tmpDir)) {
+            return '';
+        }
+
+        $prefix = $tmpDir.'/page';
+        $command = escapeshellcmd($pdftoppm).' -r 200 -png '.escapeshellarg($path).' '.escapeshellarg($prefix);
+        shell_exec($command);
+
+        $images = glob($prefix.'*.png') ?: [];
+        if (empty($images)) {
+            $this->cleanupTempDir($tmpDir);
+            return '';
+        }
+
+        $text = '';
+        foreach ($images as $image) {
+            $ocrCommand = escapeshellcmd($tesseract).' '.escapeshellarg($image).' stdout -l eng';
+            $text .= "\n".(string) shell_exec($ocrCommand);
+        }
+
+        $this->cleanupTempDir($tmpDir);
+
+        return trim($text);
+    }
+
+    private function cleanupTempDir(string $dir): void
+    {
+        if (! is_dir($dir)) {
+            return;
+        }
+
+        $files = glob($dir.'/*') ?: [];
+        foreach ($files as $file) {
+            @unlink($file);
+        }
+        @rmdir($dir);
     }
 }
