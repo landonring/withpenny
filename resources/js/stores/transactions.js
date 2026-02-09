@@ -5,6 +5,20 @@ import { authState, ensureAuthReady } from './auth';
 
 const STORAGE_PREFIX = 'penny';
 
+async function ensureCsrf(force = false) {
+    if (!force && window.axios?.defaults?.headers?.common?.['X-CSRF-TOKEN']) {
+        return;
+    }
+    try {
+        const { data } = await axios.get('/api/csrf');
+        if (data?.csrf_token) {
+            window.axios.defaults.headers.common['X-CSRF-TOKEN'] = data.csrf_token;
+        }
+    } catch {
+        // ignore
+    }
+}
+
 const state = reactive({
     monthKey: getMonthKey(new Date()),
     transactions: [],
@@ -294,6 +308,7 @@ async function addTransaction(payload) {
         return transaction;
     }
 
+    await ensureCsrf(true);
     const response = await axios.post('/api/transactions', payload);
     const created = response.data.transaction;
     const createdMonth = getMonthKeyFromDateString(created.transaction_date);
@@ -338,6 +353,7 @@ async function updateTransaction(id, payload) {
         return updated;
     }
 
+    await ensureCsrf(true);
     const response = await axios.put(`/api/transactions/${id}`, payload);
     const updated = response.data.transaction;
     const updatedMonthKey = getMonthKeyFromDateString(updated.transaction_date);
@@ -368,6 +384,7 @@ async function deleteTransaction(id) {
         return;
     }
 
+    await ensureCsrf(true);
     await axios.delete(`/api/transactions/${id}`);
     removeTransactionFromMonth(monthKey, id);
 }
@@ -380,6 +397,7 @@ async function syncQueue() {
     if (!queue.length) return;
 
     state.syncing = true;
+    await ensureCsrf(true);
 
     const remaining = [];
 

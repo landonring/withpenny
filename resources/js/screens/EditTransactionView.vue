@@ -77,6 +77,8 @@ const handleDelete = async () => {
     try {
         await deleteTransaction(transaction.value.id);
         router.push({ name: 'transactions' });
+    } catch (err) {
+        error.value = err?.response?.data?.message || 'Unable to delete right now.';
     } finally {
         loading.value = false;
     }
