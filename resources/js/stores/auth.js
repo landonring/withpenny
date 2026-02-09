@@ -15,6 +15,20 @@ export function applyAuthPayload(data) {
     }
 }
 
+async function ensureCsrf(force = false) {
+    if (!force && window.axios?.defaults?.headers?.common?.['X-CSRF-TOKEN']) {
+        return;
+    }
+    try {
+        const { data } = await axios.get('/api/csrf');
+        if (data?.csrf_token) {
+            window.axios.defaults.headers.common['X-CSRF-TOKEN'] = data.csrf_token;
+        }
+    } catch {
+        // ignore
+    }
+}
+
 export async function initAuth() {
     if (authState.ready || authState.busy) {
         return;
@@ -41,6 +55,7 @@ export async function ensureAuthReady() {
 }
 
 export async function login(payload) {
+    await ensureCsrf(true);
     const { data } = await axios.post('/api/login', { ...payload, remember: true });
     applyAuthPayload(data);
     authState.justLoggedIn = true;
@@ -48,6 +63,7 @@ export async function login(payload) {
 }
 
 export async function register(payload) {
+    await ensureCsrf(true);
     const { data } = await axios.post('/api/register', payload);
     applyAuthPayload(data);
     authState.justLoggedIn = true;
