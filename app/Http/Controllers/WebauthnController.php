@@ -21,8 +21,15 @@ class WebauthnController extends Controller
     {
         $options = $request->secureRegistration()->toCreate();
 
-        if (property_exists($options, 'excludeCredentials')) {
-            $options->excludeCredentials = [];
+        if (is_object($options) && method_exists($options, 'toArray')) {
+            $options = $options->toArray();
+        }
+
+        if (is_array($options)) {
+            $options['excludeCredentials'] = [];
+            if (isset($options['publicKey']) && is_array($options['publicKey'])) {
+                $options['publicKey']['excludeCredentials'] = [];
+            }
         }
 
         return $options;
