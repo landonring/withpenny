@@ -1073,7 +1073,8 @@ a:hover {
 
 .statement-list {
     display: grid;
-    gap: 12px;
+    gap: 16px;
+    padding-bottom: 140px;
 }
 
 .statement-item {
@@ -1181,9 +1182,10 @@ a:hover {
     gap: 12px;
     justify-content: space-between;
     position: sticky;
-    bottom: calc(90px + env(safe-area-inset-bottom));
+    bottom: calc(88px + env(safe-area-inset-bottom));
     background: var(--app-bg);
-    padding: 12px 0 0;
+    padding: 12px 0 8px;
+    z-index: 5;
 }
 
 .data-summary {
