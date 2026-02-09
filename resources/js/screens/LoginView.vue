@@ -36,9 +36,9 @@
 
                 <button
                     v-if="biometricAvailable"
-                    class="faceid-button"
+                    :class="['faceid-button', { 'is-disabled': !biometricsState.enabled }]"
                     type="button"
-                    :disabled="biometricBusy || !biometricsState.enabled"
+                    :aria-disabled="!biometricsState.enabled"
                     @click="handleBiometricLogin"
                 >
                     <span class="faceid-icon" aria-hidden="true">
@@ -54,6 +54,7 @@
                     <span>{{ biometricBusy ? 'Checking…' : 'Face ID' }}</span>
                 </button>
 
+                <p v-if="biometricHint" class="faceid-hint">{{ biometricHint }}</p>
                 <p v-if="biometricError" class="form-error">{{ biometricError }}</p>
             </form>
 
@@ -88,6 +89,7 @@ const error = ref('');
 const loading = ref(false);
 const showPassword = ref(false);
 const biometricError = ref('');
+const biometricHint = ref('');
 const biometricBusy = ref(false);
 
 const biometricAvailable = computed(() => biometricsState.supported);
@@ -109,6 +111,13 @@ const handleSubmit = async () => {
 
 const handleBiometricLogin = async () => {
     biometricError.value = '';
+    biometricHint.value = '';
+
+    if (!biometricsState.enabled) {
+        biometricHint.value = 'After you enable Face ID on this device, it will always work here.';
+        return;
+    }
+
     biometricBusy.value = true;
 
     try {

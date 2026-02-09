@@ -630,9 +630,23 @@ a:hover {
     gap: 8px;
 }
 
+.faceid-button.is-disabled {
+    opacity: 0.6;
+}
+
 .faceid-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.faceid-hint {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
 }
 
 .faceid-icon {
