@@ -57,5 +57,7 @@ Route::prefix('api')->group(function () {
     });
 });
 
-Route::view('/', 'app');
+Route::get('/', function () {
+    return auth()->check() ? redirect('/app') : view('app');
+});
 Route::view('/{any}', 'app')->where('any', '.*');

@@ -1,6 +1,11 @@
 <template>
     <div class="app-shell">
-        <main :class="['main-content', { 'lock-scroll': route.meta.lockScroll }]">
+        <main
+            :class="[
+                'main-content',
+                { 'lock-scroll': route.meta.lockScroll, 'marketing-content': route.meta.marketing },
+            ]"
+        >
             <router-view />
         </main>
 

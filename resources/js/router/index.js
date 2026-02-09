@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../screens/HomeView.vue';
+import MarketingView from '../screens/MarketingView.vue';
 import ScanView from '../screens/ScanView.vue';
 import InsightsView from '../screens/InsightsView.vue';
 import ChatView from '../screens/ChatView.vue';
@@ -20,7 +21,13 @@ import SignupView from '../screens/SignupView.vue';
 import { authState, ensureAuthReady } from '../stores/auth';
 
 const routes = [
-    { path: '/', name: 'home', component: HomeView, meta: { requiresAuth: true, scrollable: true } },
+    {
+        path: '/',
+        name: 'marketing',
+        component: MarketingView,
+        meta: { guestOnly: true, hideNav: true, marketing: true },
+    },
+    { path: '/app', name: 'home', component: HomeView, meta: { requiresAuth: true, scrollable: true } },
     { path: '/scan', name: 'scan', component: ScanView, meta: { requiresAuth: true, hideHeader: true } },
     { path: '/insights', name: 'insights', component: InsightsView, meta: { requiresAuth: true } },
     { path: '/chat', name: 'chat', component: ChatView, meta: { requiresAuth: true, lockScroll: true } },

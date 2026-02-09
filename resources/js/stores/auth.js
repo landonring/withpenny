@@ -64,8 +64,6 @@ export async function logout() {
     await axios.post('/api/logout');
     authState.user = null;
     authState.justLoggedIn = false;
-    localStorage.removeItem('penny.biometric.enabled');
-    localStorage.removeItem('penny.biometric.dismissed');
 }
 
 export async function deleteAccount() {

@@ -78,6 +78,10 @@ a:hover {
     overflow: hidden;
 }
 
+.main-content.marketing-content {
+    padding-bottom: calc(48px + env(safe-area-inset-bottom));
+}
+
 .screen {
     display: grid;
     gap: 20px;
@@ -104,6 +108,188 @@ a:hover {
     font-size: 24px;
     line-height: 1.25;
     font-weight: 600;
+}
+
+.marketing {
+    display: grid;
+    gap: 28px;
+}
+
+.marketing .card {
+    box-shadow: var(--shadow);
+}
+
+.hero {
+    display: grid;
+    gap: 24px;
+    align-items: center;
+}
+
+.hero-title {
+    margin: 0;
+    font-size: 32px;
+    line-height: 1.2;
+    font-weight: 600;
+}
+
+.hero-sub {
+    margin: 12px 0 0;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--muted);
+}
+
+.hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.hero-note {
+    margin: 12px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.hero-card {
+    display: grid;
+    gap: 12px;
+    background: #fff;
+}
+
+.hero-points {
+    display: grid;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.hero-point {
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.marketing-section {
+    display: grid;
+    gap: 12px;
+}
+
+.section-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.section-copy {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--muted);
+}
+
+.marketing-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.step-list {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.pill {
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.06);
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.install-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.install-card {
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 16px;
+    padding: 14px;
+}
+
+.install-card h3 {
+    margin: 0 0 8px;
+    font-size: 15px;
+}
+
+.install-card ol {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--muted);
+    display: grid;
+    gap: 6px;
+    font-size: 14px;
+}
+
+.faq-list {
+    display: grid;
+    gap: 10px;
+}
+
+.faq-list details {
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.faq-list summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.faq-list p {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.final-cta {
+    display: grid;
+    gap: 14px;
+    text-align: center;
+}
+
+@media (min-width: 768px) {
+    .marketing {
+        max-width: 960px;
+        margin: 0 auto;
+    }
+
+    .hero {
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+    }
+
+    .marketing-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .install-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 .accent-chip {
