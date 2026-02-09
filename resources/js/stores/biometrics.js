@@ -34,6 +34,20 @@ const markBiometricEnabled = () => {
     localStorage.removeItem(DISMISSED_KEY);
 };
 
+async function ensureCsrf() {
+    if (window.axios?.defaults?.headers?.common?.['X-CSRF-TOKEN']) {
+        return;
+    }
+    try {
+        const { data } = await axios.get('/api/csrf');
+        if (data?.csrf_token) {
+            window.axios.defaults.headers.common['X-CSRF-TOKEN'] = data.csrf_token;
+        }
+    } catch {
+        // ignore
+    }
+}
+
 export async function checkBiometricSupport() {
     if (typeof window === 'undefined' || !window.isSecureContext) {
         biometricsState.supported = false;
@@ -76,6 +90,7 @@ export async function refreshBiometricStatus() {
 }
 
 export async function enableBiometrics() {
+    await ensureCsrf();
     const supported = await checkBiometricSupport();
     if (!supported) {
         throw new Error('Face ID isn’t available on this device.');
@@ -127,6 +142,7 @@ export async function disableBiometrics() {
 }
 
 export async function loginWithBiometrics() {
+    await ensureCsrf();
     const supported = await checkBiometricSupport();
     if (!supported) {
         throw new Error('Face ID isn’t available on this device.');

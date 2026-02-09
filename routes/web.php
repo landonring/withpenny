@@ -14,6 +14,7 @@ Route::prefix('api')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/csrf', [AuthController::class, 'csrf']);
     Route::post('/webauthn/authenticate/options', [WebauthnController::class, 'authenticateOptions']);
     Route::post('/webauthn/authenticate/verify', [WebauthnController::class, 'authenticateVerify']);
     Route::patch('/profile', [AuthController::class, 'updateProfile'])->middleware('auth');

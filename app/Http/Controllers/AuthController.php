@@ -76,6 +76,13 @@ class AuthController extends Controller
         ]);
     }
 
+    public function csrf()
+    {
+        return response()->json([
+            'csrf_token' => csrf_token(),
+        ]);
+    }
+
     public function updateProfile(Request $request)
     {
         $user = $request->user();
