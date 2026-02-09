@@ -27,7 +27,7 @@
             <button class="ghost-button" type="button" :disabled="loadingWeekly" @click="handleWeekly">
                 {{ loadingWeekly ? 'Checking in…' : 'Get weekly check-in' }}
             </button>
-            <p class="muted">Usually takes about 10 seconds.</p>
+            <p class="muted">Usually takes about 20 seconds.</p>
             <div v-if="weeklyCheckIn" class="ai-card">
                 <p>{{ weeklyCheckIn }}</p>
                 <button class="ghost-button" type="button" @click="weeklyCheckIn = ''">Dismiss</button>
