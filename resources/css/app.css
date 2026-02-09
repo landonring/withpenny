@@ -18,10 +18,15 @@
     --shadow: 0 18px 40px rgba(48, 59, 54, 0.08);
     --radius-lg: 24px;
     --radius-md: 18px;
+    --app-bg: #f1f3ec;
 }
 
 * {
     box-sizing: border-box;
+}
+
+html {
+    background: var(--app-bg);
 }
 
 body {
@@ -30,10 +35,15 @@ body {
     font-family: 'Manrope', ui-sans-serif, system-ui, -apple-system, sans-serif;
     color: var(--ink);
     -webkit-font-smoothing: antialiased;
-    background:
-        radial-gradient(circle at 20% 20%, rgba(214, 225, 213, 0.7), transparent 45%),
-        radial-gradient(circle at 80% 0%, rgba(248, 239, 229, 0.7), transparent 40%),
-        linear-gradient(180deg, #f9f8f4 0%, #f1f3ec 45%, #eef2ea 100%);
+    background: var(--app-bg);
+    overflow: hidden;
+    padding-top: env(safe-area-inset-top);
+}
+
+input,
+select,
+textarea {
+    font-size: 16px;
 }
 
 a {
@@ -47,10 +57,12 @@ a:hover {
 
 #app {
     min-height: 100vh;
+    height: 100vh;
 }
 
 .app-shell {
     min-height: 100vh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
 }
@@ -96,8 +108,14 @@ a:hover {
 }
 
 .main-content {
-    padding: 16px 20px calc(120px + env(safe-area-inset-bottom));
+    padding: env(safe-area-inset-top) 20px calc(120px + env(safe-area-inset-bottom));
     flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.main-content.lock-scroll {
+    overflow: hidden;
 }
 
 .screen {
@@ -174,6 +192,7 @@ a:hover {
     align-items: center;
     justify-content: center;
     text-decoration: none;
+    white-space: nowrap;
 }
 
 .primary-button.wide {
@@ -192,6 +211,11 @@ a:hover {
     padding: 8px 14px;
     font-size: 12px;
     color: var(--muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    white-space: nowrap;
 }
 
 .ghost-button:disabled {
@@ -285,16 +309,26 @@ a:hover {
 .chat-card {
     display: grid;
     gap: 12px;
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
 }
 
 .chat-bubble {
-    padding: 14px 16px;
-    border-radius: 18px;
-    font-size: 14px;
+    padding: 8px 10px;
+    border-radius: 16px;
+    font-size: 13px;
+    line-height: 1.4;
+    display: inline-block;
+    width: auto;
+    max-width: 70%;
+    word-break: break-word;
 }
 
 .chat-bubble.assistant {
     background: rgba(198, 210, 196, 0.4);
+    justify-self: start;
 }
 
 .chat-bubble.user {
@@ -302,9 +336,32 @@ a:hover {
     justify-self: end;
 }
 
+.chat-screen {
+    min-height: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.chat-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chat-screen .chat-card {
+    flex: 1;
+}
+
+.chat-screen .chat-input {
+    margin-top: auto;
+}
+
 .chat-input {
     display: flex;
     gap: 10px;
+    align-items: center;
 }
 
 .chat-input input {
@@ -316,10 +373,23 @@ a:hover {
 }
 
 .chat-input button {
-    border-radius: 14px;
-    border: none;
-    padding: 12px 16px;
-    background: var(--sage-300);
+    border-radius: 999px;
+    padding: 10px 16px;
+}
+
+.ai-card {
+    margin-top: 12px;
+    background: rgba(239, 231, 221, 0.55);
+    border-radius: 16px;
+    padding: 12px 14px;
+    display: grid;
+    gap: 10px;
+    color: var(--ink);
+}
+
+.bio-card {
+    display: grid;
+    gap: 12px;
 }
 
 .progress-shell {
@@ -338,7 +408,7 @@ a:hover {
 .auth-screen {
     display: grid;
     place-items: center;
-    min-height: calc(100vh - 160px);
+    min-height: 100%;
 }
 
 .auth-card {
@@ -350,6 +420,13 @@ a:hover {
     box-shadow: var(--shadow);
     display: grid;
     gap: 18px;
+}
+
+.auth-card .bio-card {
+    background: rgba(239, 231, 221, 0.4);
+    border-radius: 18px;
+    padding: 16px;
+    gap: 12px;
 }
 
 .auth-form {
@@ -369,6 +446,26 @@ a:hover {
     border-radius: 14px;
     border: 1px solid rgba(123, 143, 134, 0.3);
     font-size: 14px;
+}
+
+.field-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.field-row input {
+    flex: 1;
+}
+
+.field-toggle {
+    border: 1px solid rgba(123, 143, 134, 0.3);
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--muted);
+    background: #fff;
+    cursor: pointer;
 }
 
 .form-error {
@@ -450,6 +547,15 @@ a:hover {
     display: grid;
     gap: 16px;
     margin: 16px 0;
+}
+
+.overview-metrics.secondary {
+    margin-top: 0;
+    gap: 12px;
+}
+
+.overview-metrics.secondary .metric-value {
+    font-size: 18px;
 }
 
 .metric-label {
@@ -586,6 +692,10 @@ a:hover {
     font-weight: 600;
 }
 
+.transaction-row.income .transaction-amount {
+    color: #4d6f5a;
+}
+
 .transaction-groups {
     display: grid;
     gap: 16px;
@@ -619,6 +729,7 @@ a:hover {
     font-weight: 600;
     cursor: pointer;
     margin-top: 12px;
+    white-space: nowrap;
 }
 
 @media (min-width: 768px) {
@@ -633,10 +744,287 @@ a:hover {
 }
 
 .scan-screen {
-    min-height: 100vh;
+    min-height: 100%;
     padding: 20px 20px calc(120px + env(safe-area-inset-bottom));
     display: grid;
     gap: 18px;
+}
+
+.savings-screen {
+    min-height: 100%;
+    padding: 0 20px calc(120px + env(safe-area-inset-bottom));
+    display: grid;
+    gap: 16px;
+}
+
+.savings-intro {
+    display: grid;
+    gap: 12px;
+}
+
+.journey-section {
+    display: grid;
+    gap: 12px;
+}
+
+.section-header,
+.section-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.section-toggle {
+    border: none;
+    background: transparent;
+    padding: 0;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.journey-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.journey-card {
+    display: grid;
+    gap: 12px;
+}
+
+.journey-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.journey-status {
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--warm-100);
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+
+.journey-card.paused .journey-status {
+    background: rgba(198, 210, 196, 0.5);
+}
+
+.journey-card.completed .journey-status {
+    background: rgba(215, 191, 169, 0.5);
+}
+
+.milestone-bar {
+    display: flex;
+    gap: 6px;
+}
+
+.milestone-seg {
+    flex: 1;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(198, 210, 196, 0.35);
+}
+
+.milestone-seg.active {
+    background: linear-gradient(90deg, #c6d2c4, #a9b6a5);
+}
+
+.milestone-label {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.journey-details {
+    display: grid;
+    gap: 6px;
+    background: var(--warm-100);
+    border-radius: 14px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.journey-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.savings-nudge {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.account-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.statement-list {
+    display: grid;
+    gap: 12px;
+}
+
+.statement-item {
+    display: grid;
+    gap: 10px;
+}
+
+.statement-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.duplicate-chip {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(239, 231, 221, 0.8);
+    color: var(--muted);
+}
+
+.statement-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.statement-entry-actions {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.statement-entry-actions .primary-button,
+.statement-entry-actions .ghost-button {
+    width: 100%;
+}
+
+.statement-scan .scan-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.page-strip {
+    display: grid;
+    gap: 12px;
+}
+
+.page-list {
+    display: grid;
+    gap: 12px;
+}
+
+.page-thumb {
+    display: grid;
+    gap: 8px;
+}
+
+.page-thumb img {
+    width: 100%;
+    border-radius: 16px;
+    border: 1px solid rgba(123, 143, 134, 0.2);
+}
+
+.page-remove {
+    border: none;
+    background: rgba(229, 179, 179, 0.2);
+    color: #5b3232;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    width: fit-content;
+}
+
+.scan-choice.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+.type-toggle {
+    display: inline-flex;
+    gap: 8px;
+    background: rgba(198, 210, 196, 0.2);
+    padding: 6px;
+    border-radius: 999px;
+}
+
+.toggle-button {
+    border: none;
+    background: transparent;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.toggle-button.active {
+    background: #fff;
+    color: var(--ink);
+    box-shadow: 0 6px 16px rgba(34, 51, 42, 0.12);
+}
+
+.statement-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    position: sticky;
+    bottom: calc(90px + env(safe-area-inset-bottom));
+    background: var(--app-bg);
+    padding: 12px 0 0;
+}
+
+.data-summary {
+    display: grid;
+    gap: 6px;
+    background: var(--warm-100);
+    border-radius: 14px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 10px;
+}
+
+.file-button {
+    position: relative;
+    overflow: hidden;
+}
+
+.file-button.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.file-button input[type='file'] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.delete-confirm {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 16px;
+    background: rgba(229, 179, 179, 0.12);
+    display: grid;
+    gap: 10px;
 }
 
 .scan-header {
@@ -669,10 +1057,11 @@ a:hover {
     inset: 0;
     display: grid;
     place-items: center;
-    background: linear-gradient(180deg, rgba(20, 26, 23, 0.3), rgba(20, 26, 23, 0.5));
+    background: linear-gradient(180deg, rgba(20, 26, 23, 0.18), rgba(20, 26, 23, 0.32));
     color: #f8f6f0;
     text-align: center;
     padding: 20px;
+    pointer-events: none;
 }
 
 .camera-frame {

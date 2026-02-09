@@ -1,0 +1,77 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Laragear\WebAuthn\Http\Requests\AssertionRequest;
+use Laragear\WebAuthn\Http\Requests\AssertedRequest;
+use Laragear\WebAuthn\Http\Requests\AttestationRequest;
+use Laragear\WebAuthn\Http\Requests\AttestedRequest;
+
+class WebauthnController extends Controller
+{
+    public function status(Request $request)
+    {
+        return response()->json([
+            'enabled' => $request->user()->webAuthnCredentials()->whereEnabled()->exists(),
+        ]);
+    }
+
+    public function registerOptions(AttestationRequest $request)
+    {
+        return $request->secureRegistration()->userless()->toCreate();
+    }
+
+    public function registerVerify(AttestedRequest $request)
+    {
+        try {
+            $request->save([
+                'alias' => 'Penny',
+            ]);
+
+            return response()->json([
+                'enabled' => true,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Face ID didn’t work this time. You can sign in another way.',
+            ], 422);
+        }
+    }
+
+    public function authenticateOptions(AssertionRequest $request)
+    {
+        return $request->secureLogin()->toVerify(null);
+    }
+
+    public function authenticateVerify(AssertedRequest $request)
+    {
+        try {
+            $user = $request->login();
+
+            if (! $user) {
+                return response()->json([
+                    'message' => 'Face ID didn’t work this time. You can sign in another way.',
+                ], 422);
+            }
+
+            return response()->json([
+                'user' => $user,
+                'csrf_token' => csrf_token(),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Face ID didn’t work this time. You can sign in another way.',
+            ], 422);
+        }
+    }
+
+    public function disable(Request $request)
+    {
+        $request->user()->disableAllCredentials();
+
+        return response()->json([
+            'enabled' => false,
+        ]);
+    }
+}

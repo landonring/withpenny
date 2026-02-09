@@ -20,7 +20,18 @@
 
                 <label class="field">
                     <span>Password</span>
-                    <input v-model="form.password" type="password" autocomplete="new-password" minlength="8" required />
+                    <div class="field-row">
+                        <input
+                            v-model="form.password"
+                            :type="showPassword ? 'text' : 'password'"
+                            autocomplete="new-password"
+                            minlength="8"
+                            required
+                        />
+                        <button class="field-toggle" type="button" @click="showPassword = !showPassword">
+                            {{ showPassword ? 'Hide' : 'Show' }}
+                        </button>
+                    </div>
                 </label>
 
                 <p v-if="error" class="form-error">{{ error }}</p>
@@ -53,6 +64,7 @@ const form = ref({
 
 const error = ref('');
 const loading = ref(false);
+const showPassword = ref(false);
 
 const handleSubmit = async () => {
     error.value = '';

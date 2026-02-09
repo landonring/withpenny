@@ -4,13 +4,21 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Transaction;
+use App\Models\Receipt;
+use App\Models\SavingsJourney;
+use App\Models\BankStatementImport;
+use Laragear\WebAuthn\Contracts\WebAuthnAuthenticatable;
+use Laragear\WebAuthn\WebAuthnAuthentication;
+use App\Models\SavingsContribution;
 
-class User extends Authenticatable
+class User extends Authenticatable implements WebAuthnAuthenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, WebAuthnAuthentication;
 
     /**
      * The attributes that are mass assignable.
@@ -45,4 +53,30 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    public function receipts(): HasMany
+    {
+        return $this->hasMany(Receipt::class);
+    }
+
+    public function savingsJourneys(): HasMany
+    {
+        return $this->hasMany(SavingsJourney::class);
+    }
+
+    public function bankStatementImports(): HasMany
+    {
+        return $this->hasMany(BankStatementImport::class);
+    }
+
+    public function savingsContributions(): HasMany
+    {
+        return $this->hasMany(SavingsContribution::class);
+    }
+
 }
