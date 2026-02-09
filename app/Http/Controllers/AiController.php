@@ -20,7 +20,7 @@ You never judge, rush, or shame.
 Use warm, simple language.
 Never use words like ‘should’, ‘must’, ‘failed’, or ‘mistake’.
 Never create urgency or warnings.
-Keep responses very short, ideally 8-12 words.
+Keep responses concise unless asked for a longer reflection.
 
 You may summarize patterns, normalize behavior, and offer optional reflection.
 If asked for advice, respond by explaining patterns while reminding the user that decisions are always theirs.
@@ -56,9 +56,9 @@ Your goal is to help the user feel calmer than when they opened the app.";
             ."Savings total saved: {$savings['total_saved']}.\n"
             ."Savings total target: {$savings['total_target']}.\n"
             ."If there is little or no data, offer a gentle invitation without pressure.\n"
-            ."Write 1 short sentence (8-14 words) with one observation and one reassurance. Use Penny's name if it feels natural.";
+            ."Write 3-4 short sentences (40-70 words total) with one observation and one reassurance. Use Penny's name if it feels natural.";
 
-        return $this->respondWithAi($prompt);
+        return $this->respondWithAi($prompt, 180);
     }
 
     public function weeklyCheckIn(Request $request)
@@ -84,9 +84,9 @@ Your goal is to help the user feel calmer than when they opened the app.";
             ."Top categories: {$summary['top_categories']}.\n"
             ."Average monthly income (last 3 months): {$incomeTrend['average']}.\n"
             ."Income stability: {$incomeTrend['stability']}.\n"
-            ."Write 1 short sentence (under 12 words) focused on encouragement. Use Penny's name if it feels natural.";
+            ."Write 2-3 sentences (25-45 words total) focused on encouragement. Use Penny's name if it feels natural.";
 
-        return $this->respondWithAi($prompt);
+        return $this->respondWithAi($prompt, 120);
     }
 
     public function chat(Request $request)
@@ -113,10 +113,10 @@ Your goal is to help the user feel calmer than when they opened the app.";
             ."Savings active {$savings['active_count']}, saved {$savings['total_saved']}.\n"
             ."If the user expresses self-criticism, start with reassurance before any reflection. Reply in 1 short sentence (8-12 words).";
 
-        return $this->respondWithAi($prompt);
+        return $this->respondWithAi($prompt, 60);
     }
 
-    private function respondWithAi(string $prompt)
+    private function respondWithAi(string $prompt, int $maxTokens = 80)
     {
         @set_time_limit(120);
         $model = config('services.ollama.model', 'llama3.1');
@@ -156,7 +156,7 @@ Your goal is to help the user feel calmer than when they opened the app.";
                     'stream' => false,
                     'keep_alive' => '10m',
                     'options' => [
-                        'num_predict' => 40,
+                        'num_predict' => $maxTokens,
                     ],
                 ]);
         } catch (\Throwable $exception) {
