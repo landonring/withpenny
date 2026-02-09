@@ -18,6 +18,18 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/penny-192.png" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    @php
+        $ua = strtolower(request()->userAgent() ?? '');
+        $isMobile = str_contains($ua, 'mobile')
+            || str_contains($ua, 'iphone')
+            || str_contains($ua, 'ipad')
+            || str_contains($ua, 'android');
+        $isDesktop = ! $isMobile;
+    @endphp
+    <script>
+        window.__PENNY_DESKTOP__ = {{ $isDesktop ? 'true' : 'false' }};
+    </script>
 </head>
 <body>
     <div id="app"></div>

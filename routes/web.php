@@ -59,6 +59,16 @@ Route::prefix('api')->group(function () {
 });
 
 Route::get('/', function () {
-    return auth()->check() ? redirect('/app') : view('app');
+    $ua = strtolower(request()->userAgent() ?? '');
+    $isMobile = str_contains($ua, 'mobile')
+        || str_contains($ua, 'iphone')
+        || str_contains($ua, 'ipad')
+        || str_contains($ua, 'android');
+
+    if (auth()->check() && $isMobile) {
+        return redirect('/app');
+    }
+
+    return view('app');
 });
 Route::view('/{any}', 'app')->where('any', '.*');

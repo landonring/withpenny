@@ -54,7 +54,17 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
+    const isDesktop = typeof window !== 'undefined' && window.__PENNY_DESKTOP__ === true;
+
+    if (isDesktop && to.name !== 'marketing') {
+        return { name: 'marketing' };
+    }
+
     await ensureAuthReady();
+
+    if (isDesktop) {
+        return true;
+    }
 
     if (to.meta.requiresAuth && !authState.user) {
         return { name: 'login', query: { redirect: to.fullPath } };
