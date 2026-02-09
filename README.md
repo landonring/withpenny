@@ -78,6 +78,19 @@ Penny trusts proxy headers so sessions and auth work correctly behind the ngrok 
 
 Open Penny on a phone and select “Add to Home Screen” to install.
 
+## Deployment (Forge)
+
+Penny can be deployed on Laravel Forge with a standard PHP + MySQL setup.
+
+Recommended Forge configuration:
+- Set `APP_URL` to your production domain
+- Set `SESSION_DOMAIN` to your domain (e.g. `.example.com` if using subdomains)
+- Set `SANCTUM_STATEFUL_DOMAINS` to your domain
+- Build step: `npm install && npm run build`
+- Ensure `storage/` and `bootstrap/cache/` are writable
+
+No queue worker is required unless you add background jobs later.
+
 ## Phase 1 Scope
 
 - App shell + PWA
