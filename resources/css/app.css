@@ -1,24 +1,24 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600&family=Manrope:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&display=swap');
 
 :root {
-    --sage-50: #f5f7f2;
-    --sage-100: #edf2ea;
-    --sage-200: #dfe7d9;
-    --sage-300: #c6d2c4;
-    --sage-400: #a9b6a5;
-    --sage-600: #7b8f86;
-    --sage-700: #60736b;
-    --ink: #2a3430;
-    --muted: #5b6a63;
-    --warm-50: #faf7f1;
-    --warm-100: #f5efe6;
-    --warm-200: #efe7dd;
-    --card: #fcfbf8;
-    --accent: #d7bfa9;
-    --shadow: 0 18px 40px rgba(48, 59, 54, 0.08);
+    --sage-50: #f6f4ef;
+    --sage-100: #f1eee7;
+    --sage-200: #e3ded4;
+    --sage-300: #d6cfc3;
+    --sage-400: #bdb6ab;
+    --sage-600: #8f8a82;
+    --sage-700: #6f6a63;
+    --ink: #2b2b2b;
+    --muted: #6f6f6f;
+    --warm-50: #faf8f4;
+    --warm-100: #f3efe7;
+    --warm-200: #ebe6dd;
+    --card: #ffffff;
+    --accent: #d8d1c6;
+    --shadow: 0 10px 24px rgba(25, 25, 25, 0.08);
     --radius-lg: 24px;
     --radius-md: 18px;
-    --app-bg: #f1f3ec;
+    --app-bg: #f6f3ee;
 }
 
 * {
@@ -52,7 +52,7 @@ a {
 }
 
 a:hover {
-    color: var(--sage-700);
+    color: var(--ink);
 }
 
 #app {
@@ -67,48 +67,8 @@ a:hover {
     flex-direction: column;
 }
 
-.top-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: calc(18px + env(safe-area-inset-top)) 20px 10px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: linear-gradient(180deg, rgba(249, 248, 244, 0.95), rgba(249, 248, 244, 0.7));
-    backdrop-filter: blur(10px);
-}
-
-.brand {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-
-.brand-mark {
-    width: 38px;
-    height: 38px;
-    border-radius: 14px;
-    background: var(--sage-300);
-    color: var(--ink);
-    display: grid;
-    place-items: center;
-    font-family: 'Fraunces', serif;
-    font-size: 18px;
-}
-
-.brand-title {
-    font-family: 'Fraunces', serif;
-    font-size: 18px;
-}
-
-.brand-sub {
-    font-size: 12px;
-    color: var(--muted);
-}
-
 .main-content {
-    padding: env(safe-area-inset-top) 20px calc(120px + env(safe-area-inset-bottom));
+    padding: calc(20px + env(safe-area-inset-top)) 22px calc(120px + env(safe-area-inset-bottom));
     flex: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -120,7 +80,7 @@ a:hover {
 
 .screen {
     display: grid;
-    gap: 16px;
+    gap: 20px;
 }
 
 .screen-header {
@@ -133,20 +93,21 @@ a:hover {
 .eyebrow {
     margin: 0 0 6px;
     font-size: 12px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--sage-700);
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: var(--muted);
 }
 
 .screen-title {
     margin: 0;
-    font-family: 'Fraunces', serif;
-    font-size: 26px;
-    line-height: 1.2;
+    font-family: 'Manrope', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 24px;
+    line-height: 1.25;
+    font-weight: 600;
 }
 
 .accent-chip {
-    background: var(--warm-200);
+    background: var(--warm-100);
     color: var(--muted);
     border-radius: 999px;
     padding: 6px 12px;
@@ -156,9 +117,9 @@ a:hover {
 .card {
     background: var(--card);
     border-radius: var(--radius-lg);
-    padding: 20px;
+    padding: 22px;
     box-shadow: var(--shadow);
-    border: 1px solid rgba(147, 163, 151, 0.15);
+    border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .card-title {
@@ -182,12 +143,12 @@ a:hover {
     border: none;
     border-radius: 999px;
     padding: 12px 18px;
-    background: var(--sage-600);
+    background: #2f2f2f;
     color: #fdfdfb;
     font-weight: 600;
     font-size: 14px;
     cursor: pointer;
-    box-shadow: 0 12px 24px rgba(95, 116, 106, 0.25);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -206,7 +167,7 @@ a:hover {
 
 .ghost-button {
     background: transparent;
-    border: 1px solid rgba(96, 115, 107, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 999px;
     padding: 8px 14px;
     font-size: 12px;
@@ -235,11 +196,11 @@ a:hover {
 .soft-chart.dotted {
     height: 90px;
     border-radius: 16px;
-    border: 1px dashed rgba(96, 115, 107, 0.2);
+    border: 1px dashed rgba(0, 0, 0, 0.12);
     background: repeating-linear-gradient(
         90deg,
-        rgba(198, 210, 196, 0.3),
-        rgba(198, 210, 196, 0.3) 8px,
+        rgba(0, 0, 0, 0.08),
+        rgba(0, 0, 0, 0.08) 8px,
         transparent 8px,
         transparent 16px
     );
@@ -257,15 +218,15 @@ a:hover {
 }
 
 .soft-bar.needs {
-    background: rgba(198, 210, 196, 0.6);
+    background: rgba(0, 0, 0, 0.08);
 }
 
 .soft-bar.wants {
-    background: rgba(238, 230, 217, 0.7);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .soft-bar.future {
-    background: rgba(214, 191, 169, 0.4);
+    background: rgba(0, 0, 0, 0.1);
 }
 
 .action-card {
@@ -276,18 +237,19 @@ a:hover {
 }
 
 .calm-note {
-    background: linear-gradient(135deg, #fffaf3 0%, #f7f0e6 100%);
+    background: linear-gradient(135deg, #fffdf9 0%, #f3ede5 100%);
 }
 
 .soft-quote {
     margin: 0;
-    font-family: 'Fraunces', serif;
-    font-size: 16px;
+    font-family: 'Manrope', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
 }
 
 .camera-frame {
     border-radius: var(--radius-lg);
-    border: 2px dashed rgba(123, 143, 134, 0.4);
+    border: 2px dashed rgba(0, 0, 0, 0.18);
     min-height: 260px;
     padding: 20px;
     display: grid;
@@ -327,12 +289,12 @@ a:hover {
 }
 
 .chat-bubble.assistant {
-    background: rgba(198, 210, 196, 0.4);
+    background: rgba(0, 0, 0, 0.06);
     justify-self: start;
 }
 
 .chat-bubble.user {
-    background: rgba(239, 231, 221, 0.6);
+    background: rgba(0, 0, 0, 0.08);
     justify-self: end;
 }
 
@@ -368,7 +330,7 @@ a:hover {
     flex: 1;
     padding: 12px 14px;
     border-radius: 14px;
-    border: 1px solid rgba(123, 143, 134, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     background: #fff;
 }
 
@@ -379,7 +341,7 @@ a:hover {
 
 .ai-card {
     margin-top: 12px;
-    background: rgba(239, 231, 221, 0.55);
+    background: rgba(0, 0, 0, 0.04);
     border-radius: 16px;
     padding: 12px 14px;
     display: grid;
@@ -395,14 +357,14 @@ a:hover {
 .progress-shell {
     height: 14px;
     border-radius: 999px;
-    background: rgba(198, 210, 196, 0.4);
+    background: rgba(0, 0, 0, 0.08);
     overflow: hidden;
     margin: 16px 0 8px;
 }
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #c6d2c4, #a9b6a5);
+    background: linear-gradient(90deg, #3a3a3a, #6a6a6a);
 }
 
 .auth-screen {
@@ -423,7 +385,7 @@ a:hover {
 }
 
 .auth-card .bio-card {
-    background: rgba(239, 231, 221, 0.4);
+    background: rgba(0, 0, 0, 0.04);
     border-radius: 18px;
     padding: 16px;
     gap: 12px;
@@ -444,7 +406,7 @@ a:hover {
 .field input {
     padding: 12px 14px;
     border-radius: 14px;
-    border: 1px solid rgba(123, 143, 134, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     font-size: 14px;
 }
 
@@ -459,7 +421,7 @@ a:hover {
 }
 
 .field-toggle {
-    border: 1px solid rgba(123, 143, 134, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 999px;
     padding: 8px 12px;
     font-size: 12px;
@@ -469,8 +431,8 @@ a:hover {
 }
 
 .form-error {
-    background: rgba(208, 115, 115, 0.12);
-    color: #8a3f3f;
+    background: #f3ede7;
+    color: #6b5f55;
     padding: 10px 12px;
     border-radius: 12px;
     font-size: 13px;
@@ -483,11 +445,11 @@ a:hover {
     bottom: calc(16px + env(safe-area-inset-bottom));
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    background: rgba(252, 251, 248, 0.9);
-    border-radius: 26px;
-    padding: 10px 6px;
-    border: 1px solid rgba(123, 143, 134, 0.2);
-    box-shadow: 0 24px 50px rgba(48, 59, 54, 0.12);
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 24px;
+    padding: 10px 8px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 18px 32px rgba(0, 0, 0, 0.08);
     backdrop-filter: blur(12px);
     z-index: 20;
 }
@@ -498,6 +460,8 @@ a:hover {
     place-items: center;
     font-size: 11px;
     color: var(--muted);
+    padding: 6px 0;
+    border-radius: 14px;
 }
 
 .nav-icon {
@@ -511,8 +475,9 @@ a:hover {
 }
 
 .nav-item.active {
-    color: var(--sage-700);
+    color: var(--ink);
     font-weight: 600;
+    background: rgba(0, 0, 0, 0.04);
 }
 
 @media (min-width: 768px) {
@@ -560,22 +525,23 @@ a:hover {
 
 .metric-label {
     font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--sage-700);
+    text-transform: none;
+    letter-spacing: 0.02em;
+    color: var(--muted);
     margin-bottom: 6px;
 }
 
 .metric-value {
-    font-size: 22px;
-    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-family: 'Manrope', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-weight: 600;
 }
 
 .metric-input {
     width: 100%;
     padding: 12px 14px;
     border-radius: 14px;
-    border: 1px solid rgba(123, 143, 134, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     font-size: 16px;
 }
 
@@ -602,7 +568,7 @@ a:hover {
     place-items: center;
     text-align: center;
     padding: 10px;
-    box-shadow: inset 0 0 0 1px rgba(123, 143, 134, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
 }
 
 .donut-label {
@@ -631,15 +597,15 @@ a:hover {
 }
 
 .legend-dot.needs {
-    background: #c6d2c4;
+    background: #9d9d9d;
 }
 
 .legend-dot.wants {
-    background: #e9dccf;
+    background: #c7c7c7;
 }
 
 .legend-dot.future {
-    background: #d7bfa9;
+    background: #7a7a7a;
 }
 
 .legend-value {
@@ -671,7 +637,7 @@ a:hover {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    border: 1px solid rgba(123, 143, 134, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 16px;
     padding: 12px 14px;
     background: #fff;
@@ -693,7 +659,7 @@ a:hover {
 }
 
 .transaction-row.income .transaction-amount {
-    color: #4d6f5a;
+    color: var(--ink);
 }
 
 .transaction-groups {
@@ -709,7 +675,7 @@ a:hover {
 .transaction-form select {
     padding: 12px 14px;
     border-radius: 14px;
-    border: 1px solid rgba(123, 143, 134, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     font-size: 14px;
     background: #fff;
 }
@@ -724,8 +690,8 @@ a:hover {
     border: none;
     border-radius: 999px;
     padding: 12px 18px;
-    background: #e5b3b3;
-    color: #5b3232;
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--ink);
     font-weight: 600;
     cursor: pointer;
     margin-top: 12px;
@@ -745,16 +711,16 @@ a:hover {
 
 .scan-screen {
     min-height: 100%;
-    padding: 20px 20px calc(120px + env(safe-area-inset-bottom));
+    padding: 0 0 calc(120px + env(safe-area-inset-bottom));
     display: grid;
-    gap: 18px;
+    gap: 20px;
 }
 
 .savings-screen {
     min-height: 100%;
-    padding: 0 20px calc(120px + env(safe-area-inset-bottom));
+    padding: 0 0 calc(120px + env(safe-area-inset-bottom));
     display: grid;
-    gap: 16px;
+    gap: 20px;
 }
 
 .savings-intro {
@@ -805,17 +771,17 @@ a:hover {
 .journey-status {
     font-size: 12px;
     color: var(--muted);
-    background: var(--warm-100);
+    background: rgba(0, 0, 0, 0.04);
     padding: 4px 10px;
     border-radius: 999px;
 }
 
 .journey-card.paused .journey-status {
-    background: rgba(198, 210, 196, 0.5);
+    background: rgba(0, 0, 0, 0.08);
 }
 
 .journey-card.completed .journey-status {
-    background: rgba(215, 191, 169, 0.5);
+    background: rgba(0, 0, 0, 0.1);
 }
 
 .milestone-bar {
@@ -827,11 +793,11 @@ a:hover {
     flex: 1;
     height: 10px;
     border-radius: 999px;
-    background: rgba(198, 210, 196, 0.35);
+    background: rgba(0, 0, 0, 0.08);
 }
 
 .milestone-seg.active {
-    background: linear-gradient(90deg, #c6d2c4, #a9b6a5);
+    background: linear-gradient(90deg, #3a3a3a, #6a6a6a);
 }
 
 .milestone-label {
@@ -842,7 +808,7 @@ a:hover {
 .journey-details {
     display: grid;
     gap: 6px;
-    background: var(--warm-100);
+    background: rgba(0, 0, 0, 0.04);
     border-radius: 14px;
     padding: 10px 12px;
     font-size: 13px;
@@ -896,7 +862,7 @@ a:hover {
     font-size: 12px;
     padding: 4px 10px;
     border-radius: 999px;
-    background: rgba(239, 231, 221, 0.8);
+    background: rgba(0, 0, 0, 0.06);
     color: var(--muted);
 }
 
@@ -938,13 +904,13 @@ a:hover {
 .page-thumb img {
     width: 100%;
     border-radius: 16px;
-    border: 1px solid rgba(123, 143, 134, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .page-remove {
     border: none;
-    background: rgba(229, 179, 179, 0.2);
-    color: #5b3232;
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--ink);
     border-radius: 999px;
     padding: 6px 12px;
     font-size: 12px;
@@ -959,7 +925,7 @@ a:hover {
 .type-toggle {
     display: inline-flex;
     gap: 8px;
-    background: rgba(198, 210, 196, 0.2);
+    background: rgba(0, 0, 0, 0.06);
     padding: 6px;
     border-radius: 999px;
 }
@@ -977,7 +943,7 @@ a:hover {
 .toggle-button.active {
     background: #fff;
     color: var(--ink);
-    box-shadow: 0 6px 16px rgba(34, 51, 42, 0.12);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
 .statement-footer {
@@ -993,7 +959,7 @@ a:hover {
 .data-summary {
     display: grid;
     gap: 6px;
-    background: var(--warm-100);
+    background: rgba(0, 0, 0, 0.04);
     border-radius: 14px;
     padding: 10px 12px;
     font-size: 13px;
@@ -1022,7 +988,7 @@ a:hover {
     margin-top: 12px;
     padding: 12px;
     border-radius: 16px;
-    background: rgba(229, 179, 179, 0.12);
+    background: rgba(0, 0, 0, 0.04);
     display: grid;
     gap: 10px;
 }
@@ -1098,7 +1064,7 @@ a:hover {
 .receipt-thumb {
     width: 100%;
     border-radius: 18px;
-    border: 1px solid rgba(123, 143, 134, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .suggestions {
@@ -1115,10 +1081,10 @@ a:hover {
 }
 
 .suggestion-label {
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    text-transform: none;
+    letter-spacing: 0.02em;
     font-size: 11px;
-    color: var(--sage-700);
+    color: var(--muted);
 }
 
 .suggestion-value {
