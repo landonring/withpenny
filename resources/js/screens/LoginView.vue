@@ -7,22 +7,6 @@
                 <p class="card-sub">Gentle and private, just for you.</p>
             </div>
 
-            <div v-if="biometricAvailable" class="bio-card">
-                <p class="card-sub">
-                    {{ biometricsState.enabled ? 'Use Face ID or Touch ID to continue quickly.' : 'Face ID is ready when you are.' }}
-                </p>
-                <button
-                    class="primary-button"
-                    type="button"
-                    :disabled="biometricBusy || !biometricsState.enabled"
-                    @click="handleBiometricLogin"
-                >
-                    {{ biometricBusy ? 'Checking…' : 'Continue with Face ID' }}
-                </button>
-                <p v-if="!biometricsState.enabled" class="muted">Sign in once to enable Face ID on this device.</p>
-                <p v-if="biometricError" class="form-error">{{ biometricError }}</p>
-            </div>
-
             <form class="auth-form" @submit.prevent="handleSubmit">
                 <label class="field">
                     <span>Email</span>
@@ -49,6 +33,28 @@
                 <button class="primary-button" type="submit" :disabled="loading">
                     {{ loading ? 'Signing in…' : 'Log in' }}
                 </button>
+
+                <button
+                    v-if="biometricAvailable"
+                    class="faceid-button"
+                    type="button"
+                    :disabled="biometricBusy || !biometricsState.enabled"
+                    @click="handleBiometricLogin"
+                >
+                    <span class="faceid-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                            <rect x="4" y="4" width="16" height="16" rx="4" />
+                            <path d="M9 8v2" />
+                            <path d="M15 8v2" />
+                            <path d="M9 16v-2" />
+                            <path d="M15 16v-2" />
+                            <path d="M8.5 12c1.2 1.1 5.8 1.1 7 0" />
+                        </svg>
+                    </span>
+                    <span>{{ biometricBusy ? 'Checking…' : 'Face ID' }}</span>
+                </button>
+
+                <p v-if="biometricError" class="form-error">{{ biometricError }}</p>
             </form>
 
             <p class="muted">

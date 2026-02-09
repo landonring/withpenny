@@ -616,6 +616,36 @@ a:hover {
     cursor: pointer;
 }
 
+.faceid-button {
+    border: 1px solid rgba(0, 0, 0, 0.14);
+    border-radius: 12px;
+    padding: 10px 14px;
+    background: #f4f4f4;
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.faceid-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.faceid-icon {
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+}
+
+.faceid-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
 .form-error {
     background: #f3ede7;
     color: #6b5f55;
