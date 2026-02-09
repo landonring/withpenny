@@ -14,6 +14,7 @@
             <button class="primary-button" type="button" :disabled="loadingMonthly" @click="handleMonthly">
                 {{ loadingMonthly ? 'Reflecting…' : 'Generate reflection' }}
             </button>
+            <p class="muted">Usually takes about 20 seconds.</p>
             <div v-if="monthlyReflection" class="ai-card">
                 <p>{{ monthlyReflection }}</p>
                 <button class="ghost-button" type="button" @click="monthlyReflection = ''">Dismiss</button>
@@ -26,6 +27,7 @@
             <button class="ghost-button" type="button" :disabled="loadingWeekly" @click="handleWeekly">
                 {{ loadingWeekly ? 'Checking in…' : 'Get weekly check-in' }}
             </button>
+            <p class="muted">Usually takes about 10 seconds.</p>
             <div v-if="weeklyCheckIn" class="ai-card">
                 <p>{{ weeklyCheckIn }}</p>
                 <button class="ghost-button" type="button" @click="weeklyCheckIn = ''">Dismiss</button>
