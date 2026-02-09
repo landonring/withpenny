@@ -19,7 +19,13 @@ class WebauthnController extends Controller
 
     public function registerOptions(AttestationRequest $request)
     {
-        return $request->secureRegistration()->userless()->toCreate();
+        $options = $request->secureRegistration()->toCreate();
+
+        if (isset($options['excludeCredentials'])) {
+            $options['excludeCredentials'] = [];
+        }
+
+        return $options;
     }
 
     public function registerVerify(AttestedRequest $request)
