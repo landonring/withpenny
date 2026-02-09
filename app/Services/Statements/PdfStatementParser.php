@@ -58,19 +58,35 @@ class PdfStatementParser
 
         $rows = [];
         $monthPattern = StatementParser::monthPattern();
+        $inTable = false;
 
         foreach ($lines as $line) {
             $line = trim($line);
             if ($line === '') continue;
 
-            if (preg_match('/^'.$monthPattern.'\s+\d{1,2}\b/i', $line) !== 1) {
+            $normalized = strtolower($line);
+            if (str_contains($normalized, 'date') && str_contains($normalized, 'description') && str_contains($normalized, 'amount')) {
+                $inTable = true;
                 continue;
             }
 
-            if (preg_match('/^'.$monthPattern.'\s+\d{1,2}\s+(.+?)\s{2,}(?:Debit|Credit)?\s*([+-]?\s*\$?\d[\d,]*\.?\d{0,2})\s+\$?\d[\d,]*\.?\d{0,2}$/i', $line, $matches)) {
+            if ($inTable && (str_starts_with($normalized, 'page ') || str_contains($normalized, 'statement period') || str_starts_with($normalized, 'note:'))) {
+                $inTable = false;
+                continue;
+            }
+
+            if ($inTable && preg_match('/^'.$monthPattern.'\s+\d{1,2}\b/i', $line) !== 1) {
+                continue;
+            }
+
+            if (! $inTable && preg_match('/^'.$monthPattern.'\s+\d{1,2}\b/i', $line) !== 1) {
+                continue;
+            }
+
+            if (preg_match('/^'.$monthPattern.'\s+\d{1,2}\s+(.+?)\s{2,}(Debit|Credit)\s+([+-]?\s*\$?\d[\d,]*\.\d{2})/i', $line, $matches)) {
                 $dateRaw = trim(preg_replace('/\s{2,}.*/', '', $line));
                 $description = trim($matches[1]);
-                $amountRaw = $matches[2];
+                $amountRaw = $matches[3];
 
                 if ($this->isBalanceLine($description)) {
                     continue;
@@ -104,7 +120,7 @@ class PdfStatementParser
 
             $moneyParts = [];
             foreach ($parts as $part) {
-                if (preg_match('/[+-]?\s*\$?\d[\d,]*\.?\d{0,2}/', $part)) {
+                if (preg_match('/[+-]?\s*\$?\d[\d,]*\.\d{2}/', $part)) {
                     $moneyParts[] = $part;
                 }
             }
@@ -196,6 +212,7 @@ class PdfStatementParser
         $normalized = strtolower($description);
         return str_contains($normalized, 'opening balance')
             || str_contains($normalized, 'closing balance')
-            || str_contains($normalized, 'total ending balance');
+            || str_contains($normalized, 'total ending balance')
+            || str_contains($normalized, 'ending balance');
     }
 }

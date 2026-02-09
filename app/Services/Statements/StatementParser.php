@@ -165,14 +165,11 @@ class StatementParser
 
     public static function extractAmounts(string $line): array
     {
-        preg_match_all('/[+-]?\s*\$?\d[\d,]*\.?\d{0,2}/', $line, $matches);
+        preg_match_all('/[+-]?\s*\$?\d[\d,]*\.\d{2}/', $line, $matches);
         $candidates = [];
         foreach ($matches[0] ?? [] as $candidate) {
             $trim = trim($candidate);
             if ($trim === '') {
-                continue;
-            }
-            if (! str_contains($trim, '$') && ! str_contains($trim, '.') && ! str_contains($trim, ',') && ! str_starts_with($trim, '+') && ! str_starts_with($trim, '-')) {
                 continue;
             }
             $candidates[] = $trim;
