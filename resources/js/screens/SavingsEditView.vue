@@ -26,12 +26,13 @@
                         v-model="form.target_amount"
                         type="number"
                         inputmode="decimal"
-                        min="0"
+                        :min="isEmergency ? 20000 : 0.01"
                         step="0.01"
                         placeholder="0.00"
                         required
                     />
                 </label>
+                <p v-if="isEmergency" class="muted">Emergency fund targets start at $20,000.</p>
 
                 <p v-if="error" class="form-error">{{ error }}</p>
                 <p v-if="success" class="muted">{{ success }}</p>
@@ -82,6 +83,14 @@
             </div>
         </div>
 
+        <div v-if="journey" class="card">
+            <div class="card-title">Delete journey</div>
+            <p class="card-sub">You can remove this journey anytime.</p>
+            <button class="danger-button" type="button" @click="handleDelete">
+                Delete journey
+            </button>
+        </div>
+
         <div v-else class="card">
             <div class="card-title">Journey not found</div>
             <p class="card-sub">Head back to your savings list to choose a journey.</p>
@@ -95,7 +104,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getJourneyById, initSavings, setJourneyStatus, updateJourney } from '../stores/savings';
+import { deleteJourney, getJourneyById, initSavings, setJourneyStatus, updateJourney } from '../stores/savings';
 
 const route = useRoute();
 const router = useRouter();
@@ -112,6 +121,8 @@ const form = ref({
     description: '',
     target_amount: '',
 });
+
+const isEmergency = computed(() => form.value.title.toLowerCase().includes('emergency fund'));
 
 onMounted(() => {
     initSavings();
@@ -155,6 +166,18 @@ const setStatus = async (status) => {
         }
     } catch (err) {
         error.value = err?.response?.data?.message || 'Unable to update this journey.';
+    }
+};
+
+const handleDelete = async () => {
+    if (!journey.value) return;
+    const ok = window.confirm('Delete this journey? This can’t be undone.');
+    if (!ok) return;
+    try {
+        await deleteJourney(journeyId.value);
+        router.push({ name: 'savings' });
+    } catch (err) {
+        error.value = err?.response?.data?.message || 'Unable to delete this journey.';
     }
 };
 </script>

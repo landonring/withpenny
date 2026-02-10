@@ -9,10 +9,23 @@
         </div>
 
         <div class="card insight-card">
-            <div class="card-title">Monthly reflection</div>
+            <div class="card-title">Yearly overview</div>
+            <p class="card-sub">A calm look at the year so far.</p>
+            <button class="primary-button" type="button" :disabled="loadingYearly" @click="handleYearly">
+                {{ loadingYearly ? 'Preparing…' : 'Generate yearly overview' }}
+            </button>
+            <p class="muted">Usually takes about 20 seconds.</p>
+            <div v-if="yearlyReflection" class="ai-card">
+                <p>{{ yearlyReflection }}</p>
+                <button class="ghost-button" type="button" @click="yearlyReflection = ''">Dismiss</button>
+            </div>
+        </div>
+
+        <div class="card insight-card">
+            <div class="card-title">Monthly overview</div>
             <p class="card-sub">A gentle note about your month, whenever you want it.</p>
             <button class="primary-button" type="button" :disabled="loadingMonthly" @click="handleMonthly">
-                {{ loadingMonthly ? 'Reflecting…' : 'Generate reflection' }}
+                {{ loadingMonthly ? 'Preparing…' : 'Generate monthly overview' }}
             </button>
             <p class="muted">Usually takes about 20 seconds.</p>
             <div v-if="monthlyReflection" class="ai-card">
@@ -24,7 +37,7 @@
         <div class="card insight-card">
             <div class="card-title">Weekly check-in</div>
             <p class="card-sub">A short, optional check-in whenever you want one.</p>
-            <button class="ghost-button" type="button" :disabled="loadingWeekly" @click="handleWeekly">
+            <button class="primary-button" type="button" :disabled="loadingWeekly" @click="handleWeekly">
                 {{ loadingWeekly ? 'Checking in…' : 'Get weekly check-in' }}
             </button>
             <p class="muted">Usually takes about 20 seconds.</p>
@@ -38,13 +51,16 @@
 
 <script setup>
 import { ref } from 'vue';
-import { generateMonthlyReflection, generateWeeklyCheckIn } from '../stores/ai';
+import { generateMonthlyReflection, generateWeeklyCheckIn, generateYearlyReflection } from '../stores/ai';
 import { transactionsState } from '../stores/transactions';
 
 const monthlyReflection = ref('');
+const yearlyReflection = ref('');
 const weeklyCheckIn = ref('');
 const loadingMonthly = ref(false);
+const loadingYearly = ref(false);
 const loadingWeekly = ref(false);
+const currentYear = new Date().getFullYear();
 
 const handleMonthly = async () => {
     loadingMonthly.value = true;
@@ -56,6 +72,19 @@ const handleMonthly = async () => {
         monthlyReflection.value = 'Penny is resting right now. You can try again in a little while.';
     } finally {
         loadingMonthly.value = false;
+    }
+};
+
+const handleYearly = async () => {
+    loadingYearly.value = true;
+    yearlyReflection.value = '';
+
+    try {
+        yearlyReflection.value = await generateYearlyReflection(currentYear);
+    } catch (err) {
+        yearlyReflection.value = 'Penny is resting right now. You can try again in a little while.';
+    } finally {
+        loadingYearly.value = false;
     }
 };
 

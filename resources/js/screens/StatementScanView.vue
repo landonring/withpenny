@@ -10,36 +10,12 @@
 
         <div class="scan-stage">
             <div class="camera-view">
-                <img v-if="currentUrl" :src="currentUrl" alt="Statement page preview" />
-                <div v-else class="camera-overlay">
-                    <div class="camera-frame"></div>
-                    <p class="camera-hint">Line up the page and tap Take photo.</p>
-                </div>
+                <div class="camera-hint">Choose statement photos to begin.</div>
             </div>
         </div>
 
-        <div v-if="currentUrl" class="scan-actions">
-            <button class="primary-button" type="button" @click="usePage">
-                Use this page
-            </button>
-            <button class="ghost-button" type="button" @click="retakePage">
-                Retake
-            </button>
-        </div>
-
-        <div v-else class="scan-actions">
+        <div class="scan-actions">
             <label class="primary-button scan-choice" :class="{ disabled: pages.length >= maxPages }">
-                Take photo
-                <input
-                    ref="cameraInput"
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    :disabled="pages.length >= maxPages"
-                    @change="handleCamera"
-                />
-            </label>
-            <label class="ghost-button scan-choice" :class="{ disabled: pages.length >= maxPages }">
                 Choose from photos
                 <input
                     ref="libraryInput"
@@ -82,45 +58,11 @@ import { scanStatementImages } from '../stores/statements';
 const router = useRouter();
 
 const pages = ref([]);
-const currentUrl = ref('');
-const currentBlob = ref(null);
 const error = ref('');
 const uploading = ref(false);
 const maxPages = 6;
 
-const cameraInput = ref(null);
 const libraryInput = ref(null);
-const handleCamera = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (currentUrl.value) {
-        URL.revokeObjectURL(currentUrl.value);
-    }
-    currentBlob.value = file;
-    currentUrl.value = URL.createObjectURL(file);
-    event.target.value = '';
-};
-
-const usePage = () => {
-    if (!currentBlob.value || !currentUrl.value) return;
-    pages.value = [
-        ...pages.value,
-        { id: `${Date.now()}-${pages.value.length}`, url: currentUrl.value, blob: currentBlob.value },
-    ];
-    currentBlob.value = null;
-    currentUrl.value = '';
-};
-
-const retakePage = () => {
-    if (currentUrl.value) {
-        URL.revokeObjectURL(currentUrl.value);
-    }
-    currentUrl.value = '';
-    currentBlob.value = null;
-    if (cameraInput.value) {
-        cameraInput.value.value = '';
-    }
-};
 
 const handleLibrary = (event) => {
     const files = Array.from(event.target.files || []);
@@ -165,9 +107,6 @@ const handleCancel = () => {
 };
 
 onBeforeUnmount(() => {
-    if (currentUrl.value) {
-        URL.revokeObjectURL(currentUrl.value);
-    }
     pages.value.forEach((page) => {
         if (page.url) {
             URL.revokeObjectURL(page.url);

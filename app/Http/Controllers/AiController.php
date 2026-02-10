@@ -22,6 +22,9 @@ Speak in plain, human language with short, clear sentences.
 Avoid jargon or financial buzzwords.
 Be conversational, not instructional.
 Use one consistent voice everywhere.
+Do not talk about yourself. Avoid first-person language like “I”, “me”, “my”, or “Penny”.
+Use second-person language and focus on the user (“you”).
+Avoid phrases like “let’s” or “we”.
 
 Honesty is allowed and encouraged. If something isn’t going well:
 - Say it clearly
@@ -63,7 +66,7 @@ Your goal is to help the user feel calmer and more capable than when they opened
         $savings = $this->summarizeSavings($user->id);
         $incomeTrend = $this->summarizeIncomeTrend($user->id);
 
-        $prompt = "Monthly reflection request.\n"
+        $prompt = "Monthly overview request.\n"
             ."Month: ".$start->format('F Y').".\n"
             ."Transactions count: {$summary['count']}.\n"
             ."Total spent: {$summary['spending_total']}.\n"
@@ -75,7 +78,7 @@ Your goal is to help the user feel calmer and more capable than when they opened
             ."Savings total saved: {$savings['total_saved']}.\n"
             ."Savings total target: {$savings['total_target']}.\n"
             ."If there is little or no data, offer a gentle invitation without pressure.\n"
-            ."Write 3-4 short sentences (40-70 words total) with one observation and one reassurance. Use Penny's name if it feels natural.";
+            ."Write 3-4 short sentences (40-70 words total) with one observation and one reassurance. End with a complete sentence.";
 
         return $this->respondWithAi($prompt, 180);
     }
@@ -103,9 +106,41 @@ Your goal is to help the user feel calmer and more capable than when they opened
             ."Top categories: {$summary['top_categories']}.\n"
             ."Average monthly income (last 3 months): {$incomeTrend['average']}.\n"
             ."Income stability: {$incomeTrend['stability']}.\n"
-            ."Write 2-3 sentences (25-45 words total) focused on encouragement. Use Penny's name if it feels natural.";
+            ."Write 2-3 sentences (25-45 words total) focused on encouragement. End with a complete sentence.";
 
         return $this->respondWithAi($prompt, 120);
+    }
+
+    public function yearlyReflection(Request $request)
+    {
+        $this->debugEnabled = $request->boolean('debug');
+        $user = $request->user();
+        $year = (int) $request->input('year', now()->year);
+
+        [$start, $end] = $this->resolveYearRange($year);
+
+        $transactions = Transaction::query()
+            ->where('user_id', $user->id)
+            ->whereBetween('transaction_date', [$start->toDateString(), $end->toDateString()])
+            ->get();
+
+        $summary = $this->summarizeYearTransactions($transactions);
+        $savings = $this->summarizeSavings($user->id);
+
+        $prompt = "Yearly overview request.\n"
+            ."Year: {$year}.\n"
+            ."Transactions count: {$summary['count']}.\n"
+            ."Total spent: {$summary['spending_total']}.\n"
+            ."Total income: {$summary['income_total']}.\n"
+            ."Average monthly spent: {$summary['average_spent']}.\n"
+            ."Average monthly income: {$summary['average_income']}.\n"
+            ."Top categories: {$summary['top_categories']}.\n"
+            ."Savings journeys active: {$savings['active_count']}.\n"
+            ."Savings total saved: {$savings['total_saved']}.\n"
+            ."If there is little or no data, offer a gentle invitation without pressure.\n"
+            ."Write 4-5 short sentences (60-90 words total) with one observation and one reassurance. End with a complete sentence.";
+
+        return $this->respondWithAi($prompt, 220);
     }
 
     public function chat(Request $request)
@@ -130,9 +165,9 @@ Your goal is to help the user feel calmer and more capable than when they opened
             ."Context (optional): This month transactions {$summary['count']}, spent {$summary['spending_total']}, income {$summary['income_total']}, top categories {$summary['top_categories']}. "
             ."Average monthly income (last 3 months): {$incomeTrend['average']}, stability {$incomeTrend['stability']}. "
             ."Savings active {$savings['active_count']}, saved {$savings['total_saved']}.\n"
-            ."If the user expresses self-criticism, start with reassurance before any reflection. Reply in 1 short sentence (8-12 words).";
+            ."If the user expresses self-criticism, start with reassurance before any reflection. Reply in 1-2 short sentences (12-24 words). End with a complete sentence.";
 
-        return $this->respondWithAi($prompt, 60);
+        return $this->respondWithAi($prompt, 80);
     }
 
     private function respondWithAi(string $prompt, int $maxTokens = 80)
@@ -207,6 +242,10 @@ Your goal is to help the user feel calmer and more capable than when they opened
             $text = 'Penny is resting right now. You can try again in a little while.';
         }
 
+        if (! preg_match('/[.!?]["\']?$/', $text)) {
+            $text = rtrim($text).'.';
+        }
+
         return response()->json([
             'message' => $text,
         ]);
@@ -258,6 +297,18 @@ Your goal is to help the user feel calmer and more capable than when they opened
         return [$start, $end];
     }
 
+    private function resolveYearRange(int $year): array
+    {
+        try {
+            $start = Carbon::create($year, 1, 1)->startOfDay();
+        } catch (\Throwable $error) {
+            $start = now()->startOfYear();
+        }
+
+        $end = (clone $start)->endOfYear();
+        return [$start, $end];
+    }
+
     private function summarizeTransactions($transactions): array
     {
         $count = $transactions->count();
@@ -286,6 +337,49 @@ Your goal is to help the user feel calmer and more capable than when they opened
         return [
             'spending_total' => '$'.number_format($spendingTotal, 2),
             'income_total' => '$'.number_format($incomeTotal, 2),
+            'count' => $count,
+            'top_categories' => $topParts ? implode(', ', $topParts) : 'none yet',
+        ];
+    }
+
+    private function summarizeYearTransactions($transactions): array
+    {
+        $count = $transactions->count();
+        $categoryTotals = [];
+        $spendingTotal = 0;
+        $incomeTotal = 0;
+
+        foreach ($transactions as $transaction) {
+            $amount = (float) $transaction->amount;
+            if (($transaction->type ?? 'spending') === 'income') {
+                $incomeTotal += $amount;
+                continue;
+            }
+            $spendingTotal += $amount;
+            $categoryTotals[$transaction->category] = ($categoryTotals[$transaction->category] ?? 0) + $amount;
+        }
+
+        arsort($categoryTotals);
+        $top = array_slice($categoryTotals, 0, 3, true);
+        $topParts = [];
+
+        foreach ($top as $category => $amount) {
+            $topParts[] = $category.' ($'.number_format($amount, 2).')';
+        }
+
+        $monthsWithData = $transactions
+            ->groupBy(fn ($transaction) => $transaction->transaction_date->format('Y-m'))
+            ->count();
+        $monthsWithData = max(1, $monthsWithData);
+
+        $avgSpent = $spendingTotal / $monthsWithData;
+        $avgIncome = $incomeTotal / $monthsWithData;
+
+        return [
+            'spending_total' => '$'.number_format($spendingTotal, 2),
+            'income_total' => '$'.number_format($incomeTotal, 2),
+            'average_spent' => '$'.number_format($avgSpent, 2),
+            'average_income' => '$'.number_format($avgIncome, 2),
             'count' => $count,
             'top_categories' => $topParts ? implode(', ', $topParts) : 'none yet',
         ];

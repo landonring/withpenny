@@ -13,12 +13,14 @@ class BankStatementImport extends Model
     protected $fillable = [
         'user_id',
         'transactions',
+        'meta',
         'masked_account',
         'source',
     ];
 
     protected $casts = [
         'transactions' => 'encrypted:array',
+        'meta' => 'encrypted:array',
     ];
 
     public function user(): BelongsTo

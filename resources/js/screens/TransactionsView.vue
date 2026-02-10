@@ -10,11 +10,11 @@
 
         <div class="card action-card">
             <div>
-                <div class="card-title">Add spending</div>
+                <div class="card-title">Add spending or income</div>
                 <p class="card-sub">Capture it while it is fresh.</p>
             </div>
             <router-link class="primary-button" :to="{ name: 'transactions-new' }">
-                Add spending
+                Add spending or income
             </router-link>
         </div>
 

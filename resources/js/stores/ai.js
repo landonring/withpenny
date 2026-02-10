@@ -27,6 +27,16 @@ export async function generateWeeklyCheckIn() {
     return data.message;
 }
 
+export async function generateYearlyReflection(year) {
+    const request = axios.post(
+        '/api/ai/yearly-reflection',
+        { year },
+        { timeout: REQUEST_TIMEOUT }
+    );
+    const { data } = await withTimeout(request);
+    return data.message;
+}
+
 export async function sendChatMessage(message) {
     const request = axios.post('/api/ai/chat', { message }, { timeout: REQUEST_TIMEOUT });
     const { data } = await withTimeout(request);

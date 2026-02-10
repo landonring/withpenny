@@ -2,8 +2,8 @@
     <section class="screen">
         <div class="screen-header">
             <div>
-                <p class="eyebrow">Add spending</p>
-                <h1 class="screen-title">Capture a spending moment</h1>
+                <p class="eyebrow">Add spending or income</p>
+                <h1 class="screen-title">Capture a money moment</h1>
             </div>
             <div class="accent-chip">New</div>
         </div>
@@ -12,7 +12,7 @@
             <TransactionForm
                 :error="error"
                 :loading="loading"
-                submit-label="Save spending"
+                submit-label="Save"
                 @submit="handleSubmit"
                 @cancel="handleCancel"
             />

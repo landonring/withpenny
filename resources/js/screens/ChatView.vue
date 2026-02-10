@@ -15,7 +15,7 @@
             </button>
         </div>
 
-        <div class="card chat-card">
+        <div ref="chatCard" class="card chat-card">
             <div
                 v-for="(message, index) in messages"
                 :key="index"
@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { nextTick, ref, watch } from 'vue';
 import { sendChatMessage } from '../stores/ai';
 
 const STORAGE_KEY = 'penny.chat.messages';
@@ -49,6 +49,7 @@ const defaultMessages = [
 ];
 
 const messages = ref([]);
+const chatCard = ref(null);
 
 const draft = ref('');
 const loading = ref(false);
@@ -61,17 +62,20 @@ const handleSend = async () => {
     draft.value = '';
     loading.value = true;
     persistMessages();
+    scrollToBottom();
 
     try {
         const response = await sendChatMessage(text);
         messages.value = [...messages.value, { role: 'assistant', text: response }];
         persistMessages();
+        scrollToBottom();
     } catch (err) {
         messages.value = [
             ...messages.value,
             { role: 'assistant', text: 'Penny is resting right now. You can try again in a little while.' },
         ];
         persistMessages();
+        scrollToBottom();
     } finally {
         loading.value = false;
     }
@@ -85,6 +89,7 @@ const loadMessages = () => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
         messages.value = [...defaultMessages];
+        scrollToBottom();
         return;
     }
     try {
@@ -93,12 +98,28 @@ const loadMessages = () => {
     } catch {
         messages.value = [...defaultMessages];
     }
+    scrollToBottom();
 };
 
 const resetChat = () => {
     messages.value = [...defaultMessages];
     persistMessages();
+    scrollToBottom();
 };
 
 loadMessages();
+
+const scrollToBottom = () => {
+    nextTick(() => {
+        if (!chatCard.value) return;
+        chatCard.value.scrollTop = chatCard.value.scrollHeight;
+    });
+};
+
+watch(
+    () => messages.value.length,
+    () => {
+        scrollToBottom();
+    }
+);
 </script>

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\BankStatementImport;
 use App\Models\Transaction;
-use App\Services\Statements\CsvStatementParser;
 use App\Services\Statements\PdfStatementParser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,31 +15,35 @@ class BankStatementController extends Controller
     public function upload(Request $request)
     {
         $validated = $request->validate([
-            'file' => ['required', 'file', 'mimes:csv,txt,pdf', 'max:15360'],
+            'file' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
         ], [
-            'file.mimes' => 'That file type isn’t supported yet. CSV or PDF works best.',
+            'file.mimes' => 'That file type isn’t supported yet. A statement screenshot (PNG/JPG) works best.',
         ]);
 
         $file = $validated['file'];
         $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension());
+        $imageExtensions = ['jpg', 'jpeg', 'png', 'webp'];
 
         $path = $file->store('tmp');
-        $fullPath = Storage::disk('local')->path($path);
 
         $pdfExtractionFailed = false;
+        $summary = null;
 
         try {
-            if ($extension === 'pdf') {
-                $parser = new PdfStatementParser();
-                $text = $parser->extractText($fullPath);
-                if ($text === '') {
-                    $pdfExtractionFailed = true;
-                    $transactions = [];
-                } else {
-                    $transactions = $parser->parseText($text);
-                }
+            $parser = new PdfStatementParser();
+            $imagePath = $this->storeStatementImage($file);
+            try {
+                $text = $this->runOcrOnFile($imagePath);
+            } finally {
+                @unlink($imagePath);
+            }
+
+            if ($text === '') {
+                $pdfExtractionFailed = true;
+                $transactions = [];
             } else {
-                $transactions = (new CsvStatementParser())->parse($fullPath);
+                $transactions = $parser->parseText($text);
+                $summary = $parser->extractSummary($text);
             }
         } catch (\Throwable $error) {
             Log::warning('statement_parse_failed', ['source' => $extension, 'error' => $error->getMessage()]);
@@ -52,7 +55,7 @@ class BankStatementController extends Controller
         if (empty($transactions)) {
             return response()->json([
                 'message' => $pdfExtractionFailed
-                    ? "We had trouble reading that PDF. You can try again or keep things manual."
+                    ? "We couldn't read that screenshot. You can try again or keep things manual."
                     : "We couldn't find any transactions in this file.",
             ], 422);
         }
@@ -62,14 +65,16 @@ class BankStatementController extends Controller
         $import = BankStatementImport::create([
             'user_id' => $request->user()->id,
             'transactions' => $transactions,
+            'meta' => $summary,
             'masked_account' => null,
-            'source' => $extension,
+            'source' => 'photo',
         ]);
 
         return response()->json([
             'import' => [
                 'id' => $import->id,
                 'transactions' => $import->transactions,
+                'meta' => $import->meta,
             ],
         ], 201);
     }
@@ -91,7 +96,9 @@ class BankStatementController extends Controller
             }
         }
 
-        $transactions = (new PdfStatementParser())->parseText($rawText);
+        $parser = new PdfStatementParser();
+        $transactions = $parser->parseText($rawText);
+        $summary = $parser->extractSummary($rawText);
 
         if (empty($transactions)) {
             return response()->json([
@@ -104,6 +111,7 @@ class BankStatementController extends Controller
         $import = BankStatementImport::create([
             'user_id' => $request->user()->id,
             'transactions' => $transactions,
+            'meta' => $summary,
             'masked_account' => null,
             'source' => 'photo',
         ]);
@@ -112,6 +120,7 @@ class BankStatementController extends Controller
             'import' => [
                 'id' => $import->id,
                 'transactions' => $import->transactions,
+                'meta' => $import->meta,
             ],
         ], 201);
     }
@@ -124,6 +133,7 @@ class BankStatementController extends Controller
             'import' => [
                 'id' => $import->id,
                 'transactions' => $import->transactions,
+                'meta' => $import->meta,
             ],
         ]);
     }
@@ -227,7 +237,9 @@ class BankStatementController extends Controller
         imagefill($canvas, 0, 0, $white);
         imagecopyresampled($canvas, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
 
-        imagejpeg($canvas, $path, 82);
+        imagefilter($canvas, IMG_FILTER_GRAYSCALE);
+        imagefilter($canvas, IMG_FILTER_CONTRAST, -8);
+        imagejpeg($canvas, $path, 90);
 
         imagedestroy($image);
         imagedestroy($canvas);
@@ -251,7 +263,7 @@ class BankStatementController extends Controller
             mkdir(dirname($outputBase), 0775, true);
         }
 
-        $command = escapeshellcmd($tesseract).' '.escapeshellarg($path).' '.escapeshellarg($outputBase).' --dpi 300';
+        $command = escapeshellcmd($tesseract).' '.escapeshellarg($path).' '.escapeshellarg($outputBase).' --dpi 300 -l eng --oem 1 --psm 6 -c preserve_interword_spaces=1';
         shell_exec($command);
 
         $textPath = $outputBase.'.txt';

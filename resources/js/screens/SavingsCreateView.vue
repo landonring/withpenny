@@ -12,6 +12,19 @@
             <p class="card-sub">You can change this later. Even small steps count.</p>
 
             <form class="auth-form" @submit.prevent="handleSubmit">
+                <div class="quick-start">
+                    <span class="field-hint">Quick option</span>
+                    <div class="quick-row">
+                        <button
+                            class="quick-pill"
+                            type="button"
+                            @click="applyPreset('Emergency fund', 'A calm buffer for the unexpected')"
+                        >
+                            Emergency fund
+                        </button>
+                    </div>
+                </div>
+
                 <label class="field">
                     <span>Title</span>
                     <input v-model="form.title" type="text" placeholder="Beach trip" required />
@@ -28,12 +41,13 @@
                         v-model="form.target_amount"
                         type="number"
                         inputmode="decimal"
-                        min="0"
+                        :min="isEmergency ? 20000 : 0.01"
                         step="0.01"
                         placeholder="0.00"
                         required
                     />
                 </label>
+                <p v-if="isEmergency" class="muted">Emergency fund targets start at $20,000.</p>
 
                 <p v-if="error" class="form-error">{{ error }}</p>
 
@@ -46,7 +60,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { createJourney } from '../stores/savings';
 
@@ -78,4 +92,16 @@ const handleSubmit = async () => {
         loading.value = false;
     }
 };
+
+const applyPreset = (title, description) => {
+    form.value.title = title;
+    if (!form.value.description) {
+        form.value.description = description;
+    }
+    if (title.toLowerCase().includes('emergency fund')) {
+        form.value.target_amount = form.value.target_amount ? form.value.target_amount : 20000;
+    }
+};
+
+const isEmergency = computed(() => form.value.title.toLowerCase().includes('emergency fund'));
 </script>

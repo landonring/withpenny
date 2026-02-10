@@ -135,7 +135,9 @@ class ReceiptController extends Controller
         imagecopyresampled($canvas, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
 
         ob_start();
-        imagejpeg($canvas, null, 82);
+        imagefilter($canvas, IMG_FILTER_GRAYSCALE);
+        imagefilter($canvas, IMG_FILTER_CONTRAST, -8);
+        imagejpeg($canvas, null, 90);
         $jpegData = ob_get_clean();
 
         imagedestroy($image);
@@ -164,7 +166,7 @@ class ReceiptController extends Controller
             mkdir(dirname($outputBase), 0775, true);
         }
 
-        $command = escapeshellcmd($tesseract).' '.escapeshellarg($fullPath).' '.escapeshellarg($outputBase).' --dpi 300';
+        $command = escapeshellcmd($tesseract).' '.escapeshellarg($fullPath).' '.escapeshellarg($outputBase).' --dpi 300 -l eng --oem 1 --psm 6 -c preserve_interword_spaces=1';
         shell_exec($command);
 
         $textPath = $outputBase.'.txt';

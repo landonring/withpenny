@@ -67,11 +67,19 @@ export async function updateJourney(id, payload) {
     return data.journey;
 }
 
+export async function deleteJourney(id) {
+    await ensureAuthReady();
+    await axios.delete(`/api/savings-journeys/${id}`);
+    state.journeys = state.journeys.filter((journey) => String(journey.id) !== String(id));
+}
+
 export async function addToJourney(id, amount) {
     await ensureAuthReady();
     const { data } = await axios.post(`/api/savings-journeys/${id}/add`, { amount });
     upsertJourney(data.journey);
-    applyFutureContribution(amount);
+    if (isEmergencyJourney(data.journey)) {
+        applyFutureContribution(amount);
+    }
     return data.journey;
 }
 
@@ -91,6 +99,11 @@ export async function setJourneyStatus(id, status) {
     const { data } = await axios.post(`/api/savings-journeys/${id}/${endpoint}`);
     upsertJourney(data.journey);
     return data.journey;
+}
+
+function isEmergencyJourney(journey) {
+    const title = (journey?.title || '').trim().toLowerCase();
+    return title === 'emergency fund' || title.includes('emergency fund');
 }
 
 export { state as savingsState };

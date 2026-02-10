@@ -145,11 +145,12 @@ function saveFuture(monthKey, value) {
     localStorage.setItem(futureKey(monthKey, userId), String(value));
 }
 
-function computeSummary(transactions, futureTotal = 0, manualIncome = 0) {
+function computeSummary(transactions, futureTotal = 0) {
     const totals = {
         Needs: 0,
         Wants: 0,
         Future: parseAmount(futureTotal),
+        Income: 0,
     };
     const byCategory = {};
     let incomeTotal = 0;
@@ -159,6 +160,7 @@ function computeSummary(transactions, futureTotal = 0, manualIncome = 0) {
         const amount = parseAmount(transaction.amount);
         if (type === 'income') {
             incomeTotal += amount;
+            totals.Income += amount;
             return;
         }
         const group = categoryGroups[transaction.category] || 'Wants';
@@ -176,8 +178,8 @@ function computeSummary(transactions, futureTotal = 0, manualIncome = 0) {
     });
 
     const spendingTotal = totals.Needs + totals.Wants;
-    const total = spendingTotal + totals.Future;
-    const moneyIn = incomeTotal + parseAmount(manualIncome);
+    const total = spendingTotal + totals.Future + totals.Income;
+    const moneyIn = incomeTotal;
     const net = moneyIn - spendingTotal;
 
     return {
@@ -218,7 +220,7 @@ function setStateTransactions(transactions, monthKey, futureOverride = null) {
 
     if (monthKey === state.monthKey) {
         state.transactions = sorted;
-        state.summary = computeSummary(sorted, state.futureTotal, state.income);
+        state.summary = computeSummary(sorted, state.futureTotal);
     }
 }
 
@@ -257,6 +259,7 @@ async function fetchTransactions(monthKey = state.monthKey) {
         const futureTotal = parseAmount(response.data.future_total);
         const merged = mergeTransactions(response.data.transactions || [], localTransactions);
         setStateTransactions(merged, monthKey, futureTotal);
+        refreshEmergencyFuture(monthKey);
     } catch (error) {
         setStateTransactions(localTransactions, monthKey);
     } finally {
@@ -267,17 +270,35 @@ async function fetchTransactions(monthKey = state.monthKey) {
 
 function setMonth(monthKey) {
     state.monthKey = monthKey;
-    state.income = loadIncome(monthKey);
     state.futureTotal = loadFuture(monthKey);
     setStateTransactions(loadMonthFromStorage(monthKey), monthKey);
     fetchTransactions(monthKey);
+    refreshEmergencyFuture(monthKey);
 }
 
-function updateIncome(value) {
+function setFutureForMonth(monthKey, value) {
     const sanitized = parseAmount(value);
-    state.income = sanitized;
-    saveIncome(state.monthKey, sanitized);
-    state.summary = computeSummary(state.transactions, state.futureTotal, state.income);
+    saveFuture(monthKey, sanitized);
+    if (monthKey === state.monthKey) {
+        state.futureTotal = sanitized;
+        state.summary = computeSummary(state.transactions, state.futureTotal);
+    }
+}
+
+async function refreshEmergencyFuture(monthKey) {
+    await ensureAuthReady();
+    if (!authState.user || !navigator.onLine) return;
+
+    try {
+        const { data } = await axios.get('/api/savings-journeys/emergency-total', {
+            params: { month: monthKey },
+        });
+        if (typeof data?.total === 'number') {
+            setFutureForMonth(monthKey, data.total);
+        }
+    } catch {
+        // keep local value
+    }
 }
 
 async function addTransaction(payload) {
@@ -447,7 +468,6 @@ async function initTransactions() {
     }
     if (state.ready) return;
     state.ready = true;
-    state.income = loadIncome(state.monthKey);
     state.futureTotal = loadFuture(state.monthKey);
     setStateTransactions(loadMonthFromStorage(state.monthKey), state.monthKey);
     fetchTransactions(state.monthKey);
@@ -484,7 +504,7 @@ function applyFutureContribution(amount, dateString = null) {
 
     if (monthKey === state.monthKey) {
         state.futureTotal = next;
-        state.summary = computeSummary(state.transactions, next, state.income);
+        state.summary = computeSummary(state.transactions, next);
     }
 }
 
@@ -493,7 +513,7 @@ export {
     initTransactions,
     fetchTransactions,
     setMonth,
-    updateIncome,
+    setFutureForMonth,
     addTransaction,
     addReceiptTransaction,
     updateTransaction,

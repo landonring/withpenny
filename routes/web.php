@@ -30,6 +30,7 @@ Route::prefix('api')->group(function () {
 
         Route::post('/ai/monthly-reflection', [AiController::class, 'monthlyReflection']);
         Route::post('/ai/weekly-checkin', [AiController::class, 'weeklyCheckIn']);
+        Route::post('/ai/yearly-reflection', [AiController::class, 'yearlyReflection']);
         Route::post('/ai/chat', [AiController::class, 'chat']);
 
         Route::post('/statements/upload', [BankStatementController::class, 'upload']);
@@ -47,9 +48,11 @@ Route::prefix('api')->group(function () {
         Route::post('/savings-journeys', [SavingsJourneyController::class, 'store']);
         Route::patch('/savings-journeys/{journey}', [SavingsJourneyController::class, 'update']);
         Route::post('/savings-journeys/{journey}/add', [SavingsJourneyController::class, 'add']);
+        Route::delete('/savings-journeys/{journey}', [SavingsJourneyController::class, 'destroy']);
         Route::post('/savings-journeys/{journey}/pause', [SavingsJourneyController::class, 'pause']);
         Route::post('/savings-journeys/{journey}/resume', [SavingsJourneyController::class, 'resume']);
         Route::post('/savings-journeys/{journey}/complete', [SavingsJourneyController::class, 'complete']);
+        Route::get('/savings-journeys/emergency-total', [SavingsJourneyController::class, 'emergencyTotal']);
 
         Route::post('/receipts/scan', [ReceiptController::class, 'scan']);
         Route::get('/receipts/{receipt}', [ReceiptController::class, 'show']);
@@ -69,6 +72,33 @@ Route::get('/', function () {
         return redirect('/app');
     }
 
+    return view('marketing');
+});
+
+Route::get('/app', function () {
+    $ua = strtolower(request()->userAgent() ?? '');
+    $isMobile = str_contains($ua, 'mobile')
+        || str_contains($ua, 'iphone')
+        || str_contains($ua, 'ipad')
+        || str_contains($ua, 'android');
+
+    if (! $isMobile) {
+        return redirect('/');
+    }
+
     return view('app');
 });
-Route::view('/{any}', 'app')->where('any', '.*');
+
+Route::get('/{any}', function ($any) {
+    $ua = strtolower(request()->userAgent() ?? '');
+    $isMobile = str_contains($ua, 'mobile')
+        || str_contains($ua, 'iphone')
+        || str_contains($ua, 'ipad')
+        || str_contains($ua, 'android');
+
+    if (! $isMobile && $any !== '') {
+        return redirect('/');
+    }
+
+    return $isMobile ? view('app') : view('marketing');
+})->where('any', '.*');

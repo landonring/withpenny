@@ -19,6 +19,7 @@ class StatementParser
             'Y-m-d', 'Y/m/d',
             'd/m/Y', 'd/m/y',
             'd-m-Y', 'd-m-y',
+            'j M Y', 'j F Y',
         ];
 
         foreach ($formats as $format) {
@@ -30,6 +31,20 @@ class StatementParser
         }
 
         if ($year) {
+            if (preg_match('/^\d{1,2}[\/-]\d{1,2}$/', $value)) {
+                $withYear = $value.'/'.$year;
+                try {
+                    return Carbon::createFromFormat('m/d/Y', $withYear)->toDateString();
+                } catch (\Throwable $error) {
+                    // continue
+                }
+                try {
+                    return Carbon::createFromFormat('m-d-Y', str_replace('/', '-', $withYear))->toDateString();
+                } catch (\Throwable $error) {
+                    // continue
+                }
+            }
+
             try {
                 return Carbon::createFromFormat('M j Y', "$value $year")->toDateString();
             } catch (\Throwable $error) {
@@ -56,6 +71,14 @@ class StatementParser
         $negative = false;
         $positive = false;
 
+        if (preg_match('/^\s*-\s*/', $clean)) {
+            $negative = true;
+        }
+
+        if (preg_match('/^\s*\+\s*/', $clean)) {
+            $positive = true;
+        }
+
         if (preg_match('/\bCR\b/i', $clean)) {
             $positive = true;
         }
@@ -64,14 +87,20 @@ class StatementParser
             $negative = true;
         }
 
+        if (preg_match('/-\s*$/', $clean)) {
+            $negative = true;
+        }
+
         $clean = preg_replace('/\b(CR|DR)\b/i', '', $clean);
+        $clean = preg_replace('/^[+-]\s*/', '', $clean);
+        $clean = preg_replace('/-\s*$/', '', $clean);
 
         if (str_starts_with($clean, '(') && str_ends_with($clean, ')')) {
             $negative = true;
             $clean = trim($clean, '()');
         }
 
-        $clean = str_replace(['$', ',', ' '], '', $clean);
+        $clean = str_replace(['$', ',', ' ', 'USD'], '', $clean);
         $amount = (float) $clean;
 
         if ($negative && ! $positive) {
@@ -143,6 +172,22 @@ class StatementParser
             return (int) $matches[2];
         }
 
+        if (preg_match('/\b(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})\s*-\s*(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})\b/', $text, $matches)) {
+            $year = (int) $matches[3];
+            if ($year < 100) {
+                $year += 2000;
+            }
+            return $year;
+        }
+
+        if (preg_match('/\bStatement Date:\s*(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})\b/i', $text, $matches)) {
+            $year = (int) $matches[3];
+            if ($year < 100) {
+                $year += 2000;
+            }
+            return $year;
+        }
+
         return null;
     }
 
@@ -152,11 +197,19 @@ class StatementParser
             return $matches[1];
         }
 
+        if (preg_match('/\b(\d{1,2}[\/-]\d{1,2})\b/', $line, $matches)) {
+            return $matches[1];
+        }
+
         if (preg_match('/\b(\d{4}-\d{1,2}-\d{1,2})\b/', $line, $matches)) {
             return $matches[1];
         }
 
         if (preg_match('/\b'.$monthPattern.'\s+\d{1,2}\b/i', $line, $matches)) {
+            return $matches[0];
+        }
+
+        if (preg_match('/\b\d{1,2}\s+'.$monthPattern.'\b/i', $line, $matches)) {
             return $matches[0];
         }
 

@@ -20,6 +20,26 @@
             </p>
         </div>
 
+        <div v-if="summaryAvailable" class="card data-summary">
+            <div class="card-title">Statement summary</div>
+            <div v-if="summary?.opening_balance != null" class="detail-row">
+                <span>Opening balance</span>
+                <span>{{ formatCurrency(summary.opening_balance) }}</span>
+            </div>
+            <div v-if="summary?.closing_balance != null" class="detail-row">
+                <span>Closing balance</span>
+                <span>{{ formatCurrency(summary.closing_balance) }}</span>
+            </div>
+            <div v-if="statementIncome != null" class="detail-row">
+                <span>Total income (statement)</span>
+                <span>{{ formatCurrency(statementIncome) }}</span>
+            </div>
+            <div class="detail-row">
+                <span>Total spending (entries)</span>
+                <span>{{ formatCurrency(totals.spending) }}</span>
+            </div>
+        </div>
+
         <div v-if="loading" class="muted">Preparing your statement…</div>
         <div v-else-if="!transactions.length" class="card">
             <div class="card-title">No transactions found</div>
@@ -93,6 +113,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { confirmStatement, discardStatement, fetchStatement } from '../stores/statements';
+import { getMonthKey, setMonth } from '../stores/transactions';
 
 const route = useRoute();
 const router = useRouter();
@@ -101,9 +122,32 @@ const loading = ref(true);
 const saving = ref(false);
 const error = ref('');
 const transactions = ref([]);
+const summary = ref(null);
 const showNoIncomeNote = computed(() =>
     transactions.value.length > 0 && !transactions.value.some((item) => item.type === 'income')
 );
+const summaryAvailable = computed(() => transactions.value.length > 0);
+const totals = computed(() => {
+    const included = transactions.value.filter((item) => item.include !== false);
+    return included.reduce(
+        (acc, item) => {
+            if (item.type === 'income') {
+                acc.income += Number.parseFloat(item.amount) || 0;
+            } else {
+                acc.spending += Number.parseFloat(item.amount) || 0;
+            }
+            return acc;
+        },
+        { income: 0, spending: 0 }
+    );
+});
+const statementIncome = computed(() => {
+    const value = Number.parseFloat(summary.value?.balance_change);
+    if (!Number.isFinite(value) || value <= 0) {
+        return null;
+    }
+    return value;
+});
 
 const loadImport = async () => {
     loading.value = true;
@@ -118,6 +162,7 @@ const loadImport = async () => {
             amount: Number.parseFloat(item.amount) || 0,
         }));
         transactions.value = list;
+        summary.value = data.meta || null;
     } catch (err) {
         error.value = err?.response?.data?.message || 'Unable to load this statement.';
     } finally {
@@ -145,7 +190,20 @@ const handleConfirm = async () => {
             type: item.type === 'income' ? 'income' : 'spending',
             include: !!item.include,
         }));
+        const included = payload.filter((item) => item.include);
+        if (!included.length) {
+            error.value = 'Select at least one entry to import.';
+            saving.value = false;
+            return;
+        }
         await confirmStatement(route.params.id, payload);
+
+        const dates = included.map((item) => item.date).filter(Boolean).sort();
+        const firstDate = dates[0];
+        if (firstDate) {
+            const monthKey = getMonthKey(new Date(firstDate));
+            setMonth(monthKey);
+        }
         router.push({ name: 'transactions' });
     } catch (err) {
         error.value = err?.response?.data?.message || 'Unable to import right now.';
@@ -166,5 +224,14 @@ const handleDiscard = async () => {
     } finally {
         saving.value = false;
     }
+};
+
+const formatCurrency = (value) => {
+    const amount = Number.parseFloat(value) || 0;
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 2,
+    }).format(amount);
 };
 </script>

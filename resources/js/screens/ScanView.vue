@@ -8,30 +8,24 @@
             </div>
         </div>
 
-        <div class="scan-stage">
+        <div v-if="!capturedUrl" class="card scan-guide">
+            <div class="card-title">Choose a clear receipt photo</div>
+            <p class="card-sub">Good light and a full page makes the scan feel smoother.</p>
+            <div class="scan-tip-list">
+                <p>Include the full receipt edge to edge.</p>
+                <p>Keep the text sharp and easy to read.</p>
+                <p>No pressure. You can adjust anything later.</p>
+            </div>
+        </div>
+
+        <div v-if="capturedUrl" class="scan-stage">
             <div class="camera-view">
-                <img v-if="capturedUrl" :src="capturedUrl" alt="Receipt preview" />
-                <video
-                    v-else-if="cameraActive"
-                    ref="videoRef"
-                    autoplay
-                    playsinline
-                    muted
-                ></video>
-                <div v-if="!capturedUrl" class="camera-overlay">
-                    <div class="camera-frame"></div>
-                    <p class="camera-hint">
-                        {{ cameraActive ? 'Tap Capture photo to save this frame.' : 'Line up the receipt and tap Take photo.' }}
-                    </p>
-                </div>
+                <img :src="capturedUrl" alt="Receipt preview" />
             </div>
         </div>
 
         <div v-if="!capturedUrl" class="scan-actions">
-            <button class="primary-button" type="button" :disabled="starting || uploading" @click="handleTakePhoto">
-                {{ cameraActive ? 'Capture photo' : 'Take photo' }}
-            </button>
-            <label class="ghost-button scan-choice">
+            <label class="primary-button scan-choice">
                 Choose from photos
                 <input
                     ref="libraryInput"
@@ -47,7 +41,7 @@
                 {{ uploading ? 'Preparing…' : 'Use this photo' }}
             </button>
             <button class="ghost-button" type="button" :disabled="uploading" @click="retakePhoto">
-                Retake
+                Choose another
             </button>
         </div>
 
@@ -59,7 +53,7 @@
 </template>
 
 <script setup>
-import { nextTick, onBeforeUnmount, ref } from 'vue';
+import { onBeforeUnmount, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { scanReceipt } from '../stores/receipts';
 
@@ -70,55 +64,6 @@ const capturedUrl = ref('');
 const capturedBlob = ref(null);
 const uploading = ref(false);
 const error = ref('');
-const videoRef = ref(null);
-const streamRef = ref(null);
-const cameraActive = ref(false);
-const starting = ref(false);
-
-const stopCamera = () => {
-    if (streamRef.value) {
-        streamRef.value.getTracks().forEach((track) => track.stop());
-        streamRef.value = null;
-    }
-    cameraActive.value = false;
-};
-
-const startCamera = async () => {
-    if (cameraActive.value || starting.value) return;
-    error.value = '';
-    starting.value = true;
-
-    try {
-        if (!navigator.mediaDevices?.getUserMedia) {
-            error.value = 'Camera access is unavailable. You can choose a photo instead.';
-            return;
-        }
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: 'environment' } },
-            audio: false,
-        });
-
-        streamRef.value = stream;
-        cameraActive.value = true;
-        await nextTick();
-
-        if (!videoRef.value) {
-            throw new Error('camera_view_missing');
-        }
-
-        videoRef.value.srcObject = stream;
-        await new Promise((resolve) => {
-            videoRef.value.onloadedmetadata = () => resolve();
-        });
-        await videoRef.value.play();
-    } catch (err) {
-        error.value = 'We could not access the camera. You can choose a photo instead.';
-        stopCamera();
-    } finally {
-        starting.value = false;
-    }
-};
 
 const retakePhoto = () => {
     if (capturedUrl.value) {
@@ -126,7 +71,6 @@ const retakePhoto = () => {
     }
     capturedUrl.value = '';
     capturedBlob.value = null;
-    startCamera();
 };
 
 const handleFile = (event) => {
@@ -135,50 +79,9 @@ const handleFile = (event) => {
     if (capturedUrl.value) {
         URL.revokeObjectURL(capturedUrl.value);
     }
-    stopCamera();
     capturedBlob.value = file;
     capturedUrl.value = URL.createObjectURL(file);
     event.target.value = '';
-};
-
-const capturePhoto = async () => {
-    if (!videoRef.value) return;
-    const width = videoRef.value.videoWidth;
-    const height = videoRef.value.videoHeight;
-    if (!width || !height) return;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext('2d');
-    if (!context) return;
-    context.drawImage(videoRef.value, 0, 0, width, height);
-
-    const blob = await new Promise((resolve) => {
-        canvas.toBlob(resolve, 'image/jpeg', 0.9);
-    });
-
-    if (!blob) {
-        error.value = 'We could not capture that. You can try again.';
-        return;
-    }
-
-    if (capturedUrl.value) {
-        URL.revokeObjectURL(capturedUrl.value);
-    }
-
-    capturedBlob.value = blob;
-    capturedUrl.value = URL.createObjectURL(blob);
-    stopCamera();
-};
-
-const handleTakePhoto = async () => {
-    if (!cameraActive.value) {
-        await startCamera();
-        return;
-    }
-
-    await capturePhoto();
 };
 
 const usePhoto = async () => {
@@ -200,6 +103,5 @@ onBeforeUnmount(() => {
     if (capturedUrl.value) {
         URL.revokeObjectURL(capturedUrl.value);
     }
-    stopCamera();
 });
 </script>

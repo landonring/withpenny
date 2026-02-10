@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../screens/HomeView.vue';
 import MarketingView from '../screens/MarketingView.vue';
+import PricingView from '../screens/PricingView.vue';
 import ScanView from '../screens/ScanView.vue';
 import InsightsView from '../screens/InsightsView.vue';
 import ChatView from '../screens/ChatView.vue';
@@ -26,6 +27,12 @@ const routes = [
         path: '/',
         name: 'marketing',
         component: MarketingView,
+        meta: { guestOnly: true, hideNav: true, marketing: true },
+    },
+    {
+        path: '/pricing',
+        name: 'pricing',
+        component: PricingView,
         meta: { guestOnly: true, hideNav: true, marketing: true },
     },
     { path: '/app', name: 'home', component: HomeView, meta: { requiresAuth: true, scrollable: true } },
@@ -58,7 +65,7 @@ const router = createRouter({
 router.beforeEach(async (to) => {
     const isDesktop = typeof window !== 'undefined' && window.__PENNY_DESKTOP__ === true;
 
-    if (isDesktop && to.name !== 'marketing') {
+    if (isDesktop && !to.meta?.marketing) {
         return { name: 'marketing' };
     }
 
