@@ -21,19 +21,6 @@
 
 <link href="/marketing.css?v={{ filemtime(public_path('marketing.css')) }}" rel="stylesheet"/>
 <link href="/marketing-overrides.css?v={{ filemtime(public_path('marketing-overrides.css')) }}" rel="stylesheet"/>
-    @php
-        $hasHot = is_file(public_path('hot'));
-    @endphp
-    @if (! $hasHot)
-        @php
-            $manifestPath = public_path('build/manifest.json');
-            $manifest = is_file($manifestPath) ? json_decode(file_get_contents($manifestPath), true) : null;
-            $cssFile = $manifest['resources/css/app.css']['file'] ?? null;
-        @endphp
-        @if ($cssFile)
-            <link rel="stylesheet" href="/build/{{ $cssFile }}" />
-        @endif
-    @endif
 
     @php
         $ua = strtolower(request()->userAgent() ?? '');

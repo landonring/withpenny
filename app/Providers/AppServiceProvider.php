@@ -48,10 +48,14 @@ class AppServiceProvider extends ServiceProvider
 
         if ($isHotLocal && ! $isRequestLocal) {
             Vite::useHotFile(storage_path('framework/vite.hot.disabled'));
-
-            return;
+        } else {
+            Vite::useHotFile($hotFile);
         }
 
-        Vite::useHotFile($hotFile);
+        // Always generate root-relative build asset paths in non-hot mode.
+        // This avoids bad absolute hosts caused by proxy/CDN host mismatches.
+        if (! Vite::isRunningHot()) {
+            Vite::createAssetPathsUsing(static fn (string $path, $secure = null): string => '/'.ltrim($path, '/'));
+        }
     }
 }
