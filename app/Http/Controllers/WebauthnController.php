@@ -39,7 +39,7 @@ class WebauthnController extends Controller
     {
         try {
             $request->save([
-                'alias' => 'Penny',
+                'alias' => 'Penny Passkey',
             ]);
 
             return response()->json([
@@ -47,7 +47,7 @@ class WebauthnController extends Controller
             ]);
         } catch (\Throwable $e) {
             return response()->json([
-                'message' => 'Face ID didn’t work this time. You can sign in another way.',
+                'message' => 'Passkey didn’t work this time. You can sign in another way.',
             ], 422);
         }
     }
@@ -64,7 +64,7 @@ class WebauthnController extends Controller
 
             if (! $user) {
                 return response()->json([
-                    'message' => 'Face ID didn’t work this time. You can sign in another way.',
+                    'message' => 'Passkey didn’t work this time. You can sign in another way.',
                 ], 422);
             }
 
@@ -74,7 +74,7 @@ class WebauthnController extends Controller
             ]);
         } catch (\Throwable $e) {
             return response()->json([
-                'message' => 'Face ID didn’t work this time. You can sign in another way.',
+                'message' => 'Passkey didn’t work this time. You can sign in another way.',
             ], 422);
         }
     }

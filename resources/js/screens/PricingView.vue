@@ -26,60 +26,107 @@
             </div>
         </header>
 
+        <div class="pricing-toggle">
+            <div class="billing-switch" :class="{ 'is-annual': billingCycle === 'yearly' }">
+                <button
+                    type="button"
+                    class="billing-label"
+                    :class="{ active: billingCycle === 'monthly' }"
+                    @click="billingCycle = 'monthly'"
+                >
+                    Monthly
+                </button>
+                <button
+                    type="button"
+                    class="billing-toggle"
+                    :aria-pressed="billingCycle === 'yearly'"
+                    @click="billingCycle = billingCycle === 'monthly' ? 'yearly' : 'monthly'"
+                >
+                    <span class="billing-knob" aria-hidden="true"></span>
+                </button>
+                <button
+                    type="button"
+                    class="billing-label"
+                    :class="{ active: billingCycle === 'yearly' }"
+                    @click="billingCycle = 'yearly'"
+                >
+                    Yearly <span class="billing-save">save 10%</span>
+                </button>
+            </div>
+        </div>
+
         <section class="pricing-cards">
             <article class="card pricing-card">
                 <header>
-                    <p class="eyebrow">Starter</p>
-                    <h2 class="section-title">$0</h2>
+                    <p class="eyebrow">Starter — Free</p>
+                    <h2 class="section-title">{{ starterPrice }} <span class="price-unit">{{ billingUnit }}</span></h2>
                     <p class="section-copy">A quiet place to start.</p>
                 </header>
                 <ul class="pricing-list">
-                    <li>Manual spending entries</li>
-                    <li>Manual income entries</li>
-                    <li>Basic monthly overview</li>
-                    <li>Offline usage</li>
-                    <li>Core app features</li>
+                    <li>Access to every feature in Penny</li>
+                    <li>Receipt scanning: 5 scans / month (basic extraction)</li>
+                    <li>Bank statements: 2 uploads / month, up to 30 days each</li>
+                    <li>Insights: 2 weekly + 1 monthly per month</li>
+                    <li>Chat: 10 messages / month (basic context)</li>
+                    <li>Manual tracking and offline support</li>
                 </ul>
-                <p class="pricing-note">AI insights, receipt scanning, and statements stay off by default.</p>
-                <router-link class="primary-button wide" :to="{ name: 'register' }">Start free</router-link>
+                <p class="pricing-note">Great for getting started with calm, usage-based limits.</p>
+                <button class="primary-button wide" type="button" @click="handleStarter">Start free</button>
             </article>
 
             <article class="card pricing-card recommended">
                 <header>
                     <p class="eyebrow">Pro</p>
-                    <h2 class="section-title">$10 <span class="price-unit">/ month</span></h2>
+                    <h2 class="section-title">{{ proPrice }} <span class="price-unit">{{ billingUnit }}</span></h2>
                     <p class="section-copy">A little guidance goes a long way.</p>
                 </header>
                 <ul class="pricing-list">
                     <li>Everything in Starter</li>
-                    <li>Weekly AI insight (1 per week)</li>
-                    <li>Monthly AI reflection (1 per month)</li>
-                    <li>Receipt photo scanning (upload)</li>
-                    <li>Gentle categorization assistance</li>
+                    <li>Receipt scanning: 20 scans / month + editable categories</li>
+                    <li>Bank statements: 10 uploads / month, up to 6 months each</li>
+                    <li>Insights: 10 daily / month</li>
+                    <li>Insights: unlimited weekly check-ins</li>
+                    <li>Insights: 4 monthly overviews / month</li>
+                    <li>Yearly overview (1 per year)</li>
+                    <li>Chat: 25 messages / month</li>
                 </ul>
-                <p class="pricing-note">Weekly and monthly insights stay calm and optional.</p>
-                <router-link class="primary-button wide" :to="{ name: 'register' }">Upgrade to Pro</router-link>
+                <p class="pricing-note">All features stay visible. Limits simply expand.</p>
+                <button
+                    class="primary-button wide"
+                    type="button"
+                    :disabled="billingBusy === 'pro'"
+                    @click="startPlan('pro')"
+                >
+                    {{ billingBusy === 'pro' ? 'Starting…' : 'Upgrade to Pro' }}
+                </button>
             </article>
 
             <article class="card pricing-card">
                 <header>
                     <p class="eyebrow">Premium</p>
-                    <h2 class="section-title">$25 <span class="price-unit">/ month</span></h2>
+                    <h2 class="section-title">{{ premiumPrice }} <span class="price-unit">{{ billingUnit }}</span></h2>
                     <p class="section-copy">For those who want Penny fully by their side.</p>
                 </header>
                 <ul class="pricing-list">
                     <li>Everything in Pro</li>
-                    <li>Unlimited AI insights</li>
-                    <li>Receipt photo scanning</li>
-                    <li>Bank statement uploads</li>
-                    <li>Automatic income & spending detection</li>
-                    <li>Deeper trend analysis</li>
-                    <li>Priority future features</li>
+                    <li>Unlimited receipt scanning</li>
+                    <li>Unlimited bank statement uploads</li>
+                    <li>Unlimited daily / weekly / monthly / yearly insights</li>
+                    <li>Unlimited AI chat</li>
+                    <li>No counters, ceilings, or limit reminders</li>
                 </ul>
-                <p class="pricing-note">Full support, still at your pace.</p>
-                <router-link class="primary-button wide" :to="{ name: 'register' }">Go Premium</router-link>
+                <p class="pricing-note">Full support, zero pressure.</p>
+                <button
+                    class="primary-button wide"
+                    type="button"
+                    :disabled="billingBusy === 'premium'"
+                    @click="startPlan('premium')"
+                >
+                    {{ billingBusy === 'premium' ? 'Starting…' : 'Go Premium' }}
+                </button>
             </article>
         </section>
+        <p v-if="billingError" class="form-error">{{ billingError }}</p>
 
         <section class="card marketing-section pricing-compare">
             <h2 class="section-title">A quick comparison</h2>
@@ -91,28 +138,58 @@
                     <span>Premium</span>
                 </div>
                 <div class="compare-row">
+                    <span>Feature visibility</span>
+                    <span>All features visible</span>
+                    <span>All features visible</span>
+                    <span>All features visible</span>
+                </div>
+                <div class="compare-row">
                     <span>Manual tracking</span>
                     <span>Included</span>
                     <span>Included</span>
                     <span>Included</span>
                 </div>
                 <div class="compare-row">
-                    <span>AI insights</span>
-                    <span>—</span>
-                    <span>Weekly + monthly</span>
+                    <span>Receipt scanning</span>
+                    <span>5 / month (basic)</span>
+                    <span>20 / month (full)</span>
                     <span>Unlimited</span>
                 </div>
                 <div class="compare-row">
-                    <span>Receipt scanning</span>
-                    <span>—</span>
-                    <span>Yes</span>
-                    <span>Yes</span>
+                    <span>Bank statements</span>
+                    <span>2 / month, 30-day window</span>
+                    <span>10 / month, 6-month window</span>
+                    <span>Unlimited</span>
                 </div>
                 <div class="compare-row">
-                    <span>Bank statements</span>
-                    <span>—</span>
-                    <span>—</span>
-                    <span>Yes</span>
+                    <span>Insights (daily)</span>
+                    <span>Not included</span>
+                    <span>10 / month</span>
+                    <span>Unlimited</span>
+                </div>
+                <div class="compare-row">
+                    <span>Insights (weekly)</span>
+                    <span>2 / month</span>
+                    <span>Unlimited</span>
+                    <span>Unlimited</span>
+                </div>
+                <div class="compare-row">
+                    <span>Insights (monthly)</span>
+                    <span>1 / month</span>
+                    <span>4 / month</span>
+                    <span>Unlimited</span>
+                </div>
+                <div class="compare-row">
+                    <span>Insights (yearly)</span>
+                    <span>Not included</span>
+                    <span>1 / year</span>
+                    <span>Unlimited</span>
+                </div>
+                <div class="compare-row">
+                    <span>AI chat</span>
+                    <span>10 / month (basic)</span>
+                    <span>25 / month</span>
+                    <span>Unlimited</span>
                 </div>
                 <div class="compare-row">
                     <span>Offline support</span>
@@ -142,8 +219,8 @@
                     <p>Anytime. You can move up whenever it feels right.</p>
                 </details>
                 <details>
-                    <summary>What happens if I downgrade?</summary>
-                    <p>Your data stays intact. Some features pause, but nothing is lost.</p>
+                    <summary>What happens if I hit a limit?</summary>
+                    <p>You can still open every feature. Penny gently pauses only the action until the period resets or you upgrade.</p>
                 </details>
                 <details>
                     <summary>Do I lose my data?</summary>
@@ -163,3 +240,73 @@
         </section>
     </section>
 </template>
+
+<script setup>
+import { computed, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { authState } from '../stores/auth';
+import { startCheckout } from '../stores/billing';
+
+const billingCycle = ref('monthly');
+const billingUnit = computed(() => (billingCycle.value === 'monthly' ? '/ month' : '/ year'));
+const billingBusy = ref('');
+const billingError = ref('');
+
+const formatPrice = (value) => {
+    const rounded = Math.round(value * 100) / 100;
+    const whole = Math.abs(rounded - Math.round(rounded)) < 0.001;
+    return `$${whole ? Math.round(rounded) : rounded.toFixed(2)}`;
+};
+
+const starterPrice = computed(() => formatPrice(0));
+const proPrice = computed(() => {
+    if (billingCycle.value === 'monthly') return formatPrice(15);
+    return formatPrice(15 * 12 * 0.9);
+});
+const premiumPrice = computed(() => {
+    if (billingCycle.value === 'monthly') return formatPrice(25);
+    return formatPrice(25 * 12 * 0.9);
+});
+
+const router = useRouter();
+const route = useRoute();
+
+const handleStarter = () => {
+    if (authState.user) {
+        router.push({ name: 'home' });
+        return;
+    }
+    router.push({ name: 'register', query: { redirect: route.fullPath } });
+};
+
+const startPlan = async (plan) => {
+    billingError.value = '';
+
+    if (!authState.user) {
+        router.push({
+            name: 'register',
+            query: {
+                plan,
+                interval: billingCycle.value,
+                redirect: route.fullPath,
+            },
+        });
+        return;
+    }
+
+    billingBusy.value = plan;
+
+    try {
+        const data = await startCheckout(plan, billingCycle.value);
+        if (data?.url) {
+            window.location.href = data.url;
+            return;
+        }
+        router.push({ name: 'home' });
+    } catch (err) {
+        billingError.value = err?.response?.data?.message || 'Unable to start billing right now.';
+    } finally {
+        billingBusy.value = '';
+    }
+};
+</script>

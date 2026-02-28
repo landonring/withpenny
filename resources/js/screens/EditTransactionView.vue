@@ -13,12 +13,12 @@
                 v-if="transaction"
                 :model-value="transaction"
                 :error="error"
-                :loading="loading"
+                :loading="loading || loadingData"
                 :submit-label="submitLabel"
                 @submit="handleSubmit"
                 @cancel="handleCancel"
             />
-            <div v-else class="muted">Loading transaction…</div>
+            <div v-else class="muted">{{ error || 'Loading transaction…' }}</div>
         </div>
 
         <button class="danger-button" type="button" :disabled="loading" @click="handleDelete">
@@ -33,6 +33,7 @@ import { useRoute, useRouter } from 'vue-router';
 import TransactionForm from '../components/TransactionForm.vue';
 import {
     deleteTransaction,
+    fetchTransactionById,
     getTransactionById,
     initTransactions,
     updateTransaction,
@@ -42,10 +43,29 @@ const route = useRoute();
 const router = useRouter();
 
 const loading = ref(false);
+const loadingData = ref(false);
 const error = ref('');
 
+const loadTransaction = async () => {
+    loadingData.value = true;
+    error.value = '';
+    try {
+        await initTransactions();
+        if (!transaction.value) {
+            await fetchTransactionById(transactionId.value);
+        }
+        if (!transaction.value) {
+            error.value = 'Transaction not found.';
+        }
+    } catch (err) {
+        error.value = err?.response?.data?.message || 'Unable to load this transaction.';
+    } finally {
+        loadingData.value = false;
+    }
+};
+
 onMounted(() => {
-    initTransactions();
+    loadTransaction();
 });
 
 const transactionId = computed(() => route.params.id);

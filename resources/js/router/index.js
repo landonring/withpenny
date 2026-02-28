@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../screens/HomeView.vue';
 import MarketingView from '../screens/MarketingView.vue';
-import PricingView from '../screens/PricingView.vue';
 import ScanView from '../screens/ScanView.vue';
 import InsightsView from '../screens/InsightsView.vue';
 import ChatView from '../screens/ChatView.vue';
@@ -17,22 +16,20 @@ import AddSpendingView from '../screens/AddSpendingView.vue';
 import EditTransactionView from '../screens/EditTransactionView.vue';
 import ReceiptReviewView from '../screens/ReceiptReviewView.vue';
 import ProfileView from '../screens/ProfileView.vue';
+import AdminDashboardView from '../screens/AdminDashboardView.vue';
+import AdminUsersNetworkView from '../screens/AdminUsersNetworkView.vue';
+import AdminUpdatesView from '../screens/AdminUpdatesView.vue';
 import NotFoundView from '../screens/NotFoundView.vue';
 import LoginView from '../screens/LoginView.vue';
 import SignupView from '../screens/SignupView.vue';
 import { authState, ensureAuthReady } from '../stores/auth';
+import { ensureOnboardingStatus, onboardingState, routeAllowedDuringOnboarding } from '../stores/onboarding';
 
 const routes = [
     {
         path: '/',
         name: 'marketing',
         component: MarketingView,
-        meta: { guestOnly: true, hideNav: true, marketing: true },
-    },
-    {
-        path: '/pricing',
-        name: 'pricing',
-        component: PricingView,
         meta: { guestOnly: true, hideNav: true, marketing: true },
     },
     { path: '/app', name: 'home', component: HomeView, meta: { requiresAuth: true, scrollable: true } },
@@ -50,9 +47,18 @@ const routes = [
     { path: '/transactions/new', name: 'transactions-new', component: AddSpendingView, meta: { requiresAuth: true } },
     { path: '/transactions/:id/edit', name: 'transactions-edit', component: EditTransactionView, meta: { requiresAuth: true } },
     { path: '/profile', name: 'profile', component: ProfileView, meta: { requiresAuth: true, scrollable: true } },
+    { path: '/admin/dashboard', name: 'admin-dashboard', component: AdminDashboardView, meta: { requiresAuth: true, hideNav: true, fullBleed: true } },
+    { path: '/admin/users', name: 'admin-users', component: AdminUsersNetworkView, meta: { requiresAuth: true, hideNav: true, fullBleed: true } },
+    {
+        path: '/admin/roadmap-feedback',
+        alias: '/admin/updates',
+        name: 'admin-updates',
+        component: AdminUpdatesView,
+        meta: { requiresAuth: true, hideNav: true, scrollable: true },
+    },
     { path: '/scan/review/:id', name: 'receipts-review', component: ReceiptReviewView, meta: { requiresAuth: true, hideNav: true, hideHeader: true } },
-    { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true, hideNav: true } },
-    { path: '/register', name: 'register', component: SignupView, meta: { guestOnly: true, hideNav: true } },
+    { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true, hideNav: true, allowDesktop: true } },
+    { path: '/register', name: 'register', component: SignupView, meta: { guestOnly: true, hideNav: true, allowDesktop: true } },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView, meta: { hideNav: true } },
 ];
 
@@ -63,17 +69,7 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
-    const isDesktop = typeof window !== 'undefined' && window.__PENNY_DESKTOP__ === true;
-
-    if (isDesktop && !to.meta?.marketing) {
-        return { name: 'marketing' };
-    }
-
     await ensureAuthReady();
-
-    if (isDesktop) {
-        return true;
-    }
 
     if (to.meta.requiresAuth && !authState.user) {
         return { name: 'login', query: { redirect: to.fullPath } };
@@ -81,6 +77,13 @@ router.beforeEach(async (to) => {
 
     if (to.meta.guestOnly && authState.user) {
         return { name: 'home' };
+    }
+
+    if (authState.user && !to.path.startsWith('/admin')) {
+        await ensureOnboardingStatus();
+        if (onboardingState.mode && !routeAllowedDuringOnboarding(to.path)) {
+            return onboardingState.targetPath || '/app';
+        }
     }
 
     return true;

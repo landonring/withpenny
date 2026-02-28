@@ -3,6 +3,7 @@ export const categoryOptions = [
     { label: 'Dining', group: 'Wants' },
     { label: 'Transportation', group: 'Needs' },
     { label: 'Housing', group: 'Needs' },
+    { label: 'School', group: 'Needs' },
     { label: 'Shopping', group: 'Wants' },
     { label: 'Subscriptions', group: 'Needs' },
     { label: 'Misc', group: 'Wants' },

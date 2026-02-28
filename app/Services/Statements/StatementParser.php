@@ -6,9 +6,14 @@ use Carbon\Carbon;
 
 class StatementParser
 {
+    public static function amountPattern(): string
+    {
+        return '[+-]?\s*\$?\d[\d,]*(?:[.,]\d{2})';
+    }
+
     public static function monthPattern(): string
     {
-        return '(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)';
+        return '(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)';
     }
 
     public static function parseDate(string $value, ?int $year = null): ?string
@@ -100,7 +105,12 @@ class StatementParser
             $clean = trim($clean, '()');
         }
 
-        $clean = str_replace(['$', ',', ' ', 'USD'], '', $clean);
+        $clean = str_replace(['$', ' ', 'USD'], '', $clean);
+        if (str_contains($clean, ',') && ! str_contains($clean, '.') && preg_match('/,\d{2}$/', $clean)) {
+            $clean = str_replace(',', '.', $clean);
+        } else {
+            $clean = str_replace(',', '', $clean);
+        }
         $amount = (float) $clean;
 
         if ($negative && ! $positive) {
@@ -205,7 +215,7 @@ class StatementParser
             return $matches[1];
         }
 
-        if (preg_match('/\b'.$monthPattern.'\s+\d{1,2}\b/i', $line, $matches)) {
+        if (preg_match('/\b'.$monthPattern.'\s*\d{1,2}\b/i', $line, $matches)) {
             return $matches[0];
         }
 
@@ -218,7 +228,7 @@ class StatementParser
 
     public static function extractAmounts(string $line): array
     {
-        preg_match_all('/[+-]?\s*\$?\d[\d,]*\.\d{2}/', $line, $matches);
+        preg_match_all('/'.self::amountPattern().'/', $line, $matches);
         $candidates = [];
         foreach ($matches[0] ?? [] as $candidate) {
             $trim = trim($candidate);
@@ -241,6 +251,66 @@ class StatementParser
                 continue;
             }
             if ($bestValue === null || $value < $bestValue) {
+                $bestValue = $value;
+                $best = $amount;
+            }
+        }
+
+        return $best;
+    }
+
+    public static function pickLikelyAmountFromLine(string $line, array $amounts): ?string
+    {
+        if (empty($amounts)) {
+            return null;
+        }
+
+        if (preg_match_all('/[+-]\s*\$?\d[\d,]*\.\d{2}/', $line, $matches) && !empty($matches[0])) {
+            return trim($matches[0][0]);
+        }
+
+        if (preg_match('/(\$?\d[\d,]*\.\d{2})\s*(CR|DR)\b/i', $line, $matches)) {
+            return trim($matches[1]);
+        }
+
+        if (count($amounts) >= 2) {
+            $best = null;
+            $bestValue = null;
+            foreach ($amounts as $amount) {
+                $value = abs(self::parseAmount($amount));
+                if ($value <= 0) {
+                    continue;
+                }
+                if ($bestValue === null || $value < $bestValue) {
+                    $bestValue = $value;
+                    $best = $amount;
+                }
+            }
+            return $best;
+        }
+
+        return $amounts[0];
+    }
+
+    public static function pickLikelyBalance(array $amounts, ?string $amountRaw): ?string
+    {
+        if (count($amounts) < 2) {
+            return null;
+        }
+
+        $amountValue = $amountRaw ? abs(self::parseAmount($amountRaw)) : null;
+        $best = null;
+        $bestValue = null;
+
+        foreach ($amounts as $amount) {
+            $value = abs(self::parseAmount($amount));
+            if ($value <= 0) {
+                continue;
+            }
+            if ($amountValue !== null && abs($value - $amountValue) < 0.01) {
+                continue;
+            }
+            if ($bestValue === null || $value > $bestValue) {
                 $bestValue = $value;
                 $best = $amount;
             }

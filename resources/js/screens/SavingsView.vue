@@ -12,7 +12,12 @@
             <p class="card-sub">
                 Saving here is personal and flexible. You can move at your own pace.
             </p>
-            <router-link class="primary-button" :to="{ name: 'savings-new' }">
+            <router-link
+                class="primary-button"
+                data-onboarding="savings-primary"
+                :to="{ name: 'savings-new' }"
+                @click="handlePrimaryJourneyClick"
+            >
                 Start a journey
             </router-link>
         </div>
@@ -134,6 +139,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { savingsState, fetchJourneys, initSavings, setJourneyStatus } from '../stores/savings';
+import { onboardingState } from '../stores/onboarding';
 
 const showPaused = ref(false);
 const showCompleted = ref(false);
@@ -152,6 +158,11 @@ const completedJourneys = computed(() => journeys.value.filter((journey) => jour
 
 const toggleDetails = (id) => {
     detailsOpen.value = { ...detailsOpen.value, [id]: !detailsOpen.value[id] };
+};
+
+const handlePrimaryJourneyClick = (event) => {
+    if (!onboardingState.mode) return;
+    event.preventDefault();
 };
 
 const resumeJourney = async (id) => {

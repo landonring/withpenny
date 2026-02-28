@@ -1,7 +1,7 @@
 import { reactive } from 'vue';
 import axios from 'axios';
 import { authState, ensureAuthReady } from './auth';
-import { applyFutureContribution } from './transactions';
+import { applyFutureContribution, setFutureForMonth } from './transactions';
 
 const state = reactive({
     journeys: [],
@@ -69,8 +69,13 @@ export async function updateJourney(id, payload) {
 
 export async function deleteJourney(id) {
     await ensureAuthReady();
+    const journey = getJourneyById(id);
     await axios.delete(`/api/savings-journeys/${id}`);
-    state.journeys = state.journeys.filter((journey) => String(journey.id) !== String(id));
+    state.journeys = state.journeys.filter((journeyItem) => String(journeyItem.id) !== String(id));
+    if (journey && isEmergencyJourney(journey)) {
+        const monthKey = new Date().toISOString().slice(0, 7);
+        setFutureForMonth(monthKey, 0);
+    }
 }
 
 export async function addToJourney(id, amount) {
@@ -98,6 +103,10 @@ export async function setJourneyStatus(id, status) {
 
     const { data } = await axios.post(`/api/savings-journeys/${id}/${endpoint}`);
     upsertJourney(data.journey);
+    if (status === 'completed' && isEmergencyJourney(data.journey)) {
+        const monthKey = new Date().toISOString().slice(0, 7);
+        setFutureForMonth(monthKey, 0);
+    }
     return data.journey;
 }
 

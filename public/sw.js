@@ -1,4 +1,5 @@
-const CACHE_NAME = 'penny-shell-v9';
+const CACHE_NAME = 'penny-shell-v14';
+const IS_DEV = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
 const CORE_ASSETS = [
     '/',
     '/manifest.webmanifest',
@@ -8,11 +9,15 @@ const CORE_ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
+    if (IS_DEV) {
+        self.skipWaiting();
+        return;
+    }
     event.waitUntil(
-        caches
-            .open(CACHE_NAME)
-            .then((cache) => cache.addAll(CORE_ASSETS))
-            .then(() => self.skipWaiting())
+        caches.open(CACHE_NAME).then(async (cache) => {
+            await Promise.allSettled(CORE_ASSETS.map((asset) => cache.add(asset)));
+            await self.skipWaiting();
+        })
     );
 });
 
@@ -30,31 +35,49 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    if (IS_DEV) {
+        return;
+    }
+
     const url = new URL(event.request.url);
-    if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) {
+    if (url.origin !== self.location.origin) {
+        return;
+    }
+
+    if (url.pathname.startsWith('/api/')) {
         return;
     }
 
     if (event.request.mode === 'navigate') {
         event.respondWith(
-            fetch(event.request).catch(() => caches.match('/'))
+            (async () => {
+                try {
+                    return await fetch(event.request);
+                } catch {
+                    const shell = await caches.match('/');
+                    return shell || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+                }
+            })()
         );
         return;
     }
 
     event.respondWith(
-        caches.match(event.request).then((cached) => {
+        caches.match(event.request).then(async (cached) => {
             if (cached) {
                 return cached;
             }
 
-            return fetch(event.request)
-                .then((response) => {
+            try {
+                const response = await fetch(event.request);
+                if (response.ok && response.type === 'basic') {
                     const responseClone = response.clone();
                     caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-                    return response;
-                })
-                .catch(() => cached);
+                }
+                return response;
+            } catch {
+                return cached || new Response('', { status: 504, statusText: 'Gateway Timeout' });
+            }
         })
     );
 });

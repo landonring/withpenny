@@ -168,6 +168,7 @@ class SavingsJourneyController extends Controller
         $journeyIds = SavingsJourney::query()
             ->where('user_id', $user->id)
             ->whereRaw('LOWER(title) LIKE ?', ['%emergency fund%'])
+            ->where('status', '!=', 'completed')
             ->pluck('id')
             ->all();
 

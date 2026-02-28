@@ -21,6 +21,16 @@ export async function generateMonthlyReflection(monthKey) {
     return data.message;
 }
 
+export async function generateDailyOverview(dateString) {
+    const request = axios.post(
+        '/api/ai/daily-overview',
+        { date: dateString },
+        { timeout: REQUEST_TIMEOUT }
+    );
+    const { data } = await withTimeout(request);
+    return data.message;
+}
+
 export async function generateWeeklyCheckIn() {
     const request = axios.post('/api/ai/weekly-checkin', {}, { timeout: REQUEST_TIMEOUT });
     const { data } = await withTimeout(request);

@@ -1,9 +1,13 @@
-import { reactive } from 'vue';
+import { reactive, watch } from 'vue';
 import axios from 'axios';
 import { categoryGroups } from '../data/categories';
 import { authState, ensureAuthReady } from './auth';
+import { ensureOnboardingStatus, onboardingState } from './onboarding';
 
 const STORAGE_PREFIX = 'penny';
+const DEMO_BALANCE = 3226.26;
+let onlineListenerBound = false;
+let onboardingWatcherBound = false;
 
 async function ensureCsrf(force = false) {
     if (!force && window.axios?.defaults?.headers?.common?.['X-CSRF-TOKEN']) {
@@ -28,6 +32,7 @@ const state = reactive({
         incomeTotal: 0,
         moneyIn: 0,
         net: 0,
+        currentBalance: 0,
         count: 0,
         topCategory: '',
         breakdown: {
@@ -38,6 +43,7 @@ const state = reactive({
     },
     income: 0,
     futureTotal: 0,
+    statementBalance: 0,
     loading: false,
     syncing: false,
     ready: false,
@@ -46,6 +52,10 @@ const state = reactive({
 
 function storageKeyForMonth(monthKey, userId) {
     return `${STORAGE_PREFIX}.transactions.${userId}.${monthKey}`;
+}
+
+function monthKeyStorage(userId) {
+    return `${STORAGE_PREFIX}.month.${userId}`;
 }
 
 function queueKey(userId) {
@@ -58,6 +68,10 @@ function incomeKey(monthKey, userId) {
 
 function futureKey(monthKey, userId) {
     return `${STORAGE_PREFIX}.future.${userId}.${monthKey}`;
+}
+
+function balanceKey(monthKey, userId) {
+    return `${STORAGE_PREFIX}.balance.${userId}.${monthKey}`;
 }
 
 function getMonthKey(date) {
@@ -76,9 +90,33 @@ function getMonthKeyFromDateString(dateString) {
     return `${year}-${String(month).padStart(2, '0')}`;
 }
 
+function loadLastMonth(userId) {
+    if (!userId) return null;
+    const raw = localStorage.getItem(monthKeyStorage(userId));
+    return raw || null;
+}
+
+function saveLastMonth(userId, monthKey) {
+    if (!userId) return;
+    localStorage.setItem(monthKeyStorage(userId), monthKey);
+}
+
 function parseAmount(value) {
     const parsed = Number.parseFloat(value);
     return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function isDemoTransaction(transaction) {
+    const source = String(transaction?.source || '').toLowerCase();
+    return source === 'demo' || source === 'onboarding_demo';
+}
+
+function filterRealTransactions(transactions) {
+    return (transactions || []).filter((item) => !isDemoTransaction(item));
+}
+
+function isOnboardingModeActive() {
+    return !!(onboardingState.mode || authState.user?.onboarding_mode);
 }
 
 function loadMonthFromStorage(monthKey) {
@@ -133,6 +171,14 @@ function loadFuture(monthKey) {
     return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function loadBalance(monthKey) {
+    const userId = authState.user?.id;
+    if (!userId) return 0;
+    const raw = localStorage.getItem(balanceKey(monthKey, userId));
+    const parsed = Number.parseFloat(raw);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function saveIncome(monthKey, value) {
     const userId = authState.user?.id;
     if (!userId) return;
@@ -145,12 +191,17 @@ function saveFuture(monthKey, value) {
     localStorage.setItem(futureKey(monthKey, userId), String(value));
 }
 
-function computeSummary(transactions, futureTotal = 0) {
+function saveBalance(monthKey, value) {
+    const userId = authState.user?.id;
+    if (!userId) return;
+    localStorage.setItem(balanceKey(monthKey, userId), String(value));
+}
+
+function computeSummary(transactions, futureTotal = 0, balanceTotal = 0) {
     const totals = {
         Needs: 0,
         Wants: 0,
         Future: parseAmount(futureTotal),
-        Income: 0,
     };
     const byCategory = {};
     let incomeTotal = 0;
@@ -178,7 +229,7 @@ function computeSummary(transactions, futureTotal = 0) {
     });
 
     const spendingTotal = totals.Needs + totals.Wants;
-    const total = spendingTotal + totals.Future + totals.Income;
+    const total = spendingTotal + totals.Future;
     const moneyIn = incomeTotal;
     const net = moneyIn - spendingTotal;
 
@@ -188,6 +239,7 @@ function computeSummary(transactions, futureTotal = 0) {
         incomeTotal,
         moneyIn,
         net,
+        currentBalance: parseAmount(balanceTotal),
         count: transactions.length,
         topCategory,
         breakdown: totals,
@@ -202,17 +254,128 @@ function sortTransactions(transactions) {
     });
 }
 
+function resolveDemoMonth(monthKey) {
+    const [yearRaw, monthRaw] = String(monthKey || '').split('-');
+    const year = Number.parseInt(yearRaw, 10);
+    const month = Number.parseInt(monthRaw, 10);
+    if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+    return new Date(year, month - 1, 1);
+}
+
+function buildOnboardingDemoTransactions(monthKey) {
+    const monthDate = resolveDemoMonth(monthKey);
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const dateForDay = (day) => {
+        const safeDay = Math.min(day, daysInMonth);
+        const value = new Date(year, month, safeDay);
+        return value.toISOString().slice(0, 10);
+    };
+
+    return [
+        {
+            id: 'onboarding-home-1',
+            user_id: null,
+            amount: 1650.0,
+            category: 'Income',
+            note: 'Payroll Direct Deposit - ACME INDUSTRIES',
+            transaction_date: dateForDay(1),
+            type: 'income',
+            source: 'onboarding_demo',
+        },
+        {
+            id: 'onboarding-home-2',
+            user_id: null,
+            amount: 86.44,
+            category: 'Groceries',
+            note: 'Debit Card Purchase - Trader Joe\'s #142',
+            transaction_date: dateForDay(5),
+            type: 'spending',
+            source: 'onboarding_demo',
+        },
+        {
+            id: 'onboarding-home-3',
+            user_id: null,
+            amount: 920.0,
+            category: 'Housing',
+            note: 'Monthly rent',
+            transaction_date: dateForDay(8),
+            type: 'spending',
+            source: 'onboarding_demo',
+        },
+        {
+            id: 'onboarding-home-4',
+            user_id: null,
+            amount: 64.2,
+            category: 'Transportation',
+            note: 'Fuel',
+            transaction_date: dateForDay(12),
+            type: 'spending',
+            source: 'onboarding_demo',
+        },
+        {
+            id: 'onboarding-home-5',
+            user_id: null,
+            amount: 210.0,
+            category: 'Future',
+            note: 'Savings transfer',
+            transaction_date: dateForDay(16),
+            type: 'spending',
+            source: 'onboarding_demo',
+        },
+        {
+            id: 'onboarding-home-6',
+            user_id: null,
+            amount: 742.35,
+            category: 'Income',
+            note: 'Freelance payout',
+            transaction_date: dateForDay(18),
+            type: 'income',
+            source: 'onboarding_demo',
+        },
+        {
+            id: 'onboarding-home-7',
+            user_id: null,
+            amount: 48.1,
+            category: 'Groceries',
+            note: 'Trader Joe\'s',
+            transaction_date: dateForDay(21),
+            type: 'spending',
+            source: 'onboarding_demo',
+        },
+        {
+            id: 'onboarding-home-8',
+            user_id: null,
+            amount: 33.77,
+            category: 'Dining',
+            note: 'Lunch',
+            transaction_date: dateForDay(24),
+            type: 'spending',
+            source: 'onboarding_demo',
+        },
+    ];
+}
+
 function mergeTransactions(serverTransactions, localTransactions) {
     const localPending = localTransactions.filter((item) => item.syncState === 'pending');
     return sortTransactions([...serverTransactions, ...localPending]);
 }
 
-function setStateTransactions(transactions, monthKey, futureOverride = null) {
+function setStateTransactions(transactions, monthKey, futureOverride = null, persist = true) {
     const sorted = sortTransactions(transactions);
-    saveMonthToStorage(monthKey, sorted);
+    if (persist) {
+        saveMonthToStorage(monthKey, sorted);
+    }
 
     if (futureOverride !== null && futureOverride !== undefined) {
-        saveFuture(monthKey, futureOverride);
+        if (persist) {
+            saveFuture(monthKey, futureOverride);
+        }
         if (monthKey === state.monthKey) {
             state.futureTotal = futureOverride;
         }
@@ -220,8 +383,40 @@ function setStateTransactions(transactions, monthKey, futureOverride = null) {
 
     if (monthKey === state.monthKey) {
         state.transactions = sorted;
-        state.summary = computeSummary(sorted, state.futureTotal);
+        state.summary = computeSummary(sorted, state.futureTotal, state.statementBalance);
     }
+}
+
+function applyOnboardingDemoState(monthKey, transactions = null, futureTotal = null) {
+    const demoTransactions = Array.isArray(transactions) && transactions.length
+        ? transactions
+        : buildOnboardingDemoTransactions(monthKey);
+    const demoFuture = Number.isFinite(Number(futureTotal))
+        ? parseAmount(futureTotal)
+        : parseAmount(
+            demoTransactions
+                .filter((transaction) => String(transaction.category || '').toLowerCase() === 'future')
+                .reduce((sum, transaction) => sum + parseAmount(transaction.amount), 0)
+        );
+
+    if (monthKey === state.monthKey) {
+        state.statementBalance = DEMO_BALANCE;
+    }
+
+    setStateTransactions(demoTransactions, monthKey, demoFuture, false);
+}
+
+function clearOnboardingDemoState(monthKey = state.monthKey) {
+    const localTransactions = filterRealTransactions(loadMonthFromStorage(monthKey));
+    const storedFuture = loadFuture(monthKey);
+    const storedBalance = loadBalance(monthKey);
+
+    if (monthKey === state.monthKey) {
+        state.futureTotal = storedFuture;
+        state.statementBalance = storedBalance;
+    }
+
+    setStateTransactions(localTransactions, monthKey, storedFuture, false);
 }
 
 function upsertTransactionInMonth(monthKey, transaction) {
@@ -240,13 +435,17 @@ function removeTransactionFromMonth(monthKey, id) {
 
 async function fetchTransactions(monthKey = state.monthKey) {
     await ensureAuthReady();
+    await ensureOnboardingStatus();
     if (!authState.user) return;
 
     state.loading = true;
-    const localTransactions = loadMonthFromStorage(monthKey);
+    const onboardingMode = isOnboardingModeActive();
+    const localTransactions = onboardingMode
+        ? []
+        : filterRealTransactions(loadMonthFromStorage(monthKey));
 
     try {
-        if (!navigator.onLine) {
+        if (!navigator.onLine && !onboardingMode) {
             setStateTransactions(localTransactions, monthKey);
             state.loading = false;
             return;
@@ -256,12 +455,26 @@ async function fetchTransactions(monthKey = state.monthKey) {
             params: { month: monthKey },
         });
 
-        const futureTotal = parseAmount(response.data.future_total);
-        const merged = mergeTransactions(response.data.transactions || [], localTransactions);
+        let serverTransactions = response.data.transactions || [];
+        let futureTotal = parseAmount(response.data.future_total);
+
+        if (onboardingMode) {
+            applyOnboardingDemoState(monthKey, serverTransactions, futureTotal);
+            state.loading = false;
+            return;
+        }
+
+        serverTransactions = filterRealTransactions(serverTransactions);
+
+        const merged = mergeTransactions(serverTransactions, localTransactions);
         setStateTransactions(merged, monthKey, futureTotal);
         refreshEmergencyFuture(monthKey);
     } catch (error) {
-        setStateTransactions(localTransactions, monthKey);
+        if (onboardingMode) {
+            applyOnboardingDemoState(monthKey);
+        } else {
+            setStateTransactions(localTransactions, monthKey);
+        }
     } finally {
         state.loading = false;
         syncQueue();
@@ -270,8 +483,12 @@ async function fetchTransactions(monthKey = state.monthKey) {
 
 function setMonth(monthKey) {
     state.monthKey = monthKey;
-    state.futureTotal = loadFuture(monthKey);
-    setStateTransactions(loadMonthFromStorage(monthKey), monthKey);
+    saveLastMonth(authState.user?.id, monthKey);
+    if (isOnboardingModeActive()) {
+        applyOnboardingDemoState(monthKey);
+    } else {
+        clearOnboardingDemoState(monthKey);
+    }
     fetchTransactions(monthKey);
     refreshEmergencyFuture(monthKey);
 }
@@ -281,12 +498,22 @@ function setFutureForMonth(monthKey, value) {
     saveFuture(monthKey, sanitized);
     if (monthKey === state.monthKey) {
         state.futureTotal = sanitized;
-        state.summary = computeSummary(state.transactions, state.futureTotal);
+        state.summary = computeSummary(state.transactions, state.futureTotal, state.statementBalance);
+    }
+}
+
+function setBalanceForMonth(monthKey, value) {
+    const sanitized = parseAmount(value);
+    saveBalance(monthKey, sanitized);
+    if (monthKey === state.monthKey) {
+        state.statementBalance = sanitized;
+        state.summary = computeSummary(state.transactions, state.futureTotal, state.statementBalance);
     }
 }
 
 async function refreshEmergencyFuture(monthKey) {
     await ensureAuthReady();
+    if (isOnboardingModeActive()) return;
     if (!authState.user || !navigator.onLine) return;
 
     try {
@@ -460,6 +687,7 @@ async function syncQueue() {
 
 async function initTransactions() {
     await ensureAuthReady();
+    await ensureOnboardingStatus();
     const userId = authState.user?.id;
     if (!userId) return;
     if (state.userId !== userId) {
@@ -468,17 +696,64 @@ async function initTransactions() {
     }
     if (state.ready) return;
     state.ready = true;
-    state.futureTotal = loadFuture(state.monthKey);
-    setStateTransactions(loadMonthFromStorage(state.monthKey), state.monthKey);
+    bindOnboardingModeWatcher();
+    bindOnlineListener();
+    const storedMonth = loadLastMonth(userId);
+    if (storedMonth) {
+        state.monthKey = storedMonth;
+    }
+    if (isOnboardingModeActive()) {
+        applyOnboardingDemoState(state.monthKey);
+    } else {
+        clearOnboardingDemoState(state.monthKey);
+    }
     fetchTransactions(state.monthKey);
+}
+
+function bindOnlineListener() {
+    if (onlineListenerBound || typeof window === 'undefined') return;
+    onlineListenerBound = true;
     window.addEventListener('online', () => {
         syncQueue();
         fetchTransactions(state.monthKey);
     });
 }
 
+function bindOnboardingModeWatcher() {
+    if (onboardingWatcherBound) return;
+    onboardingWatcherBound = true;
+
+    watch(
+        () => isOnboardingModeActive(),
+        (active, previous) => {
+            if (previous === undefined || active === previous || !authState.user || !state.ready) return;
+
+            if (active) {
+                applyOnboardingDemoState(state.monthKey);
+                fetchTransactions(state.monthKey);
+                return;
+            }
+
+            clearOnboardingDemoState(state.monthKey);
+            fetchTransactions(state.monthKey);
+        }
+    );
+}
+
 function getTransactionById(id) {
     return state.transactions.find((transaction) => String(transaction.id) === String(id));
+}
+
+async function fetchTransactionById(id) {
+    await ensureAuthReady();
+    if (!authState.user || !navigator.onLine) return null;
+
+    const response = await axios.get(`/api/transactions/${id}`);
+    const transaction = response.data?.transaction;
+    if (!transaction) return null;
+    const monthKey = getMonthKeyFromDateString(transaction.transaction_date);
+    upsertTransactionInMonth(monthKey, transaction);
+    return transaction;
 }
 
 async function addReceiptTransaction(receiptId, payload) {
@@ -496,6 +771,23 @@ async function addReceiptTransaction(receiptId, payload) {
     return created;
 }
 
+async function addReceiptTransactions(receiptId, payload) {
+    await ensureAuthReady();
+    if (!authState.user) return [];
+
+    if (!navigator.onLine) {
+        throw new Error('offline');
+    }
+
+    const response = await axios.post(`/api/receipts/${receiptId}/confirm`, payload);
+    const created = response.data.transactions || [];
+    created.forEach((transaction) => {
+        const monthKey = getMonthKeyFromDateString(transaction.transaction_date);
+        upsertTransactionInMonth(monthKey, transaction);
+    });
+    return created;
+}
+
 function applyFutureContribution(amount, dateString = null) {
     const monthKey = getMonthKeyFromDateString(dateString || state.monthKey);
     const current = loadFuture(monthKey);
@@ -504,7 +796,7 @@ function applyFutureContribution(amount, dateString = null) {
 
     if (monthKey === state.monthKey) {
         state.futureTotal = next;
-        state.summary = computeSummary(state.transactions, next);
+        state.summary = computeSummary(state.transactions, next, state.statementBalance);
     }
 }
 
@@ -514,11 +806,14 @@ export {
     fetchTransactions,
     setMonth,
     setFutureForMonth,
+    setBalanceForMonth,
     addTransaction,
     addReceiptTransaction,
+    addReceiptTransactions,
     updateTransaction,
     deleteTransaction,
     getTransactionById,
+    fetchTransactionById,
     getMonthKey,
     applyFutureContribution,
 };

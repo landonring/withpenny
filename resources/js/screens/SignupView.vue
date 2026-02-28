@@ -34,6 +34,11 @@
                     </div>
                 </label>
 
+                <label class="checkbox-field">
+                    <input v-model="form.age_confirmed" type="checkbox" required />
+                    <span>I confirm I am at least 15 years old.</span>
+                </label>
+
                 <p v-if="error" class="form-error">{{ error }}</p>
 
                 <button class="primary-button" type="submit" :disabled="loading">
@@ -43,28 +48,47 @@
 
             <p class="muted">
                 Already have an account?
-                <router-link to="/login">Log in</router-link>
+                <router-link :to="{ name: 'login', query: billingQuery }">Log in</router-link>
             </p>
         </div>
     </section>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { register } from '../stores/auth';
+import { startCheckout } from '../stores/billing';
 
 const router = useRouter();
+const route = useRoute();
 
 const form = ref({
     name: '',
     email: '',
     password: '',
+    age_confirmed: false,
 });
 
 const error = ref('');
 const loading = ref(false);
 const showPassword = ref(false);
+const billingQuery = computed(() => {
+    const query = {};
+    if (route.query.plan) query.plan = route.query.plan;
+    if (route.query.interval) query.interval = route.query.interval;
+    if (route.query.redirect) query.redirect = route.query.redirect;
+    return query;
+});
+
+const getPlanIntent = () => {
+    const plan = String(route.query.plan || '');
+    if (!['pro', 'premium'].includes(plan)) {
+        return null;
+    }
+    const interval = route.query.interval === 'yearly' ? 'yearly' : 'monthly';
+    return { plan, interval };
+};
 
 const handleSubmit = async () => {
     error.value = '';
@@ -72,7 +96,16 @@ const handleSubmit = async () => {
 
     try {
         await register(form.value);
-        router.push('/');
+        const intent = getPlanIntent();
+        if (intent) {
+            const data = await startCheckout(intent.plan, intent.interval);
+            if (data?.url) {
+                window.location.href = data.url;
+                return;
+            }
+        }
+        const redirect = route.query.redirect || '/app';
+        router.push(redirect);
     } catch (err) {
         const message = err?.response?.data?.message;
         const errors = err?.response?.data?.errors;

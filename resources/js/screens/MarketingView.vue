@@ -100,39 +100,91 @@
             <p class="section-copy">
                 Choose the pace that feels right. Starter is free. Pro and Premium add gentle support.
             </p>
+            <div class="pricing-toggle">
+                <div class="billing-switch" :class="{ 'is-annual': billingCycle === 'yearly' }">
+                    <button
+                        type="button"
+                        class="billing-label"
+                        :class="{ active: billingCycle === 'monthly' }"
+                        @click="billingCycle = 'monthly'"
+                    >
+                        Monthly
+                    </button>
+                    <button
+                        type="button"
+                        class="billing-toggle"
+                        :aria-pressed="billingCycle === 'yearly'"
+                        @click="billingCycle = billingCycle === 'monthly' ? 'yearly' : 'monthly'"
+                    >
+                        <span class="billing-knob" aria-hidden="true"></span>
+                    </button>
+                    <button
+                        type="button"
+                        class="billing-label"
+                        :class="{ active: billingCycle === 'yearly' }"
+                        @click="billingCycle = 'yearly'"
+                    >
+                        Yearly <span class="billing-save">save 10%</span>
+                    </button>
+                </div>
+            </div>
             <div class="pricing-cards">
                 <div class="card pricing-card">
-                    <p class="eyebrow">Starter</p>
-                    <h3 class="section-title">$0</h3>
+                    <p class="eyebrow">Starter — Free</p>
+                    <h3 class="section-title">{{ starterPrice }} <span class="price-unit">{{ billingUnit }}</span></h3>
                     <p class="section-copy">A quiet place to start.</p>
                     <ul class="pricing-list">
-                        <li>Manual tracking</li>
-                        <li>Offline usage</li>
-                        <li>Basic monthly overview</li>
+                        <li>All features visible</li>
+                        <li>5 receipt scans / month</li>
+                        <li>2 statement uploads / month</li>
+                        <li>2 weekly + 1 monthly insights / month</li>
+                        <li>10 chat messages / month</li>
                     </ul>
+                    <button class="primary-button wide" type="button" @click="handleStarter">
+                        Start free
+                    </button>
                 </div>
                 <div class="card pricing-card">
                     <p class="eyebrow">Pro</p>
-                    <h3 class="section-title">$10 <span class="price-unit">/ month</span></h3>
+                    <h3 class="section-title">{{ proPrice }} <span class="price-unit">{{ billingUnit }}</span></h3>
                     <p class="section-copy">A little guidance goes a long way.</p>
                     <ul class="pricing-list">
-                        <li>Weekly AI insight (1x/week)</li>
-                        <li>Monthly AI reflection (1x/month)</li>
-                        <li>Receipt photo capture</li>
+                        <li>20 receipt scans / month</li>
+                        <li>10 statement uploads / month</li>
+                        <li>10 daily, unlimited weekly, 4 monthly, 1 yearly insights</li>
+                        <li>25 chat messages / month</li>
                     </ul>
+                    <button
+                        class="primary-button wide"
+                        type="button"
+                        :disabled="billingBusy === 'pro'"
+                        @click="startPlan('pro')"
+                    >
+                        {{ billingBusy === 'pro' ? 'Starting…' : 'Choose Pro' }}
+                    </button>
                 </div>
                 <div class="card pricing-card">
                     <p class="eyebrow">Premium</p>
-                    <h3 class="section-title">$25 <span class="price-unit">/ month</span></h3>
+                    <h3 class="section-title">{{ premiumPrice }} <span class="price-unit">{{ billingUnit }}</span></h3>
                     <p class="section-copy">Full support, zero pressure.</p>
                     <ul class="pricing-list">
-                        <li>Unlimited AI insights</li>
-                        <li>Bank statement uploads</li>
-                        <li>Automatic detection</li>
+                        <li>Unlimited receipt scanning</li>
+                        <li>Unlimited statement uploads</li>
+                        <li>Unlimited insights</li>
+                        <li>Unlimited AI chat</li>
                         <li>All Pro features</li>
                     </ul>
+                    <button
+                        class="primary-button wide"
+                        type="button"
+                        :disabled="billingBusy === 'premium'"
+                        @click="startPlan('premium')"
+                    >
+                        {{ billingBusy === 'premium' ? 'Starting…' : 'Choose Premium' }}
+                    </button>
                 </div>
             </div>
+            <p v-if="billingError" class="form-error">{{ billingError }}</p>
         </section>
 
         <section class="marketing-section" id="faq">
@@ -164,7 +216,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { authState } from '../stores/auth';
+import { startCheckout } from '../stores/billing';
 
 const isDesktop = typeof window !== 'undefined' && window.__PENNY_DESKTOP__ === true;
 
@@ -179,6 +234,69 @@ const faqItems = [
 const openFaq = ref(0);
 const setFaq = (index) => {
     openFaq.value = openFaq.value === index ? -1 : index;
+};
+
+const billingCycle = ref('monthly');
+const billingUnit = computed(() => (billingCycle.value === 'monthly' ? '/ month' : '/ year'));
+const billingBusy = ref('');
+const billingError = ref('');
+
+const formatPrice = (value) => {
+    const rounded = Math.round(value * 100) / 100;
+    const whole = Math.abs(rounded - Math.round(rounded)) < 0.001;
+    return `$${whole ? Math.round(rounded) : rounded.toFixed(2)}`;
+};
+
+const starterPrice = computed(() => formatPrice(0));
+const proPrice = computed(() => {
+    if (billingCycle.value === 'monthly') return formatPrice(15);
+    return formatPrice(15 * 12 * 0.9);
+});
+const premiumPrice = computed(() => {
+    if (billingCycle.value === 'monthly') return formatPrice(25);
+    return formatPrice(25 * 12 * 0.9);
+});
+
+const router = useRouter();
+const route = useRoute();
+
+const handleStarter = () => {
+    if (authState.user) {
+        router.push({ name: 'home' });
+        return;
+    }
+    router.push({ name: 'register', query: { redirect: route.fullPath } });
+};
+
+const startPlan = async (plan) => {
+    billingError.value = '';
+
+    if (!authState.user) {
+        router.push({
+            name: 'register',
+            query: {
+                plan,
+                interval: billingCycle.value,
+                redirect: route.fullPath,
+            },
+        });
+        return;
+    }
+
+    billingBusy.value = plan;
+
+    try {
+        const data = await startCheckout(plan, billingCycle.value);
+        if (data?.url) {
+            window.location.href = data.url;
+            return;
+        }
+        router.push({ name: 'home' });
+    } catch (err) {
+        billingError.value = err?.response?.data?.message || 'Unable to start billing right now.';
+    } finally {
+        billingBusy.value = '';
+    }
 };
 
 const scrollToHow = () => {

@@ -1,0 +1,248 @@
+.article-shell {
+  background: #f6f3ec;
+}
+
+.article-header {
+  padding-top: 4.5rem;
+  padding-bottom: 2.5rem;
+}
+
+.article-eyebrow {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: #8e9a92;
+}
+
+.article-title {
+  font-family: "Playfair Display", serif;
+  font-weight: 500;
+  color: #2f3a33;
+  line-height: 1.15;
+}
+
+.article-meta {
+  color: rgba(94, 107, 99, 0.7);
+  font-size: 12px;
+  margin-top: 0.75rem;
+}
+
+.article-share {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.article-share-inline {
+  margin-top: 0;
+  display: inline-flex;
+  justify-content: flex-start;
+}
+
+.article-share-button {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid #e3e0d8;
+  background: #fffeFA;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #2f3a33;
+  transition: all 0.2s ease;
+}
+
+.article-share-button:hover {
+  border-color: rgba(199, 212, 198, 0.8);
+  box-shadow: 0 8px 16px rgba(47, 58, 51, 0.08);
+}
+
+.article-share-button.shared {
+  background: rgba(199, 212, 198, 0.4);
+}
+
+.article-share-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.article-audio {
+  margin-top: 1.5rem;
+  background: #fffeFA;
+  border: 1px solid #e3e0d8;
+  border-radius: 1.5rem;
+  padding: 1.25rem;
+  display: grid;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.article-audio-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: #8e9a92;
+}
+
+.article-audio audio {
+  display: none;
+}
+
+.article-audio-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.audio-play {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid #e3e0d8;
+  background: #fffeFA;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #2f3a33;
+  transition: all 0.2s ease;
+}
+
+.audio-play:hover {
+  border-color: rgba(199, 212, 198, 0.8);
+  box-shadow: 0 8px 16px rgba(47, 58, 51, 0.08);
+}
+
+.audio-play.is-playing {
+  background: rgba(199, 212, 198, 0.4);
+}
+
+.audio-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.article-audio-note {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(94, 107, 99, 0.7);
+}
+
+.article-content {
+  color: #5e6b63;
+  font-size: 1rem;
+  line-height: 1.9;
+}
+
+.article-content p {
+  margin-top: 1rem;
+}
+
+.article-content h2 {
+  color: #2f3a33;
+  font-family: "Playfair Display", serif;
+  font-weight: 500;
+  font-size: 2rem;
+  margin-top: 2.75rem;
+  margin-bottom: 1rem;
+}
+
+.article-content h3 {
+  color: #2f3a33;
+  font-weight: 600;
+  font-size: 1.25rem;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.article-content ul {
+  margin-top: 1rem;
+  margin-left: 1.5rem;
+  list-style: disc;
+}
+
+.article-content li {
+  margin-top: 0.5rem;
+}
+
+.article-content a {
+  color: #2f3a33;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.article-divider {
+  height: 1px;
+  background: rgba(227, 224, 216, 0.7);
+  margin: 2.5rem 0;
+}
+
+.article-cta {
+  margin-top: 2.5rem;
+  padding: 1.75rem;
+  background: #fffeFA;
+  border: 1px solid #e3e0d8;
+  border-radius: 1.5rem;
+}
+
+.article-cta h3 {
+  margin-top: 0;
+}
+
+.article-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.article-card {
+  background: #fffeFA;
+  border: 1px solid #e3e0d8;
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+}
+
+.article-card-title {
+  font-family: "Playfair Display", serif;
+  font-weight: 500;
+  color: #2f3a33;
+  font-size: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.article-card-meta {
+  color: rgba(94, 107, 99, 0.7);
+  font-size: 12px;
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .article-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .article-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.article-content a{color:#2f3a33;text-decoration-color:rgba(141,163,139,.5);text-decoration-thickness:1px;text-underline-offset:4px}
+.article-content a:hover{text-decoration-color:#c7d4c6}
+.article-cta a{ text-decoration: none; box-shadow: 0 8px 16px rgba(47,58,51,0.08)}
+.article-cta a:hover{filter:brightness(0.98)}
+.article-content .article-cta a{ text-decoration: none }
+
+.article-cta{margin-bottom:4rem}

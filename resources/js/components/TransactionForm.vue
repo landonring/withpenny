@@ -98,6 +98,15 @@ const emit = defineEmits(['submit', 'cancel']);
 
 const today = new Date().toISOString().slice(0, 10);
 
+const normalizeDate = (value) => {
+    if (!value) return today;
+    if (value instanceof Date) return value.toISOString().slice(0, 10);
+    if (typeof value !== 'string') return today;
+    if (value.includes('T')) return value.split('T')[0];
+    if (value.length >= 10) return value.slice(0, 10);
+    return today;
+};
+
 const form = reactive({
     type: 'spending',
     amount: '',
@@ -116,7 +125,7 @@ watch(
             form.category = 'Income';
         }
         form.note = value?.note ?? '';
-        form.transaction_date = value?.transaction_date ?? today;
+        form.transaction_date = normalizeDate(value?.transaction_date);
     },
     { immediate: true }
 );

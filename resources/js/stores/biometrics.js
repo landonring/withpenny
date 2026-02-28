@@ -93,15 +93,10 @@ export async function enableBiometrics() {
     await ensureCsrf(true);
     const supported = await checkBiometricSupport();
     if (!supported) {
-        throw new Error('Face ID isn’t available on this device.');
+        throw new Error('Passkeys aren’t available on this device.');
     }
 
-    const status = await refreshBiometricStatus();
-    if (status) {
-        markBiometricEnabled();
-        biometricsState.enabled = true;
-        return true;
-    }
+    await refreshBiometricStatus();
 
     biometricsState.busy = true;
 
@@ -111,7 +106,7 @@ export async function enableBiometrics() {
         const credential = await navigator.credentials.create({ publicKey });
 
         if (!credential) {
-            throw new Error('Face ID didn’t work this time. You can sign in another way.');
+            throw new Error('Passkey didn’t work this time. You can sign in another way.');
         }
 
         const response = credential.response;
@@ -145,7 +140,7 @@ export async function loginWithBiometrics() {
     await ensureCsrf(true);
     const supported = await checkBiometricSupport();
     if (!supported) {
-        throw new Error('Face ID isn’t available on this device.');
+        throw new Error('Passkeys aren’t available on this device.');
     }
 
     if (!isBiometricEnabledLocal()) {
@@ -157,7 +152,7 @@ export async function loginWithBiometrics() {
     const assertion = await navigator.credentials.get({ publicKey });
 
     if (!assertion) {
-        throw new Error('Face ID didn’t work this time. You can sign in another way.');
+        throw new Error('Passkey didn’t work this time. You can sign in another way.');
     }
 
     const response = assertion.response;

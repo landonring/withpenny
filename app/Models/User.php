@@ -11,14 +11,17 @@ use App\Models\Transaction;
 use App\Models\Receipt;
 use App\Models\SavingsJourney;
 use App\Models\BankStatementImport;
+use App\Models\FeedbackVote;
+use App\Models\FeedbackComment;
 use Laragear\WebAuthn\Contracts\WebAuthnAuthenticatable;
 use Laragear\WebAuthn\WebAuthnAuthentication;
 use App\Models\SavingsContribution;
+use Laravel\Cashier\Billable;
 
 class User extends Authenticatable implements WebAuthnAuthenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, WebAuthnAuthentication;
+    use HasFactory, Notifiable, WebAuthnAuthentication, Billable;
 
     /**
      * The attributes that are mass assignable.
@@ -29,6 +32,12 @@ class User extends Authenticatable implements WebAuthnAuthenticatable
         'name',
         'email',
         'password',
+        'life_phase',
+        'role',
+        'onboarding_mode',
+        'onboarding_step',
+        'onboarding_completed',
+        'onboarding_started_at',
     ];
 
     /**
@@ -51,6 +60,11 @@ class User extends Authenticatable implements WebAuthnAuthenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'last_login_at' => 'datetime',
+            'onboarding_mode' => 'boolean',
+            'onboarding_step' => 'integer',
+            'onboarding_completed' => 'boolean',
+            'onboarding_started_at' => 'datetime',
         ];
     }
 
@@ -77,6 +91,16 @@ class User extends Authenticatable implements WebAuthnAuthenticatable
     public function savingsContributions(): HasMany
     {
         return $this->hasMany(SavingsContribution::class);
+    }
+
+    public function feedbackVotes(): HasMany
+    {
+        return $this->hasMany(FeedbackVote::class);
+    }
+
+    public function feedbackComments(): HasMany
+    {
+        return $this->hasMany(FeedbackComment::class);
     }
 
 }

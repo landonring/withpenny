@@ -16,11 +16,15 @@ class BankStatementImport extends Model
         'meta',
         'masked_account',
         'source',
+        'extraction_confidence',
+        'balance_mismatch',
+        'extraction_method',
     ];
 
     protected $casts = [
         'transactions' => 'encrypted:array',
         'meta' => 'encrypted:array',
+        'balance_mismatch' => 'boolean',
     ];
 
     public function user(): BelongsTo

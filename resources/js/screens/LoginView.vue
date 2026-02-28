@@ -51,7 +51,7 @@
                             <path d="M8.5 12c1.2 1.1 5.8 1.1 7 0" />
                         </svg>
                     </span>
-                    <span>{{ biometricBusy ? 'Checking…' : 'Face ID' }}</span>
+                    <span>{{ biometricBusy ? 'Checking…' : 'Use passkey' }}</span>
                 </button>
 
                 <p v-if="biometricHint" class="faceid-hint">{{ biometricHint }}</p>
@@ -60,7 +60,7 @@
 
             <p class="muted">
                 New here?
-                <router-link to="/register">Create an account</router-link>
+                <router-link :to="{ name: 'register', query: billingQuery }">Create an account</router-link>
             </p>
         </div>
     </section>
@@ -70,6 +70,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { login } from '../stores/auth';
+import { startCheckout } from '../stores/billing';
 import {
     biometricsState,
     checkBiometricSupport,
@@ -93,6 +94,34 @@ const biometricHint = ref('');
 const biometricBusy = ref(false);
 
 const biometricAvailable = computed(() => biometricsState.supported);
+const billingQuery = computed(() => {
+    const query = {};
+    if (route.query.plan) query.plan = route.query.plan;
+    if (route.query.interval) query.interval = route.query.interval;
+    if (route.query.redirect) query.redirect = route.query.redirect;
+    return query;
+});
+
+const getPlanIntent = () => {
+    const plan = String(route.query.plan || '');
+    if (!['pro', 'premium'].includes(plan)) {
+        return null;
+    }
+    const interval = route.query.interval === 'yearly' ? 'yearly' : 'monthly';
+    return { plan, interval };
+};
+
+const handlePostLogin = async () => {
+    const intent = getPlanIntent();
+    if (intent) {
+        const data = await startCheckout(intent.plan, intent.interval);
+        if (data?.url) {
+            window.location.href = data.url;
+            return true;
+        }
+    }
+    return false;
+};
 
 const handleSubmit = async () => {
     error.value = '';
@@ -100,7 +129,9 @@ const handleSubmit = async () => {
 
     try {
         await login(form.value);
-        const redirect = route.query.redirect || '/';
+        const handled = await handlePostLogin();
+        if (handled) return;
+        const redirect = route.query.redirect || '/app';
         router.push(redirect);
     } catch (err) {
         error.value = err?.response?.data?.message || 'Unable to log in right now.';
@@ -114,7 +145,7 @@ const handleBiometricLogin = async () => {
     biometricHint.value = '';
 
     if (!biometricsState.enabled) {
-        biometricHint.value = 'After you enable Face ID on this device, it will always work here.';
+        biometricHint.value = 'After you add a passkey on this device, it will always work here.';
         return;
     }
 
@@ -122,10 +153,12 @@ const handleBiometricLogin = async () => {
 
     try {
         await loginWithBiometrics();
-        const redirect = route.query.redirect || '/';
+        const handled = await handlePostLogin();
+        if (handled) return;
+        const redirect = route.query.redirect || '/app';
         router.push(redirect);
     } catch (err) {
-        biometricError.value = err?.response?.data?.message || err?.message || 'Face ID didn’t work this time.';
+        biometricError.value = err?.response?.data?.message || err?.message || 'Passkey didn’t work this time.';
     } finally {
         biometricBusy.value = false;
     }
