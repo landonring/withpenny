@@ -24,17 +24,26 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
+        $requestHost = strtolower((string) request()->getHost());
+        $loopbackHosts = ['127.0.0.1', 'localhost', '::1', '0.0.0.0'];
+        $isRequestLocal = in_array($requestHost, $loopbackHosts, true) || str_ends_with($requestHost, '.localhost');
+
+        $assetUrl = (string) config('app.asset_url', '');
+        if ($assetUrl !== '') {
+            $assetHost = strtolower((string) parse_url($assetUrl, PHP_URL_HOST));
+            if ($assetHost !== '' && in_array($assetHost, $loopbackHosts, true) && ! $isRequestLocal) {
+                config(['app.asset_url' => null]);
+            }
+        }
+
         $hotFile = public_path('hot');
         if (! is_file($hotFile)) {
             return;
         }
 
-        $requestHost = strtolower((string) request()->getHost());
         $hotUrl = trim((string) file_get_contents($hotFile));
         $hotHost = strtolower((string) parse_url($hotUrl, PHP_URL_HOST));
 
-        $loopbackHosts = ['127.0.0.1', 'localhost', '::1', '0.0.0.0'];
-        $isRequestLocal = in_array($requestHost, $loopbackHosts, true) || str_ends_with($requestHost, '.localhost');
         $isHotLocal = in_array($hotHost, $loopbackHosts, true);
 
         if ($isHotLocal && ! $isRequestLocal) {

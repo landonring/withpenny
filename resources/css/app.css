@@ -40,10 +40,6 @@ body {
     padding-top: env(safe-area-inset-top);
 }
 
-body.app-ready .boot-fallback {
-    display: none;
-}
-
 input,
 select,
 textarea {
@@ -62,51 +58,6 @@ a:hover {
 #app {
     min-height: 100vh;
     height: 100vh;
-}
-
-.boot-fallback {
-    position: fixed;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    background: var(--app-bg);
-    z-index: 9999;
-    padding: 24px;
-}
-
-.boot-card {
-    width: min(420px, 100%);
-    background: #fff;
-    border-radius: 18px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    padding: 22px;
-    display: grid;
-    gap: 10px;
-    text-align: center;
-}
-
-.boot-actions {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.boot-debug {
-    margin: 0;
-    padding: 12px;
-    border-radius: 12px;
-    background: #f7f4ee;
-    color: #6f6f6f;
-    font-size: 11px;
-    text-align: left;
-    max-height: 220px;
-    overflow: auto;
-    white-space: pre-wrap;
-}
-
-.boot-debug.hidden {
-    display: none;
 }
 
 .impersonation-banner {
@@ -231,6 +182,9 @@ a:hover {
     border: 1px solid rgba(0, 0, 0, 0.05);
     display: grid;
     gap: 18px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .life-phase-title {
@@ -650,18 +604,6 @@ a:hover {
     }
 }
 
-.boot-title {
-    font-weight: 600;
-    font-size: 18px;
-    margin: 0;
-}
-
-.boot-sub {
-    color: var(--muted);
-    font-size: 14px;
-    margin: 0;
-}
-
 .app-shell {
     min-height: 100vh;
     height: 100vh;
@@ -1069,8 +1011,14 @@ a:hover {
 }
 
 @media (max-width: 720px) {
+    .life-phase-backdrop {
+        align-items: flex-start;
+        padding: calc(12px + env(safe-area-inset-top)) 12px 12px;
+    }
+
     .life-phase-modal {
         padding: 20px;
+        max-height: calc(100vh - 24px - env(safe-area-inset-top));
     }
 
     .life-phase-grid,
@@ -2754,10 +2702,10 @@ a:hover {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: calc(3px + env(safe-area-inset-bottom));
+    bottom: 0;
     background: rgba(255, 255, 255, 0.9);
     border-radius: 24px 24px 0 0;
-    padding: 10px 8px;
+    padding: 10px 8px calc(10px + env(safe-area-inset-bottom));
     border: 1px solid rgba(0, 0, 0, 0.06);
     border-bottom: none;
     box-shadow: 0 18px 32px rgba(0, 0, 0, 0.08);

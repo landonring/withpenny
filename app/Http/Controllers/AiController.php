@@ -10,7 +10,7 @@ use App\Services\PlanUsageService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use OpenAI\Laravel\Facades\OpenAI;
 
 class AiController extends Controller
 {
@@ -393,70 +393,61 @@ Your goal is to help the user feel calmer and more capable than when they opened
     private function respondWithAi(string $prompt, int $maxTokens = 80)
     {
         @set_time_limit(120);
-        $model = config('services.ollama.model', 'llama3.1');
-        $configured = rtrim(config('services.ollama.base_url', 'http://127.0.0.1:11434'), '/');
-        $candidates = array_values(array_unique([
-            $configured,
-            'http://127.0.0.1:11434',
-            'http://localhost:11434',
-        ]));
+        $apiKey = (string) config('services.openai.key', '');
+        $model = config('services.openai.model', 'gpt-4o-mini');
+        $timeout = max(15, (int) config('services.openai.timeout', 60));
 
-        $baseUrl = null;
-        foreach ($candidates as $candidate) {
-            if ($this->ollamaReachable($candidate)) {
-                $baseUrl = $candidate;
-                break;
-            }
-        }
-
-        if (! $baseUrl) {
+        if ($apiKey === '') {
             return response()->json(array_merge([
                 'message' => 'Penny is resting right now. You can try again in a little while.',
             ], $this->debugData([
-                'reason' => 'ollama_unreachable',
-                'candidates' => $candidates,
+                'reason' => 'openai_missing_key',
+                'provider' => 'openai',
                 'model' => $model,
             ])), 503);
         }
 
+        config([
+            'openai.api_key' => $apiKey,
+            'openai.request_timeout' => $timeout,
+        ]);
+
         try {
-            $response = Http::withOptions(['proxy' => null])
-                ->connectTimeout(5)
-                ->timeout(60)
-                ->post("{$baseUrl}/api/generate", [
-                    'model' => $model,
-                    'system' => self::SYSTEM_PROMPT,
-                    'prompt' => $prompt,
-                    'stream' => false,
-                    'keep_alive' => '10m',
-                    'options' => [
-                        'num_predict' => $maxTokens,
-                    ],
-                ]);
+            $response = OpenAI::chat()->create([
+                'model' => $model,
+                'messages' => [
+                    ['role' => 'system', 'content' => self::SYSTEM_PROMPT],
+                    ['role' => 'user', 'content' => $prompt],
+                ],
+                'max_tokens' => $maxTokens,
+                'temperature' => 0.5,
+            ]);
         } catch (\Throwable $exception) {
             return response()->json(array_merge([
                 'message' => 'Penny is resting right now. You can try again in a little while.',
             ], $this->debugData([
                 'reason' => 'exception',
-                'base_url' => $baseUrl,
+                'provider' => 'openai',
                 'model' => $model,
+                'timeout' => $timeout,
                 'exception' => get_class($exception),
                 'error' => $exception->getMessage(),
             ])), 503);
         }
 
-        if (! $response->successful()) {
-            return response()->json(array_merge([
-                'message' => 'Penny is resting right now. You can try again in a little while.',
-            ], $this->debugData([
-                'reason' => 'ollama_error',
-                'status' => $response->status(),
-                'body' => mb_substr((string) $response->body(), 0, 300),
-            ])), 503);
+        $content = $response->choices[0]->message->content ?? '';
+        if (is_array($content)) {
+            $parts = [];
+            foreach ($content as $item) {
+                $segment = (string) ($item['text'] ?? ($item['content'] ?? ''));
+                if ($segment !== '') {
+                    $parts[] = $segment;
+                }
+            }
+            $content = implode("\n", $parts);
         }
 
-        $data = $response->json();
-        $text = trim((string) ($data['response'] ?? ''));
+        $text = trim((string) $content);
 
         if ($text === '') {
             $text = 'Penny is resting right now. You can try again in a little while.';
@@ -535,25 +526,6 @@ Your goal is to help the user feel calmer and more capable than when they opened
             'average' => '$'.number_format($average, 2),
             'stability' => $stability,
         ];
-    }
-
-    private function ollamaReachable(string $baseUrl): bool
-    {
-        $parts = parse_url($baseUrl);
-        if (! $parts || empty($parts['host'])) {
-            return false;
-        }
-
-        $host = $parts['host'];
-        $port = $parts['port'] ?? (($parts['scheme'] ?? 'http') === 'https' ? 443 : 80);
-
-        $fp = @fsockopen($host, $port, $errno, $errstr, 1.5);
-        if (! $fp) {
-            return false;
-        }
-
-        fclose($fp);
-        return true;
     }
 
     private bool $debugEnabled = false;

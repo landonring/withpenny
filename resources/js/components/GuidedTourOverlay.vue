@@ -404,14 +404,11 @@ const routeToStepTarget = async () => {
 };
 
 const setScrollLock = (locked) => {
-    const mainContent = document.querySelector('.main-content');
     if (locked) {
         document.body.classList.add('onboarding-scroll-lock');
-        mainContent?.classList.add('onboarding-scroll-lock-content');
         return;
     }
     document.body.classList.remove('onboarding-scroll-lock');
-    mainContent?.classList.remove('onboarding-scroll-lock-content');
 };
 
 const setNavInteraction = (enabled) => {
@@ -581,6 +578,32 @@ const updateDerivedFlags = () => {
     chatResponded.value = !!document.querySelector('[data-onboarding="chat-response"]');
 };
 
+const scrollStepTargetIntoView = (target) => {
+    if (!target || onboardingState.step === 0) return;
+
+    const scroller = document.querySelector('.main-content');
+    if (scroller && typeof scroller.scrollTo === 'function') {
+        const scrollerRect = scroller.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        const safeTop = scrollerRect.top + 84;
+        const safeBottom = scrollerRect.bottom - 140;
+        const isOutsideView = targetRect.top < safeTop || targetRect.bottom > safeBottom;
+
+        if (isOutsideView) {
+            const offsetTopInScroller = targetRect.top - scrollerRect.top;
+            const centerOffset = Math.max(72, (scroller.clientHeight - targetRect.height) / 2);
+            const nextTop = Math.max(0, scroller.scrollTop + offsetTopInScroller - centerOffset);
+            scroller.scrollTo({ top: nextTop, behavior: 'smooth' });
+            window.setTimeout(() => positionCard(), 260);
+        }
+
+        return;
+    }
+
+    target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    window.setTimeout(() => positionCard(), 260);
+};
+
 const applyHighlight = async () => {
     removeHighlight();
     if (!overlayActive.value || !currentStep.value) {
@@ -653,10 +676,7 @@ const applyHighlight = async () => {
         activeTarget.value.classList.add('onboarding-target-home-summary');
     }
     positionCard();
-    if (onboardingState.step === 0) {
-        return;
-    }
-    target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    scrollStepTargetIntoView(target);
 };
 
 const handleSavingsSlider = (event) => {
