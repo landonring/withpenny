@@ -10,12 +10,21 @@ export const authState = reactive({
 });
 
 let lastUserId = null;
+const BIOMETRIC_KEYS = new Set([
+    'penny.biometric.enabled',
+    'penny.biometric.dismissed',
+]);
 
-const clearLocalUserData = () => {
+const clearLocalUserData = ({ preserveBiometric = false } = {}) => {
     try {
         Object.keys(localStorage)
             .filter((key) => key.startsWith('penny.'))
-            .forEach((key) => localStorage.removeItem(key));
+            .forEach((key) => {
+                if (preserveBiometric && BIOMETRIC_KEYS.has(key)) {
+                    return;
+                }
+                localStorage.removeItem(key);
+            });
     } catch {
         // ignore storage errors
     }
@@ -118,7 +127,8 @@ export async function logout() {
     authState.justLoggedIn = false;
     authState.impersonating = false;
     lastUserId = null;
-    clearLocalUserData();
+    // Keep local passkey hints so passkey login remains available after sign out.
+    clearLocalUserData({ preserveBiometric: true });
 }
 
 export async function deleteAccount() {

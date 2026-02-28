@@ -36,9 +36,8 @@
 
                 <button
                     v-if="biometricAvailable"
-                    :class="['faceid-button', { 'is-disabled': !biometricsState.enabled }]"
+                    class="faceid-button"
                     type="button"
-                    :aria-disabled="!biometricsState.enabled"
                     @click="handleBiometricLogin"
                 >
                     <span class="faceid-icon" aria-hidden="true">
@@ -144,11 +143,6 @@ const handleBiometricLogin = async () => {
     biometricError.value = '';
     biometricHint.value = '';
 
-    if (!biometricsState.enabled) {
-        biometricHint.value = 'After you add a passkey on this device, it will always work here.';
-        return;
-    }
-
     biometricBusy.value = true;
 
     try {
@@ -165,8 +159,10 @@ const handleBiometricLogin = async () => {
 };
 
 onMounted(async () => {
-    biometricsState.enabled = isBiometricEnabledLocal();
-    await checkBiometricSupport();
+    const localEnabled = isBiometricEnabledLocal();
+    const supported = await checkBiometricSupport();
+    // Allow trying passkey login on secure, supported devices even if local hints were cleared.
+    biometricsState.enabled = localEnabled || supported;
 });
 
 </script>

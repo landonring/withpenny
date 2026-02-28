@@ -34,6 +34,17 @@
                     </div>
                 </label>
 
+                <label class="field">
+                    <span>Confirm password</span>
+                    <input
+                        v-model="form.password_confirmation"
+                        :type="showPassword ? 'text' : 'password'"
+                        autocomplete="new-password"
+                        minlength="8"
+                        required
+                    />
+                </label>
+
                 <label class="checkbox-field">
                     <input v-model="form.age_confirmed" type="checkbox" required />
                     <span>I confirm I am at least 15 years old.</span>
@@ -67,6 +78,7 @@ const form = ref({
     name: '',
     email: '',
     password: '',
+    password_confirmation: '',
     age_confirmed: false,
 });
 
@@ -93,6 +105,12 @@ const getPlanIntent = () => {
 const handleSubmit = async () => {
     error.value = '';
     loading.value = true;
+
+    if (form.value.password !== form.value.password_confirmation) {
+        error.value = 'Passwords must match.';
+        loading.value = false;
+        return;
+    }
 
     try {
         await register(form.value);
