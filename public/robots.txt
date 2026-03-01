@@ -1,4 +1,4 @@
 User-agent: *
 Disallow:
 
-Sitemap: https://thepenny.app/sitemap.xml
+Sitemap: https://withpenny.app/sitemap.xml
