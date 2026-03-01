@@ -24,8 +24,19 @@
                             :type="showCurrent ? 'text' : 'password'"
                             autocomplete="current-password"
                         />
-                        <button class="field-toggle" type="button" @click="showCurrent = !showCurrent">
-                            {{ showCurrent ? 'Hide' : 'Show' }}
+                        <button
+                            class="field-toggle field-toggle-eye"
+                            type="button"
+                            :aria-label="showCurrent ? 'Hide current password' : 'Show current password'"
+                            @click="showCurrent = !showCurrent"
+                        >
+                            <svg v-if="!showCurrent" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 5C6.6 5 2.2 8.4 1 12c1.2 3.6 5.6 7 11 7s9.8-3.4 11-7c-1.2-3.6-5.6-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/>
+                                <circle cx="12" cy="12" r="2.2"/>
+                            </svg>
+                            <svg v-else viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3.3 2 2 3.3l3 3C3.2 7.7 1.8 9.7 1 12c1.2 3.6 5.6 7 11 7 2.1 0 4-.5 5.6-1.4l3.1 3.1 1.3-1.3L3.3 2zm8.7 14a4 4 0 0 1-4-4c0-.6.1-1.1.3-1.6l5.3 5.3c-.5.2-1 .3-1.6.3zM12 5c5.4 0 9.8 3.4 11 7-.5 1.6-1.6 3-3 4.2l-1.4-1.4c.8-.8 1.5-1.8 1.9-2.8-1.2-3-4.8-5.4-8.5-5.4-1.3 0-2.5.3-3.6.8L7.1 6C8.6 5.4 10.2 5 12 5z"/>
+                            </svg>
                         </button>
                     </div>
                 </label>
@@ -39,8 +50,19 @@
                             autocomplete="new-password"
                             minlength="8"
                         />
-                        <button class="field-toggle" type="button" @click="showNew = !showNew">
-                            {{ showNew ? 'Hide' : 'Show' }}
+                        <button
+                            class="field-toggle field-toggle-eye"
+                            type="button"
+                            :aria-label="showNew ? 'Hide new password' : 'Show new password'"
+                            @click="showNew = !showNew"
+                        >
+                            <svg v-if="!showNew" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 5C6.6 5 2.2 8.4 1 12c1.2 3.6 5.6 7 11 7s9.8-3.4 11-7c-1.2-3.6-5.6-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/>
+                                <circle cx="12" cy="12" r="2.2"/>
+                            </svg>
+                            <svg v-else viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3.3 2 2 3.3l3 3C3.2 7.7 1.8 9.7 1 12c1.2 3.6 5.6 7 11 7 2.1 0 4-.5 5.6-1.4l3.1 3.1 1.3-1.3L3.3 2zm8.7 14a4 4 0 0 1-4-4c0-.6.1-1.1.3-1.6l5.3 5.3c-.5.2-1 .3-1.6.3zM12 5c5.4 0 9.8 3.4 11 7-.5 1.6-1.6 3-3 4.2l-1.4-1.4c.8-.8 1.5-1.8 1.9-2.8-1.2-3-4.8-5.4-8.5-5.4-1.3 0-2.5.3-3.6.8L7.1 6C8.6 5.4 10.2 5 12 5z"/>
+                            </svg>
                         </button>
                     </div>
                 </label>
@@ -54,8 +76,19 @@
                             autocomplete="new-password"
                             minlength="8"
                         />
-                        <button class="field-toggle" type="button" @click="showConfirm = !showConfirm">
-                            {{ showConfirm ? 'Hide' : 'Show' }}
+                        <button
+                            class="field-toggle field-toggle-eye"
+                            type="button"
+                            :aria-label="showConfirm ? 'Hide password confirmation' : 'Show password confirmation'"
+                            @click="showConfirm = !showConfirm"
+                        >
+                            <svg v-if="!showConfirm" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 5C6.6 5 2.2 8.4 1 12c1.2 3.6 5.6 7 11 7s9.8-3.4 11-7c-1.2-3.6-5.6-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/>
+                                <circle cx="12" cy="12" r="2.2"/>
+                            </svg>
+                            <svg v-else viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3.3 2 2 3.3l3 3C3.2 7.7 1.8 9.7 1 12c1.2 3.6 5.6 7 11 7 2.1 0 4-.5 5.6-1.4l3.1 3.1 1.3-1.3L3.3 2zm8.7 14a4 4 0 0 1-4-4c0-.6.1-1.1.3-1.6l5.3 5.3c-.5.2-1 .3-1.6.3zM12 5c5.4 0 9.8 3.4 11 7-.5 1.6-1.6 3-3 4.2l-1.4-1.4c.8-.8 1.5-1.8 1.9-2.8-1.2-3-4.8-5.4-8.5-5.4-1.3 0-2.5.3-3.6.8L7.1 6C8.6 5.4 10.2 5 12 5z"/>
+                            </svg>
                         </button>
                     </div>
                 </label>

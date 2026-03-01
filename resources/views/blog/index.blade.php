@@ -50,6 +50,31 @@
 <section class="px-6 pb-32">
     <div class="max-w-6xl mx-auto">
         <div class="article-grid">
+            <a class="article-card" href="/blog/how-ai-is-changing-personal-budgeting">
+                <p class="article-eyebrow">AI</p>
+                <h2 class="article-card-title">How AI Is Changing Personal Budgeting</h2>
+                <p class="article-card-meta">Where AI helps most, and where human decisions still matter.</p>
+            </a>
+            <a class="article-card" href="/blog/budgeting-without-connecting-bank-account">
+                <p class="article-eyebrow">Privacy</p>
+                <h2 class="article-card-title">Budgeting Without Connecting Your Bank Account</h2>
+                <p class="article-card-meta">A privacy-first workflow for calmer financial tracking.</p>
+            </a>
+            <a class="article-card" href="/blog/needs-wants-future-budgeting-framework-explained">
+                <p class="article-eyebrow">Framework</p>
+                <h2 class="article-card-title">The Needs, Wants, Future Budgeting Framework Explained</h2>
+                <p class="article-card-meta">A practical model for individuals, couples, and families.</p>
+            </a>
+            <a class="article-card" href="/blog/scan-bank-statements-for-better-money-awareness">
+                <p class="article-eyebrow">Statements</p>
+                <h2 class="article-card-title">How to Scan Bank Statements for Better Money Awareness</h2>
+                <p class="article-card-meta">Turn statement uploads into reliable budgeting signals.</p>
+            </a>
+            <a class="article-card" href="/blog/minimalist-budgeting-for-busy-professionals">
+                <p class="article-eyebrow">Minimalist</p>
+                <h2 class="article-card-title">Minimalist Budgeting for Busy Professionals</h2>
+                <p class="article-card-meta">A low-friction system for high schedules and real life.</p>
+            </a>
             <a class="article-card" href="/blog/privacy-budgeting-app">
                 <p class="article-eyebrow">Privacy</p>
                 <h2 class="article-card-title">Privacy budgeting app: a manual budgeting app without bank linking</h2>

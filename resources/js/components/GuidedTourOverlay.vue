@@ -489,23 +489,65 @@ const resolveTarget = () => {
 };
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const isMobileViewport = () => window.innerWidth <= 760;
+const getBottomNavHeight = () => {
+    const nav = document.querySelector('.bottom-nav');
+    if (nav instanceof HTMLElement) {
+        return nav.getBoundingClientRect().height || 78;
+    }
+    return 78;
+};
 
 const positionCard = () => {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    const isMobile = viewportWidth <= 760;
+    const isMobile = isMobileViewport();
     const cardWidth = Math.min(380, isMobile ? viewportWidth * 0.9 : viewportWidth - 32);
-    const margin = isMobile ? 12 : 32;
+    const margin = isMobile ? 14 : 32;
     const gap = 24;
     const cardHeight = cardRef.value?.offsetHeight || 252;
     const target = activeTarget.value;
     const placement = currentStep.value?.placement || 'auto';
 
     if (isMobile) {
+        const navOffset = getBottomNavHeight();
+        const safeTop = 78;
+        const safeBottom = navOffset + 18;
+        const maxTop = Math.max(safeTop, viewportHeight - cardHeight - safeBottom);
+        let left = (viewportWidth - cardWidth) / 2;
+        let top = maxTop;
+
+        if (target) {
+            const rect = target.getBoundingClientRect();
+            const spaceAbove = rect.top - safeTop - gap;
+            const spaceBelow = viewportHeight - safeBottom - rect.bottom - gap;
+
+            if (placement === 'center-above-nav') {
+                top = rect.top - cardHeight - gap;
+            } else if (spaceBelow >= cardHeight) {
+                top = rect.bottom + gap;
+            } else if (spaceAbove >= cardHeight) {
+                top = rect.top - cardHeight - gap;
+            } else {
+                top = maxTop;
+            }
+
+            if (placement === 'left') {
+                left = rect.left - cardWidth - gap;
+            } else if (placement === 'right' || placement === 'lower-right') {
+                left = rect.right + gap;
+            } else {
+                left = rect.left + ((rect.width - cardWidth) / 2);
+            }
+        }
+
+        left = clamp(left, margin, viewportWidth - cardWidth - margin);
+        top = clamp(top, safeTop, maxTop);
+
         cardStyle.value = {
             width: `${cardWidth}px`,
-            left: `${(viewportWidth - cardWidth) / 2}px`,
-            top: `${Math.max(92, viewportHeight - cardHeight - 24)}px`,
+            left: `${left}px`,
+            top: `${top}px`,
         };
         return;
     }
@@ -585,8 +627,16 @@ const scrollStepTargetIntoView = (target) => {
     if (scroller && typeof scroller.scrollTo === 'function') {
         const scrollerRect = scroller.getBoundingClientRect();
         const targetRect = target.getBoundingClientRect();
-        const safeTop = scrollerRect.top + 84;
-        const safeBottom = scrollerRect.bottom - 140;
+        const isMobile = isMobileViewport();
+        const cardHeight = cardRef.value?.offsetHeight || (isMobile ? 300 : 252);
+        const safeTop = scrollerRect.top + (isMobile ? 76 : 84);
+        const bottomReserve = isMobile
+            ? (showBackdrop.value ? cardHeight + getBottomNavHeight() + 18 : getBottomNavHeight() + 22)
+            : 140;
+        let safeBottom = scrollerRect.bottom - bottomReserve;
+        if (safeBottom <= safeTop + 40) {
+            safeBottom = scrollerRect.bottom - 56;
+        }
         const isOutsideView = targetRect.top < safeTop || targetRect.bottom > safeBottom;
 
         if (isOutsideView) {
@@ -594,7 +644,7 @@ const scrollStepTargetIntoView = (target) => {
             const centerOffset = Math.max(72, (scroller.clientHeight - targetRect.height) / 2);
             const nextTop = Math.max(0, scroller.scrollTop + offsetTopInScroller - centerOffset);
             scroller.scrollTo({ top: nextTop, behavior: 'smooth' });
-            window.setTimeout(() => positionCard(), 260);
+            window.setTimeout(() => positionCard(), 280);
         }
 
         return;
@@ -613,7 +663,7 @@ const applyHighlight = async () => {
     await nextTick();
     updateDerivedFlags();
 
-    if (onboardingState.step === 0 && homeStepIndex.value === 0) {
+    if (onboardingState.step === 0) {
         const scroller = document.querySelector('.main-content');
         if (scroller && typeof scroller.scrollTo === 'function') {
             scroller.scrollTo({ top: 0, behavior: 'auto' });
@@ -675,8 +725,8 @@ const applyHighlight = async () => {
     if (currentStep.value.target === 'home-summary') {
         activeTarget.value.classList.add('onboarding-target-home-summary');
     }
-    positionCard();
     scrollStepTargetIntoView(target);
+    window.setTimeout(() => positionCard(), 20);
 };
 
 const handleSavingsSlider = (event) => {

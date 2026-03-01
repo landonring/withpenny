@@ -14,6 +14,7 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UsageController;
 use App\Http\Controllers\WebauthnController;
 use App\Http\Controllers\BillingController;
+use Illuminate\Support\Facades\File;
 use Laravel\Cashier\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -143,6 +144,67 @@ if (class_exists(\Laravel\Cashier\Cashier::class)) {
     Route::post('/stripe/webhook', [WebhookController::class, 'handleWebhook']);
 }
 
+Route::get('/sitemap.xml', function () {
+    $today = now()->toDateString();
+    $baseUrl = 'https://withpenny.app';
+
+    $coreUrls = collect([
+        '/',
+        '/how-it-works',
+        '/pricing',
+        '/blog',
+        '/faq',
+        '/privacy',
+        '/terms',
+    ])->map(fn (string $path) => [
+        'loc' => $baseUrl . ($path === '/' ? '' : $path),
+        'lastmod' => $today,
+        'changefreq' => in_array($path, ['/', '/blog'], true) ? 'weekly' : 'monthly',
+        'priority' => match ($path) {
+            '/' => '1.0',
+            '/blog' => '0.8',
+            '/pricing' => '0.9',
+            default => '0.7',
+        },
+    ]);
+
+    $blogUrls = collect(File::glob(resource_path('views/blog/*.blade.php')))
+        ->filter(fn (string $file) => basename($file) !== 'index.blade.php')
+        ->map(function (string $file) {
+            $slug = basename($file, '.blade.php');
+            return [
+                'loc' => "https://withpenny.app/blog/{$slug}",
+                'lastmod' => date('Y-m-d', filemtime($file)),
+                'changefreq' => 'monthly',
+                'priority' => '0.7',
+            ];
+        });
+
+    $allUrls = $coreUrls
+        ->merge($blogUrls)
+        ->unique('loc')
+        ->values();
+
+    $xml = collect([
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ])->merge(
+        $allUrls->map(function (array $entry) {
+            $loc = htmlspecialchars($entry['loc'], ENT_XML1);
+            return <<<XML
+  <url>
+    <loc>{$loc}</loc>
+    <lastmod>{$entry['lastmod']}</lastmod>
+    <changefreq>{$entry['changefreq']}</changefreq>
+    <priority>{$entry['priority']}</priority>
+  </url>
+XML;
+        })
+    )->push('</urlset>')->implode("\n");
+
+    return response($xml, 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
+});
+
 Route::get('/', function () {
     $ua = strtolower(request()->userAgent() ?? '');
     $isMobile = str_contains($ua, 'mobile')
@@ -165,7 +227,9 @@ Route::view('/security', 'legal');
 Route::view('/login', 'app');
 Route::view('/register', 'app');
 Route::redirect('/updates', '/');
-Route::redirect('/pricing', '/#pricing');
+Route::view('/how-it-works', 'marketing');
+Route::view('/pricing', 'marketing');
+Route::view('/faq', 'marketing');
 Route::view('/budgeting-app-guide', 'budgeting-app-guide');
 Route::view('/blog', 'blog.index');
 Route::view('/blog/privacy-budgeting-app', 'blog.privacy-budgeting-app');
@@ -178,6 +242,12 @@ Route::view('/blog/receipt-scanning-budgeting-app', 'blog.receipt-scanning-budge
 Route::view('/blog/pwa-budgeting-apps', 'blog.pwa-budgeting-apps');
 Route::view('/blog/50-30-20-budget-method', 'blog.50-30-20-budget-method');
 Route::view('/blog/weekly-money-reflection', 'blog.weekly-money-reflection');
+Route::view('/blog/ai-changing-personal-budgeting', 'blog.ai-changing-personal-budgeting');
+Route::view('/blog/how-ai-is-changing-personal-budgeting', 'blog.ai-changing-personal-budgeting');
+Route::view('/blog/budgeting-without-connecting-bank-account', 'blog.budgeting-without-connecting-bank-account');
+Route::view('/blog/needs-wants-future-budgeting-framework-explained', 'blog.needs-wants-future-budgeting-framework-explained');
+Route::view('/blog/scan-bank-statements-for-better-money-awareness', 'blog.scan-bank-statements-for-better-money-awareness');
+Route::view('/blog/minimalist-budgeting-for-busy-professionals', 'blog.minimalist-budgeting-for-busy-professionals');
 Route::view('/penny-vs-mint', 'compare.penny-vs-mint');
 Route::view('/penny-vs-ynab', 'compare.penny-vs-ynab');
 Route::view('/penny-vs-rocket-money', 'compare.penny-vs-rocket-money');

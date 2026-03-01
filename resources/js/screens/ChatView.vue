@@ -50,8 +50,8 @@
             </div>
         </main>
 
-        <div class="chat-input-wrap">
-            <div class="chat-fade"></div>
+        <div class="chat-input-wrap" :class="{ 'onboarding-chat-mode': onboardingState.mode && onboardingState.step === 4 }">
+            <div class="chat-fade" :class="{ 'onboarding-hidden': onboardingState.mode && onboardingState.step === 4 }"></div>
             <p v-if="chatUsageText" class="muted chat-usage">{{ chatUsageText }}</p>
             <p v-if="chatLocked" class="form-error chat-usage">You've reached your monthly limit.</p>
             <button v-if="chatLocked" class="ghost-button chat-usage" type="button" @click="openUpgrade">
