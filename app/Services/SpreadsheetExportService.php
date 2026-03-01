@@ -9,6 +9,7 @@ use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -50,7 +51,7 @@ class SpreadsheetExportService
 
         $overviewSheet = $workbook->getActiveSheet();
         $overviewSheet->setTitle('Overview');
-        $this->setupSheet($overviewSheet, [36, 22, 20]);
+        $this->setupSheet($overviewSheet, [32, 4, 14, 3, 28, 12, 12, 12]);
         $this->populateOverviewSheet(
             $overviewSheet,
             $startDate,
@@ -61,7 +62,8 @@ class SpreadsheetExportService
             $needsTotal,
             $wantsTotal,
             $futureTotal,
-            $spendingTransactions
+            $spendingTransactions,
+            $incomeTransactions
         );
 
         $spendingByCategorySheet = $workbook->createSheet();
@@ -156,72 +158,229 @@ class SpreadsheetExportService
         float $needsTotal,
         float $wantsTotal,
         float $futureTotal,
-        Collection $spendingTransactions
+        Collection $spendingTransactions,
+        Collection $incomeTransactions
     ): void {
-        $rangeLabel = $startDate->format('Y-m') === $endDate->format('Y-m')
-            ? 'Month: '.$startDate->format('F Y')
-            : 'Range: '.$startDate->format('M j, Y').' - '.$endDate->format('M j, Y');
+        $monthLabel = $startDate->format('Y-m') === $endDate->format('Y-m')
+            ? $startDate->format('F Y')
+            : $startDate->format('M j, Y').' - '.$endDate->format('M j, Y');
 
-        $sheet->setCellValue('A1', 'Penny Budget Overview');
-        $sheet->setCellValue('A2', $rangeLabel);
-        $sheet->getStyle('A1')->applyFromArray($this->titleStyle());
+        $sheet->getStyle('A1:H60')->applyFromArray([
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'F7F3ED'],
+            ],
+        ]);
 
+        $sheet->mergeCells('A1:C1');
+        $sheet->setCellValue('A1', $monthLabel);
+        $sheet->getStyle('A1')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 24, 'color' => ['rgb' => '2F4B40']],
+        ]);
+
+        $sheet->mergeCells('E1:H1');
+        $sheet->setCellValue('E1', 'Penny Monthly Budget Sheet');
+        $sheet->getStyle('E1:H1')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 13, 'color' => ['rgb' => '4A4A4A']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT],
+        ]);
+
+        $incomeGoal = round($totalIncome * 1.05, 2);
+        $billsLimit = round($needsTotal * 0.45, 2);
+        $debtLimit = round($totalExpenses * 0.20, 2);
+        $expensesLimit = round(max($totalExpenses, ($needsTotal + $wantsTotal + $futureTotal)), 2);
+        $savingsGoal = round($totalIncome * 0.15, 2);
+
+        $this->stylePanel($sheet, 'A4:C11', 'A4:C4', 'A4', 'Monthly goals', 'B99669');
         $sheet->fromArray(
             [
-                ['Metric', 'Amount'],
-                ['Total Income', $totalIncome],
-                ['Total Expenses', $totalExpenses],
-                ['Net Balance', $netBalance],
+                ['Goal', '', 'Amount'],
+                ['Savings Goal', '', $savingsGoal],
+                ['Income Goal', '', $totalIncome],
+                ['Bills Limit', '', $billsLimit],
+                ['Debt Limit', '', $debtLimit],
+                ['Expenses Limit', '', $expensesLimit],
             ],
             null,
-            'A4',
+            'A5',
             true
         );
-        $this->applyHeaderStyle($sheet, 'A4:B4');
-        $sheet->getStyle('B5:B7')->getNumberFormat()->setFormatCode(self::CURRENCY_FORMAT);
-        $sheet->getStyle('B5:B7')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $this->applyTableHeaderStyle($sheet, 'A5:C5');
+        $sheet->getStyle('C6:C10')->getNumberFormat()->setFormatCode(self::CURRENCY_FORMAT);
+        $sheet->getStyle('C6:C10')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
-        $sheet->setCellValue('A9', 'Needs / Wants / Future');
-        $sheet->getStyle('A9')->applyFromArray($this->sectionLabelStyle());
+        $this->stylePanel($sheet, 'E4:H11', 'E4:H4', 'E4', 'Amount left to spend', '8CA689');
         $sheet->fromArray(
             [
-                ['Category Type', 'Total', '% of Spending'],
-                ['Needs', $needsTotal, $this->safePercent($needsTotal, $totalExpenses)],
-                ['Wants', $wantsTotal, $this->safePercent($wantsTotal, $totalExpenses)],
-                ['Future', $futureTotal, $this->safePercent($futureTotal, $totalExpenses)],
+                ['Metric', '', '', 'Value'],
+                ['Current balance', '', '', $netBalance],
+                ['Money in', '', '', $totalIncome],
+                ['Total spent', '', '', $totalExpenses],
+                ['Amount left to spend', '', '', $netBalance],
+                ['Needs / Wants / Future', '', '', sprintf('%d%% / %d%% / %d%%',
+                    (int) round($this->safePercent($needsTotal, $totalExpenses) * 100),
+                    (int) round($this->safePercent($wantsTotal, $totalExpenses) * 100),
+                    (int) round($this->safePercent($futureTotal, $totalExpenses) * 100)
+                )],
             ],
             null,
-            'A10',
+            'E5',
             true
         );
-        $this->applyHeaderStyle($sheet, 'A10:C10');
-        $sheet->getStyle('B11:B13')->getNumberFormat()->setFormatCode(self::CURRENCY_FORMAT);
-        $sheet->getStyle('C11:C13')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_PERCENTAGE_00);
-        $sheet->getStyle('B11:C13')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $this->applyTableHeaderStyle($sheet, 'E5:H5');
+        $sheet->getStyle('H6:H9')->getNumberFormat()->setFormatCode(self::CURRENCY_FORMAT);
+        $sheet->getStyle('H6:H11')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
-        [$largestCategory, $largestAmount] = $this->largestSpendingCategory($spendingTransactions);
-        $sheet->setCellValue('A15', 'Insight Summary');
-        $sheet->getStyle('A15')->applyFromArray($this->sectionLabelStyle());
+        $this->stylePanel($sheet, 'A13:H16', 'A13:H13', 'A13', 'Money mindset', 'C9B08D');
+        $sheet->mergeCells('A14:H14');
+        $sheet->mergeCells('A15:H15');
+        $sheet->mergeCells('A16:H16');
+        $sheet->setCellValue('A14', 'Every decision is a seed for abundance, growing into freedom and stability.');
+        $sheet->setCellValue('A15', 'I transform challenges into opportunities, mastering money with calm intention.');
+        $sheet->setCellValue('A16', 'I am the architect of my financial future, building wealth that honors my goals.');
+        $sheet->getStyle('A14:A16')->applyFromArray([
+            'font' => ['italic' => true, 'size' => 10, 'color' => ['rgb' => '5A5A5A']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
 
-        if ($largestCategory === null) {
-            $sheet->setCellValue('A16', 'Largest spending category: No spending categories yet.');
-            $sheet->setCellValue('A17', 'Needs represent 0% of your total spending.');
+        $spendingByCategory = $spendingTransactions
+            ->groupBy('category')
+            ->map(fn (Collection $items) => (float) $items->sum('amount'))
+            ->sortDesc();
+
+        $debtActual = (float) $spendingByCategory
+            ->filter(fn (float $value, string $category) => $this->isDebtCategory($category))
+            ->sum();
+        $billsActual = (float) $spendingByCategory
+            ->filter(fn (float $value, string $category) => $this->isBillCategory($category))
+            ->sum();
+
+        $this->stylePanel($sheet, 'A18:C27', 'A18:C18', 'A18', 'Cashflow summary', 'B99669');
+        $sheet->fromArray(
+            [
+                ['Item', 'Budget', 'Actual'],
+                ['Rollover', 0, 0],
+                ['Income', $incomeGoal, $totalIncome],
+                ['Expenses', $expensesLimit, $totalExpenses],
+                ['Savings', $savingsGoal, $futureTotal],
+                ['Debt', $debtLimit, $debtActual],
+                ['Bills', $billsLimit, $billsActual],
+                ['Total Leftover', $incomeGoal - $expensesLimit, $netBalance],
+            ],
+            null,
+            'A19',
+            true
+        );
+        $this->applyTableHeaderStyle($sheet, 'A19:C19');
+        $sheet->getStyle('B20:C26')->getNumberFormat()->setFormatCode(self::CURRENCY_FORMAT);
+        $sheet->getStyle('B20:C26')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        $this->stylePanel($sheet, 'E18:H27', 'E18:H18', 'E18', 'Expenses summary', 'B99669');
+        $sheet->fromArray([['Category', '', 'Budget', 'Actual']], null, 'E19', true);
+        $this->applyTableHeaderStyle($sheet, 'E19:H19');
+
+        $expenseRow = 20;
+        foreach ($spendingByCategory->take(7) as $category => $amount) {
+            $sheet->fromArray([[(string) $category, '', round((float) $amount * 1.1, 2), (float) $amount]], null, "E{$expenseRow}", true);
+            $expenseRow++;
+        }
+        if ($expenseRow === 20) {
+            $sheet->fromArray([['No spending entries', '', 0, 0]], null, "E{$expenseRow}", true);
+            $expenseRow++;
+        }
+        $sheet->getStyle('G20:H'.max($expenseRow - 1, 20))->getNumberFormat()->setFormatCode(self::CURRENCY_FORMAT);
+        $sheet->getStyle('G20:H'.max($expenseRow - 1, 20))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        $this->stylePanel($sheet, 'A29:C39', 'A29:C29', 'A29', 'Bill tracker', '8CA689');
+        $sheet->fromArray([['Bill', 'Budget', 'Actual']], null, 'A30', true);
+        $this->applyTableHeaderStyle($sheet, 'A30:C30');
+
+        $billRow = 31;
+        foreach ($spendingByCategory->filter(fn (float $value, string $category) => $this->isBillCategory($category))->take(8) as $category => $amount) {
+            $sheet->fromArray([[(string) $category, round((float) $amount * 1.1, 2), (float) $amount]], null, "A{$billRow}", true);
+            $billRow++;
+        }
+        if ($billRow === 31) {
+            $sheet->fromArray([['No recurring bills detected', 0, 0]], null, "A{$billRow}", true);
+            $billRow++;
+        }
+        $sheet->getStyle('B31:C'.max($billRow - 1, 31))->getNumberFormat()->setFormatCode(self::CURRENCY_FORMAT);
+        $sheet->getStyle('B31:C'.max($billRow - 1, 31))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        $this->stylePanel($sheet, 'E29:H39', 'E29:H29', 'E29', 'Income tracker', '8CA689');
+        $sheet->fromArray([['Income source', '', 'Expected', 'Actual']], null, 'E30', true);
+        $this->applyTableHeaderStyle($sheet, 'E30:H30');
+
+        $incomeRow = 31;
+        if ($incomeTransactions->isEmpty()) {
+            $sheet->fromArray([['No income entries', '', 0, 0]], null, "E{$incomeRow}", true);
+            $sheet->getStyle("G{$incomeRow}:H{$incomeRow}")->getNumberFormat()->setFormatCode(self::CURRENCY_FORMAT);
+            $sheet->getStyle("G{$incomeRow}:H{$incomeRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         } else {
-            $sheet->setCellValue(
-                'A16',
-                sprintf('Largest spending category: %s (%s)', $largestCategory, $this->formatCurrency($largestAmount))
-            );
-            $sheet->setCellValue(
-                'A17',
-                sprintf(
-                    'Needs represent %d%% of your total spending.',
-                    (int) round($this->safePercent($needsTotal, $totalExpenses) * 100)
-                )
-            );
+            $incomeExpected = round($totalIncome / max(1, $incomeTransactions->count()), 2);
+            foreach ($incomeTransactions->take(8) as $index => $income) {
+                $label = (string) $income['description'];
+                if ($label === '' || strcasecmp($label, 'Unlabeled transaction') === 0) {
+                    $label = 'Income stream '.($index + 1);
+                }
+                $sheet->fromArray([[$label, '', $incomeExpected, (float) $income['amount']]], null, "E{$incomeRow}", true);
+                $incomeRow++;
+            }
+            $sheet->getStyle('G31:H'.($incomeRow - 1))->getNumberFormat()->setFormatCode(self::CURRENCY_FORMAT);
+            $sheet->getStyle('G31:H'.($incomeRow - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         }
 
-        $sheet->setCellValue('A19', 'Generated by Penny - AI Budgeting Assistant');
-        $sheet->getStyle('A19')->applyFromArray([
+        $this->stylePanel($sheet, 'A41:C52', 'A41:C41', 'A41', 'Savings tracker', '8CA689');
+        $sheet->fromArray(
+            [
+                ['Goal', 'Expected', 'Actual'],
+                ['Emergency Fund', round($savingsGoal * 0.50, 2), round($futureTotal * 0.50, 2)],
+                ['Vacation Fund', round($savingsGoal * 0.30, 2), round($futureTotal * 0.30, 2)],
+                ['Education Fund', round($savingsGoal * 0.20, 2), round($futureTotal * 0.20, 2)],
+            ],
+            null,
+            'A42',
+            true
+        );
+        $this->applyTableHeaderStyle($sheet, 'A42:C42');
+        $sheet->getStyle('B43:C45')->getNumberFormat()->setFormatCode(self::CURRENCY_FORMAT);
+        $sheet->getStyle('B43:C45')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        $this->stylePanel($sheet, 'E41:H52', 'E41:H41', 'E41', 'Debt tracker', 'B99669');
+        $sheet->fromArray([['Debt', '', 'Budget', 'Actual']], null, 'E42', true);
+        $this->applyTableHeaderStyle($sheet, 'E42:H42');
+
+        $debtRow = 43;
+        foreach ($spendingByCategory->filter(fn (float $value, string $category) => $this->isDebtCategory($category))->take(7) as $category => $amount) {
+            $sheet->fromArray([[(string) $category, '', round((float) $amount * 1.1, 2), (float) $amount]], null, "E{$debtRow}", true);
+            $debtRow++;
+        }
+        if ($debtRow === 43) {
+            $sheet->fromArray([['No debt payments recorded', '', 0, 0]], null, "E{$debtRow}", true);
+            $debtRow++;
+        }
+        $sheet->getStyle('G43:H'.max($debtRow - 1, 43))->getNumberFormat()->setFormatCode(self::CURRENCY_FORMAT);
+        $sheet->getStyle('G43:H'.max($debtRow - 1, 43))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        [$largestCategory, $largestAmount] = $this->largestSpendingCategory($spendingTransactions);
+        $sheet->mergeCells('A54:H54');
+        $sheet->mergeCells('A55:H55');
+        $sheet->setCellValue(
+            'A54',
+            $largestCategory === null
+                ? 'Largest spending category: no spending categories yet.'
+                : sprintf('Largest spending category: %s (%s)', $largestCategory, $this->formatCurrency($largestAmount))
+        );
+        $sheet->setCellValue(
+            'A55',
+            sprintf('Needs represent %d%% of total spending.', (int) round($this->safePercent($needsTotal, $totalExpenses) * 100))
+        );
+        $sheet->getStyle('A54:A55')->applyFromArray([
+            'font' => ['size' => 11, 'color' => ['rgb' => '4B4B4B']],
+        ]);
+
+        $sheet->setCellValue('A57', 'Generated by Penny - AI Budgeting Assistant');
+        $sheet->getStyle('A57')->applyFromArray([
             'font' => ['size' => 10, 'color' => ['rgb' => '7A7A7A']],
         ]);
     }
@@ -391,6 +550,106 @@ class SpreadsheetExportService
                 'vertical' => Alignment::VERTICAL_CENTER,
             ],
         ];
+    }
+
+    private function applyTableHeaderStyle(Worksheet $sheet, string $range): void
+    {
+        $sheet->getStyle($range)->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'size' => 10,
+                'color' => ['rgb' => '2F2F2F'],
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'F3EEE5'],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_LEFT,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => 'D7CFC3'],
+                ],
+            ],
+        ]);
+    }
+
+    private function stylePanel(
+        Worksheet $sheet,
+        string $panelRange,
+        string $headerRange,
+        string $headerCell,
+        string $title,
+        string $headerColor
+    ): void {
+        $sheet->getStyle($panelRange)->applyFromArray([
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'FFFFFF'],
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => 'D7CFC3'],
+                ],
+            ],
+            'alignment' => [
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+        ]);
+
+        $sheet->mergeCells($headerRange);
+        $sheet->setCellValue($headerCell, $title);
+        $sheet->getStyle($headerRange)->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'size' => 11,
+                'color' => ['rgb' => 'FFFFFF'],
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => $headerColor],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => 'D7CFC3'],
+                ],
+            ],
+        ]);
+    }
+
+    private function isBillCategory(string $category): bool
+    {
+        $normalized = strtolower($category);
+
+        foreach (['housing', 'rent', 'mortgage', 'subscription', 'insurance', 'utilities', 'school', 'transportation'] as $keyword) {
+            if (str_contains($normalized, $keyword)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isDebtCategory(string $category): bool
+    {
+        $normalized = strtolower($category);
+
+        foreach (['debt', 'loan', 'credit', 'card'] as $keyword) {
+            if (str_contains($normalized, $keyword)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function writeBinary(Spreadsheet $workbook): string
