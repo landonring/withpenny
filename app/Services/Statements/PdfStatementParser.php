@@ -26,9 +26,47 @@ class PdfStatementParser
     {
         $hasEmbeddedText = $this->hasEmbeddedText($path);
         $method = $hasEmbeddedText ? 'pdf_text' : 'textract';
-        $lines = $hasEmbeddedText
-            ? $this->extractDigitalLines($path)
-            : $this->extractTextractLines($path);
+        $lines = [];
+        $extractionErrors = [];
+
+        if ($hasEmbeddedText) {
+            try {
+                $lines = $this->extractDigitalLines($path);
+            } catch (\Throwable $error) {
+                $extractionErrors[] = 'pdf_text: '.$error->getMessage();
+            }
+        } else {
+            try {
+                $lines = $this->extractTextractLines($path);
+            } catch (\Throwable $error) {
+                $extractionErrors[] = 'textract: '.$error->getMessage();
+            }
+        }
+
+        if (empty($lines)) {
+            try {
+                $fallbackLines = $this->extractDigitalLines($path);
+                if (! empty($fallbackLines)) {
+                    $lines = $fallbackLines;
+                    $method = 'pdf_text_fallback';
+                }
+            } catch (\Throwable $error) {
+                $extractionErrors[] = 'pdf_text_fallback: '.$error->getMessage();
+            }
+        }
+
+        if (empty($lines)) {
+            $rawText = $this->extractBestEffortText($path);
+            if ($rawText !== '') {
+                $lines = $this->textToSyntheticLines($rawText);
+                $method = 'text_fallback';
+            }
+        }
+
+        if (empty($lines)) {
+            $reason = empty($extractionErrors) ? 'No readable statement content found.' : implode(' | ', $extractionErrors);
+            throw new \RuntimeException('Statement extraction failed: '.$reason);
+        }
 
         $parsed = $this->runPipeline($lines, $method, $debug);
 
@@ -46,6 +84,29 @@ class PdfStatementParser
         ]);
 
         return $parsed;
+    }
+
+    private function extractBestEffortText(string $path): string
+    {
+        $pdftotext = trim((string) shell_exec('command -v pdftotext'));
+        if ($pdftotext !== '') {
+            $command = escapeshellcmd($pdftotext).' '.escapeshellarg($path).' - 2>/dev/null';
+            $text = trim((string) shell_exec($command));
+            if ($text !== '') {
+                return $text;
+            }
+        }
+
+        $strings = trim((string) shell_exec('command -v strings'));
+        if ($strings !== '') {
+            $command = escapeshellcmd($strings).' -n 6 '.escapeshellarg($path).' 2>/dev/null';
+            $text = trim((string) shell_exec($command));
+            if ($text !== '') {
+                return $text;
+            }
+        }
+
+        return '';
     }
 
     /**

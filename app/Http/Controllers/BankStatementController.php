@@ -29,11 +29,11 @@ class BankStatementController extends Controller
     {
         if ($request->user()->onboarding_mode) {
             $validated = $request->validate([
-                'file' => ['required', 'file', 'mimes:pdf', 'max:25600'],
+                'file' => ['required', 'file', 'max:25600'],
             ], [
-                'file.mimes' => 'Only PDF bank statements are supported.',
                 'file.required' => 'Please upload a PDF statement file.',
             ]);
+            $this->assertPdfUpload($validated['file'], 'file');
 
             $import = $this->createDemoImport($request);
             $this->onboarding->rememberImportId($request, $import->id);
@@ -53,11 +53,11 @@ class BankStatementController extends Controller
         }
 
         $validated = $request->validate([
-            'file' => ['required', 'file', 'mimes:pdf', 'max:25600'],
+            'file' => ['required', 'file', 'max:25600'],
         ], [
-            'file.mimes' => 'Only PDF bank statements are supported.',
             'file.required' => 'Please upload a PDF statement file.',
         ]);
+        $this->assertPdfUpload($validated['file'], 'file');
 
         [$transactions, $summary, $extractionMeta] = $this->parseSinglePdf($validated['file'], $request);
 
@@ -95,15 +95,22 @@ class BankStatementController extends Controller
     public function scanImages(Request $request)
     {
         if ($request->user()->onboarding_mode) {
-            $validated = $request->validate([
+            $request->validate([
                 'files' => ['nullable', 'array', 'max:6'],
-                'files.*' => ['required', 'file', 'mimes:pdf', 'max:25600'],
+                'files.*' => ['required', 'file', 'max:25600'],
                 'images' => ['nullable', 'array', 'max:6'],
-                'images.*' => ['required', 'file', 'mimes:pdf', 'max:25600'],
-            ], [
-                'files.*.mimes' => 'Only PDF bank statements are supported.',
-                'images.*.mimes' => 'Only PDF bank statements are supported.',
+                'images.*' => ['required', 'file', 'max:25600'],
             ]);
+
+            $files = $request->file('files', []);
+            $images = $request->file('images', []);
+            foreach ($files as $index => $file) {
+                $this->assertPdfUpload($file, "files.$index");
+            }
+            foreach ($images as $index => $file) {
+                $this->assertPdfUpload($file, "images.$index");
+            }
+            $documents = array_merge($files, $images);
 
             $import = $this->createDemoImport($request);
             $this->onboarding->rememberImportId($request, $import->id);
@@ -122,22 +129,28 @@ class BankStatementController extends Controller
             );
         }
 
-        $validated = $request->validate([
+        $request->validate([
             'files' => ['nullable', 'array', 'min:1', 'max:6'],
-            'files.*' => ['required', 'file', 'mimes:pdf', 'max:25600'],
+            'files.*' => ['required', 'file', 'max:25600'],
             'images' => ['nullable', 'array', 'min:1', 'max:6'],
-            'images.*' => ['required', 'file', 'mimes:pdf', 'max:25600'],
+            'images.*' => ['required', 'file', 'max:25600'],
         ], [
             'files.required' => 'Please upload at least one PDF statement file.',
-            'files.*.mimes' => 'Only PDF bank statements are supported.',
-            'images.*.mimes' => 'Only PDF bank statements are supported.',
         ]);
 
-        $documents = $validated['files'] ?? $validated['images'] ?? [];
+        $files = $request->file('files', []);
+        $images = $request->file('images', []);
+        $documents = array_merge($files, $images);
         if (empty($documents)) {
             throw ValidationException::withMessages([
                 'files' => ['Please upload at least one PDF statement file.'],
             ]);
+        }
+        foreach ($files as $index => $file) {
+            $this->assertPdfUpload($file, "files.$index");
+        }
+        foreach ($images as $index => $file) {
+            $this->assertPdfUpload($file, "images.$index");
         }
 
         $allTransactions = [];
@@ -360,6 +373,25 @@ class BankStatementController extends Controller
         }
 
         return 'Misc';
+    }
+
+    private function assertPdfUpload($file, string $field): void
+    {
+        $name = strtolower((string) $file->getClientOriginalName());
+        $clientMime = strtolower((string) $file->getClientMimeType());
+        $detectedMime = strtolower((string) $file->getMimeType());
+
+        $isPdf = str_ends_with($name, '.pdf')
+            || str_contains($clientMime, 'pdf')
+            || str_contains($detectedMime, 'pdf');
+
+        if ($isPdf) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            $field => ['Only PDF bank statements are supported.'],
+        ]);
     }
 
     /**
