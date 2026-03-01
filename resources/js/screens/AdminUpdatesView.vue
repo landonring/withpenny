@@ -184,7 +184,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="item in filteredIdeas" :key="item.id">
+                                        <tr v-for="item in filteredIdeas" :key="item.id" :data-feature-row-id="item.id">
                                             <td>{{ item.title }}</td>
                                             <td>{{ item.vote_count }}</td>
                                             <td>{{ formatStatus(item.status) }}</td>
@@ -345,7 +345,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="item in filteredBugs" :key="item.id">
+                                        <tr v-for="item in filteredBugs" :key="item.id" :data-bug-row-id="item.id">
                                             <td>{{ item.title }}</td>
                                             <td>{{ item.vote_count }}</td>
                                             <td>{{ formatStatus(item.status) }}</td>
@@ -486,7 +486,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="roadmapItem in roadmapItems" :key="roadmapItem.id">
+                                        <tr v-for="roadmapItem in roadmapItems" :key="roadmapItem.id" :data-roadmap-row-id="roadmapItem.id">
                                             <td>{{ roadmapItem.title }}</td>
                                             <td>{{ formatStatus(roadmapItem.status) }}</td>
                                             <td>{{ roadmapItem.feedback_item_title || 'None' }}</td>
@@ -738,7 +738,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 import {
     createAdminAnnouncement,
     createAdminFeedbackItem,
@@ -860,6 +860,15 @@ const formatDateTime = (value) => {
 const formatStatus = (status) => {
     if (!status) return '—';
     return status.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+};
+
+const firstApiErrorMessage = (err, fallback) => {
+    const validationErrors = err?.response?.data?.errors;
+    if (validationErrors && typeof validationErrors === 'object') {
+        const firstField = Object.values(validationErrors).find((messages) => Array.isArray(messages) && messages.length);
+        if (firstField?.[0]) return String(firstField[0]);
+    }
+    return err?.response?.data?.message || fallback;
 };
 
 const statusClass = (status) => {
@@ -1058,21 +1067,40 @@ const createIdea = async () => {
     error.value = '';
 
     try {
-        await createAdminFeedbackItem({
-            title: newIdea.title,
-            description: newIdea.description,
+        const title = String(newIdea.title || '').trim();
+        const description = String(newIdea.description || '').trim();
+        const response = await createAdminFeedbackItem({
+            title,
+            description,
             status: newIdea.status,
             type: 'idea',
         });
+        const created = response?.item || null;
 
         newIdea.title = '';
         newIdea.description = '';
         newIdea.status = 'submitted';
         showIdeaForm.value = false;
+        section.value = 'features';
+        ideaSearch.value = '';
+        ideaStatusFilter.value = 'all';
         message.value = 'Feature created.';
+
+        if (created?.id) {
+            const hasItem = items.value.some((item) => item.id === created.id);
+            if (!hasItem) {
+                items.value = [created, ...items.value];
+            }
+            selectedIdeaId.value = created.id;
+            selectedIdea.value = created;
+            await nextTick();
+            const row = document.querySelector(`[data-feature-row-id="${created.id}"]`);
+            row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
         await loadData();
     } catch (err) {
-        error.value = err?.response?.data?.message || 'Unable to create feature right now.';
+        error.value = firstApiErrorMessage(err, 'Unable to create feature right now.');
     } finally {
         creatingIdea.value = false;
     }
@@ -1083,21 +1111,40 @@ const createBug = async () => {
     error.value = '';
 
     try {
-        await createAdminFeedbackItem({
-            title: newBug.title,
-            description: newBug.description,
+        const title = String(newBug.title || '').trim();
+        const description = String(newBug.description || '').trim();
+        const response = await createAdminFeedbackItem({
+            title,
+            description,
             status: newBug.status,
             type: 'bug',
         });
+        const created = response?.item || null;
 
         newBug.title = '';
         newBug.description = '';
         newBug.status = 'reported';
         showBugForm.value = false;
+        section.value = 'bugs';
+        bugSearch.value = '';
+        bugStatusFilter.value = 'all';
         message.value = 'Bug created.';
+
+        if (created?.id) {
+            const hasItem = items.value.some((item) => item.id === created.id);
+            if (!hasItem) {
+                items.value = [created, ...items.value];
+            }
+            selectedIdeaId.value = created.id;
+            selectedIdea.value = created;
+            await nextTick();
+            const row = document.querySelector(`[data-bug-row-id="${created.id}"]`);
+            row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
         await loadData();
     } catch (err) {
-        error.value = err?.response?.data?.message || 'Unable to create bug right now.';
+        error.value = firstApiErrorMessage(err, 'Unable to create bug right now.');
     } finally {
         creatingBug.value = false;
     }
@@ -1218,22 +1265,49 @@ const createRoadmap = async () => {
     error.value = '';
 
     try {
-        await createAdminRoadmapItem({
-            title: newRoadmap.title,
-            description: newRoadmap.description,
+        const title = String(newRoadmap.title || '').trim();
+        const description = String(newRoadmap.description || '').trim();
+        const payload = {
             status: newRoadmap.status,
             feedback_item_id: newRoadmap.feedback_item_id,
-        });
+        };
+
+        // Title is optional only when linked to a feature; avoid sending empty strings.
+        if (title.length > 0) payload.title = title;
+        if (description.length > 0) payload.description = description;
+
+        if (!payload.feedback_item_id && !payload.title) {
+            error.value = 'Add a title or link a feature before creating a roadmap item.';
+            return;
+        }
+
+        const response = await createAdminRoadmapItem(payload);
+        const created = response?.roadmap_item || null;
 
         newRoadmap.title = '';
         newRoadmap.description = '';
         newRoadmap.status = 'planned';
         newRoadmap.feedback_item_id = null;
-        showRoadmapForm.value = false;
+        showRoadmapForm.value = true;
+        section.value = 'roadmap';
         message.value = 'Roadmap item created.';
+
+        if (created?.id) {
+            const hasItem = roadmapItems.value.some((item) => item.id === created.id);
+            if (!hasItem) {
+                roadmapItems.value = [...roadmapItems.value, created]
+                    .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
+            }
+            selectedRoadmapId.value = created.id;
+            selectedRoadmap.value = { ...created };
+            await nextTick();
+            const row = document.querySelector(`[data-roadmap-row-id="${created.id}"]`);
+            row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
         await loadData();
     } catch (err) {
-        error.value = err?.response?.data?.message || 'Unable to create roadmap item right now.';
+        error.value = firstApiErrorMessage(err, 'Unable to create roadmap item right now.');
     } finally {
         creatingRoadmap.value = false;
     }
