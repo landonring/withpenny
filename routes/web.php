@@ -8,8 +8,10 @@ use App\Http\Controllers\AdminImpersonationController;
 use App\Http\Controllers\BankStatementController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\SavingsJourneyController;
+use App\Http\Controllers\SpreadsheetController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UsageController;
 use App\Http\Controllers\WebauthnController;
@@ -21,6 +23,8 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('api')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/csrf', [AuthController::class, 'csrf']);
@@ -59,6 +63,15 @@ Route::prefix('api')->group(function () {
         Route::post('/webauthn/register/verify', [WebauthnController::class, 'registerVerify'])->middleware('onboarding.readonly');
         Route::delete('/webauthn', [WebauthnController::class, 'disable'])->middleware('onboarding.readonly');
         Route::get('/usage', [UsageController::class, 'show']);
+        Route::post('/spreadsheets/generate', [SpreadsheetController::class, 'generate']);
+        Route::get('/notifications/settings', [NotificationController::class, 'settings']);
+        Route::post('/notifications/enable', [NotificationController::class, 'enable'])->middleware('onboarding.readonly');
+        Route::post('/notifications/disable', [NotificationController::class, 'disable'])->middleware('onboarding.readonly');
+        Route::post('/notifications/subscribe', [NotificationController::class, 'subscribe'])->middleware('onboarding.readonly');
+        Route::post('/notifications/unsubscribe', [NotificationController::class, 'unsubscribe'])->middleware('onboarding.readonly');
+        Route::get('/notifications/history', [NotificationController::class, 'history']);
+        Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
 
         Route::post('/ai/monthly-reflection', [AiController::class, 'monthlyReflection'])->middleware('onboarding.step:3');
         Route::post('/ai/daily-overview', [AiController::class, 'dailyOverview'])->middleware('onboarding.step:3');
@@ -103,6 +116,9 @@ Route::prefix('api')->group(function () {
         Route::post('/billing/resume', [BillingController::class, 'resume'])->middleware('onboarding.readonly');
     });
 });
+
+Route::get('/api/notifications/{notification}/track-click', [NotificationController::class, 'trackClick'])
+    ->name('api.notifications.track-click');
 
 Route::post('/admin/impersonate/stop', [AdminImpersonationController::class, 'stop'])
     ->middleware('auth');
@@ -226,6 +242,8 @@ Route::view('/terms', 'legal');
 Route::view('/security', 'legal');
 Route::view('/login', 'app');
 Route::view('/register', 'app');
+Route::view('/forgot-password', 'app');
+Route::view('/reset-password/{token}', 'app')->name('password.reset');
 Route::redirect('/updates', '/');
 Route::view('/how-it-works', 'marketing');
 Route::view('/pricing', 'marketing');

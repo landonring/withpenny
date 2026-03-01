@@ -22,6 +22,8 @@ import AdminUpdatesView from '../screens/AdminUpdatesView.vue';
 import NotFoundView from '../screens/NotFoundView.vue';
 import LoginView from '../screens/LoginView.vue';
 import SignupView from '../screens/SignupView.vue';
+import ForgotPasswordView from '../screens/ForgotPasswordView.vue';
+import ResetPasswordView from '../screens/ResetPasswordView.vue';
 import { authState, ensureAuthReady } from '../stores/auth';
 import { ensureOnboardingStatus, onboardingState, routeAllowedDuringOnboarding } from '../stores/onboarding';
 
@@ -59,6 +61,8 @@ const routes = [
     { path: '/scan/review/:id', name: 'receipts-review', component: ReceiptReviewView, meta: { requiresAuth: true, hideNav: true, hideHeader: true } },
     { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true, hideNav: true, allowDesktop: true } },
     { path: '/register', name: 'register', component: SignupView, meta: { guestOnly: true, hideNav: true, allowDesktop: true } },
+    { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordView, meta: { guestOnly: true, hideNav: true, allowDesktop: true } },
+    { path: '/reset-password/:token', name: 'reset-password', component: ResetPasswordView, meta: { guestOnly: true, hideNav: true, allowDesktop: true } },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView, meta: { hideNav: true } },
 ];
 

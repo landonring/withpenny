@@ -39,6 +39,10 @@
                     </div>
                 </label>
 
+                <p class="muted">
+                    <router-link :to="{ name: 'forgot-password' }">Forgot password?</router-link>
+                </p>
+
                 <p v-if="error" class="form-error">{{ error }}</p>
 
                 <button class="primary-button" type="submit" :disabled="loading">

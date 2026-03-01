@@ -109,6 +109,16 @@ export async function register(payload) {
     return data.user;
 }
 
+export async function requestPasswordReset(payload) {
+    const { data } = await withCsrfRetry(() => axios.post('/api/forgot-password', payload));
+    return data;
+}
+
+export async function resetPassword(payload) {
+    const { data } = await withCsrfRetry(() => axios.post('/api/reset-password', payload));
+    return data;
+}
+
 export async function updateProfile(payload) {
     const { data } = await withCsrfRetry(() => axios.patch('/api/profile', payload));
     applyAuthPayload(data);
