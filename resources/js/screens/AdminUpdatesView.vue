@@ -871,6 +871,35 @@ const firstApiErrorMessage = (err, fallback) => {
     return err?.response?.data?.message || fallback;
 };
 
+const pickArray = (...candidates) => {
+    for (const value of candidates) {
+        if (Array.isArray(value)) return value;
+    }
+    return [];
+};
+
+const normalizeAdminPayload = (payload) => {
+    if (!payload || typeof payload !== 'object') {
+        return {
+            items: [],
+            roadmap_items: [],
+            announcements: [],
+            comments: [],
+        };
+    }
+
+    const root = (payload.data && typeof payload.data === 'object')
+        ? payload.data
+        : payload;
+
+    return {
+        items: pickArray(root.items, root.feedback_items, root.data?.items, root.data?.feedback_items),
+        roadmap_items: pickArray(root.roadmap_items, root.roadmapItems, root.data?.roadmap_items, root.data?.roadmapItems),
+        announcements: pickArray(root.announcements, root.data?.announcements),
+        comments: pickArray(root.comments, root.data?.comments),
+    };
+};
+
 const statusClass = (status) => {
     if (status === 'in_progress') return 'in-progress';
     if (status === 'planned') return 'planned';
@@ -1020,15 +1049,16 @@ const loadData = async () => {
     error.value = '';
 
     try {
-        const payload = await fetchAdminFeedback({ include_deleted_comments: 1 });
+        const rawPayload = await fetchAdminFeedback({ include_deleted_comments: 1 });
+        const payload = normalizeAdminPayload(rawPayload);
 
-        items.value = payload.items || [];
-        roadmapItems.value = payload.roadmap_items || [];
-        announcements.value = (payload.announcements || []).map((entry) => ({
+        items.value = payload.items;
+        roadmapItems.value = payload.roadmap_items;
+        announcements.value = payload.announcements.map((entry) => ({
             ...entry,
             tags_text: Array.isArray(entry.tags) ? entry.tags.join(', ') : '',
         }));
-        comments.value = payload.comments || [];
+        comments.value = payload.comments;
 
         if (selectedIdeaId.value) {
             const exists = items.value.some((item) => item.id === selectedIdeaId.value);

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'penny-shell-v14';
+const CACHE_NAME = 'penny-shell-v15';
 const IS_DEV = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
 const CORE_ASSETS = [
     '/',
@@ -44,7 +44,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    if (url.pathname.startsWith('/api/')) {
+    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin/')) {
         return;
     }
 
