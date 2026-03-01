@@ -105,6 +105,7 @@ const starterQuestions = [
     'What is one thing I should focus on this week?',
     'Where did most of my spending go?',
     'How can I reduce wants without feeling restricted?',
+    'Can you generate my budget spreadsheet for this month?',
 ];
 
 const draft = ref('');
@@ -117,7 +118,7 @@ const chatUsageText = computed(() => {
     if (!chatUsage.value || chatUsage.value.limit === null) return '';
     return `${chatUsage.value.remaining} of ${chatUsage.value.limit} chat messages left this month`;
 });
-const showStarterQuestions = computed(() => onboardingState.mode && onboardingState.step === 4 && !chatResponded.value);
+const showStarterQuestions = computed(() => !chatLocked.value && starterQuestions.length > 0);
 const openUpgrade = () => {
     showUpgrade(usageState.plan === 'starter' ? 'pro' : 'premium', 'AI chat');
 };
@@ -171,10 +172,6 @@ const handleSend = async () => {
         loading.value = false;
     }
 };
-
-const chatResponded = computed(() => {
-    return messages.value.some((message, index) => message.role === 'assistant' && index > 0);
-});
 
 const handleStarterQuestion = async (question) => {
     if (loading.value || chatLocked.value) return;
