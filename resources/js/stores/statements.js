@@ -14,7 +14,10 @@ export async function uploadStatement(file) {
 export async function scanStatementImages(images) {
     const formData = new FormData();
     images.forEach((image, index) => {
-        formData.append('images[]', image, image.name || `statement-${index + 1}.pdf`);
+        const filename = image.name || `statement-${index + 1}.pdf`;
+        // Send both keys for backward compatibility with older/newer backends.
+        formData.append('images[]', image, filename);
+        formData.append('files[]', image, filename);
     });
 
     const { data } = await axios.post('/api/statements/scan-images', formData, {

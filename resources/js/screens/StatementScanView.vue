@@ -147,7 +147,12 @@ const handleReview = async () => {
             return;
         }
 
-        error.value = err?.response?.data?.message || 'Unable to scan right now.';
+        const payload = err?.response?.data || {};
+        const validationText = payload?.errors
+            ? Object.values(payload.errors).flat().join(' ')
+            : '';
+
+        error.value = payload?.message || validationText || 'Unable to scan right now.';
         if (status === 429) {
             await ensureUsageStatus(true);
         }
