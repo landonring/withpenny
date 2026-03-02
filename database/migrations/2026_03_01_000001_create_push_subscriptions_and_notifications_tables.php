@@ -12,12 +12,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->text('endpoint');
+            $table->char('endpoint_hash', 64);
             $table->text('p256dh_key');
             $table->text('auth_key');
             $table->timestamp('last_used_at')->nullable();
             $table->timestamps();
 
-            $table->unique(['user_id', 'endpoint'], 'push_subscriptions_user_endpoint_unique');
+            $table->unique(['user_id', 'endpoint_hash'], 'push_subscriptions_user_endpoint_hash_unique');
             $table->index(['user_id', 'updated_at']);
         });
 

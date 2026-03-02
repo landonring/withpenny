@@ -13,6 +13,7 @@ class PushSubscription extends Model
     protected $fillable = [
         'user_id',
         'endpoint',
+        'endpoint_hash',
         'p256dh_key',
         'auth_key',
         'last_used_at',
@@ -27,4 +28,3 @@ class PushSubscription extends Model
         return $this->belongsTo(User::class);
     }
 }
-

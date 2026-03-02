@@ -75,9 +75,10 @@ class NotificationController extends Controller
         PushSubscription::query()->updateOrCreate(
             [
                 'user_id' => $request->user()->id,
-                'endpoint' => $validated['endpoint'],
+                'endpoint_hash' => hash('sha256', $validated['endpoint']),
             ],
             [
+                'endpoint' => $validated['endpoint'],
                 'p256dh_key' => $validated['keys']['p256dh'],
                 'auth_key' => $validated['keys']['auth'],
                 'last_used_at' => now(),
@@ -95,7 +96,7 @@ class NotificationController extends Controller
 
         $query = PushSubscription::query()->where('user_id', $request->user()->id);
         if (! empty($validated['endpoint'])) {
-            $query->where('endpoint', $validated['endpoint']);
+            $query->where('endpoint_hash', hash('sha256', $validated['endpoint']));
         }
         $query->delete();
 
@@ -172,4 +173,3 @@ class NotificationController extends Controller
         ];
     }
 }
-
