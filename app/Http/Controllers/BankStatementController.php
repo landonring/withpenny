@@ -130,9 +130,9 @@ class BankStatementController extends Controller
         }
 
         $request->validate([
-            'files' => ['nullable', 'array', 'min:1', 'max:6'],
+            'files' => ['nullable', 'array', 'max:6'],
             'files.*' => ['required', 'file', 'max:25600'],
-            'images' => ['nullable', 'array', 'min:1', 'max:6'],
+            'images' => ['nullable', 'array', 'max:6'],
             'images.*' => ['required', 'file', 'max:25600'],
         ], [
             'files.required' => 'Please upload at least one PDF statement file.',

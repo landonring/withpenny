@@ -15,8 +15,6 @@ export async function scanStatementImages(images) {
     const formData = new FormData();
     images.forEach((image, index) => {
         const filename = image.name || `statement-${index + 1}.pdf`;
-        // Send both keys for backward compatibility with older/newer backends.
-        formData.append('images[]', image, filename);
         formData.append('files[]', image, filename);
     });
 
