@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Penny – AI Budgeting Assistant for Individuals, Couples & Families</title>
+<title>Penny Because every penny counts</title>
 <meta name="description" content="Penny is an AI-powered budgeting assistant that helps individuals, couples, and families gain clarity around spending. Scan statements, generate insights, and build calm financial awareness."/>
 <meta name="keywords" content="AI budgeting app, personal budgeting assistant, spending tracker, budgeting without bank connection, AI finance assistant"/>
 <meta name="csrf-token" content="{{ csrf_token() }}"/>
@@ -63,63 +63,8 @@
             'AI reflections (optional)',
         ],
     ];
-    $faqSchema = [
-        '@context' => 'https://schema.org',
-        '@type' => 'FAQPage',
-        'mainEntity' => [
-            [
-                '@type' => 'Question',
-                'name' => 'Is Penny an AI budgeting app?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'Yes. Penny is an AI-powered budgeting assistant that combines manual tracking, statement scanning, and calm insights.',
-                ],
-            ],
-            [
-                '@type' => 'Question',
-                'name' => 'Does Penny require bank integration?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'No. Penny works without direct bank account connection. You can track manually or upload statements when you choose.',
-                ],
-            ],
-            [
-                '@type' => 'Question',
-                'name' => 'Is Penny secure?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'Yes. Penny is privacy-first and built around user control. Your budgeting workflow is designed to minimize unnecessary data exposure.',
-                ],
-            ],
-            [
-                '@type' => 'Question',
-                'name' => 'Can Penny help individuals budget?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'Yes. Penny helps individuals build practical budgeting habits with manual tracking, spending insights, and AI support.',
-                ],
-            ],
-            [
-                '@type' => 'Question',
-                'name' => 'Is Penny good for couples?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'Yes. Penny works well for couples who want shared awareness, calmer money check-ins, and better spending alignment.',
-                ],
-            ],
-            [
-                '@type' => 'Question',
-                'name' => 'How is Penny different from Mint or YNAB?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'Penny emphasizes calm guidance, privacy-first workflows, and optional AI support. It is designed for clarity without complexity.',
-                ],
-            ],
-        ],
-    ];
 @endphp
 <script type="application/ld+json">{!! json_encode($softwareSchema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}</script>
-<script type="application/ld+json">{!! json_encode($faqSchema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}</script>
 </head>
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading">
 @include('partials.marketing-nav')
@@ -151,35 +96,6 @@
 </div>
 </div>
 </header>
-<section class="w-full py-20 px-6 border-t border-border-soft/50" id="what-is-penny">
-<div class="max-w-5xl mx-auto space-y-16">
-<div class="bg-card border border-border-soft rounded-2xl p-8 md:p-12 space-y-6">
-<h2 class="text-3xl md:text-4xl font-serif font-medium text-text-heading">Frequently asked questions</h2>
-<div class="space-y-6">
-<div>
-<h3 class="text-xl font-semibold text-text-heading">Is Penny an AI budgeting app?</h3>
-<p class="text-text-body leading-relaxed mt-2">Yes. Penny is an AI-powered budgeting assistant that combines manual tracking, statement scanning, and calm, practical insights.</p>
-</div>
-<div>
-<h3 class="text-xl font-semibold text-text-heading">Does Penny require bank account integration?</h3>
-<p class="text-text-body leading-relaxed mt-2">No. Penny works without direct bank account connection. You can track manually or upload statements only when you choose.</p>
-</div>
-<div>
-<h3 class="text-xl font-semibold text-text-heading">Is Penny secure and privacy-first?</h3>
-<p class="text-text-body leading-relaxed mt-2">Yes. Penny is designed around user control. You decide what gets tracked, uploaded, and reviewed.</p>
-</div>
-<div>
-<h3 class="text-xl font-semibold text-text-heading">Who uses Penny?</h3>
-<p class="text-text-body leading-relaxed mt-2">Individuals, couples, families, freelancers, and privacy-conscious users who want clearer money awareness without complexity.</p>
-</div>
-<div>
-<h3 class="text-xl font-semibold text-text-heading">How is Penny different from Mint or YNAB?</h3>
-<p class="text-text-body leading-relaxed mt-2">Penny focuses on calm guidance, optional AI support, and a privacy-first workflow built for practical day-to-day clarity.</p>
-</div>
-</div>
-</div>
-</div>
-</section>
 <section class="py-24 px-6 text-center">
 <div class="max-w-3xl mx-auto">
 <h2 class="text-3xl md:text-4xl font-serif italic text-text-heading leading-tight mb-10">
@@ -456,76 +372,32 @@
 <p id="billing-error" class="text-xs text-text-body/70 mt-6 text-center"></p>
 </div>
 </section>
-<section class="w-full py-24 px-6" id="faq">
-<div class="max-w-3xl mx-auto">
-<h2 class="text-3xl md:text-4xl font-serif font-medium text-text-heading mb-12 text-center">Frequently Asked Questions</h2>
-<div class="space-y-4">
-<details class="group border border-border-soft bg-card rounded-xl overflow-hidden open:ring-1 open:ring-accent-sage/30 transition-all">
-<summary class="flex cursor-pointer items-center justify-between p-6 text-lg font-medium text-text-heading hover:bg-canvas/50 transition-colors">
-                    Is Penny an AI budgeting app?
-                    <span class="transition-transform duration-300 group-open:rotate-180 text-accent-label">
-<span class="material-icons">expand_more</span>
-</span>
-</summary>
-<div class="border-t border-border-soft px-6 py-6 text-text-body leading-relaxed bg-white/50">
-                    Yes. Penny is an AI-powered budgeting assistant that helps individuals, couples, and families review spending, scan statements, and generate practical insights.
-                </div>
-</details>
-<details class="group border border-border-soft bg-card rounded-xl overflow-hidden open:ring-1 open:ring-accent-sage/30 transition-all">
-<summary class="flex cursor-pointer items-center justify-between p-6 text-lg font-medium text-text-heading hover:bg-canvas/50 transition-colors">
-                    Does Penny require bank integration?
-                    <span class="transition-transform duration-300 group-open:rotate-180 text-accent-label">
-<span class="material-icons">expand_more</span>
-</span>
-</summary>
-<div class="border-t border-border-soft px-6 py-6 text-text-body leading-relaxed bg-white/50">
-                    No. Penny is designed to work without direct bank account integration. You can track manually and upload statements only when you choose.
-                </div>
-</details>
-<details class="group border border-border-soft bg-card rounded-xl overflow-hidden open:ring-1 open:ring-accent-sage/30 transition-all">
-<summary class="flex cursor-pointer items-center justify-between p-6 text-lg font-medium text-text-heading hover:bg-canvas/50 transition-colors">
-                    Is Penny secure?
-                    <span class="transition-transform duration-300 group-open:rotate-180 text-accent-label">
-<span class="material-icons">expand_more</span>
-</span>
-</summary>
-<div class="border-t border-border-soft px-6 py-6 text-text-body leading-relaxed bg-white/50">
-                    Yes. Penny is privacy-first and keeps financial tracking under your control, with no forced bank syncing and no advertising-driven experience.
-                </div>
-</details>
-<details class="group border border-border-soft bg-card rounded-xl overflow-hidden open:ring-1 open:ring-accent-sage/30 transition-all">
-<summary class="flex cursor-pointer items-center justify-between p-6 text-lg font-medium text-text-heading hover:bg-canvas/50 transition-colors">
-                    Can Penny help individuals budget?
-                    <span class="transition-transform duration-300 group-open:rotate-180 text-accent-label">
-<span class="material-icons">expand_more</span>
-</span>
-</summary>
-<div class="border-t border-border-soft px-6 py-6 text-text-body leading-relaxed bg-white/50">
-                    Yes. Individuals can use Penny for manual tracking, statement scans, and AI reflections that turn spending activity into clear next steps.
-                </div>
-</details>
-<details class="group border border-border-soft bg-card rounded-xl overflow-hidden open:ring-1 open:ring-accent-sage/30 transition-all">
-<summary class="flex cursor-pointer items-center justify-between p-6 text-lg font-medium text-text-heading hover:bg-canvas/50 transition-colors">
-                    Is Penny good for couples?
-                    <span class="transition-transform duration-300 group-open:rotate-180 text-accent-label">
-<span class="material-icons">expand_more</span>
-</span>
-</summary>
-<div class="border-t border-border-soft px-6 py-6 text-text-body leading-relaxed bg-white/50">
-                    Yes. Couples use Penny to create shared visibility around spending and reduce money friction with calmer check-ins.
-                </div>
-</details>
-<details class="group border border-border-soft bg-card rounded-xl overflow-hidden open:ring-1 open:ring-accent-sage/30 transition-all">
-<summary class="flex cursor-pointer items-center justify-between p-6 text-lg font-medium text-text-heading hover:bg-canvas/50 transition-colors">
-                    How is Penny different from Mint or YNAB?
-                    <span class="transition-transform duration-300 group-open:rotate-180 text-accent-label">
-<span class="material-icons">expand_more</span>
-</span>
-</summary>
-<div class="border-t border-border-soft px-6 py-6 text-text-body leading-relaxed bg-white/50">
-                    Penny is built around calm guidance, privacy-first workflows, and optional AI support. It emphasizes clarity without forcing complexity.
-                </div>
-</details>
+<section class="w-full py-24 px-6 border-t border-border-soft/50" id="faq">
+<div class="max-w-5xl mx-auto">
+<div class="bg-card border border-border-soft rounded-2xl p-8 md:p-12 space-y-6">
+<h2 class="text-3xl md:text-4xl font-serif font-medium text-text-heading">Frequently asked questions</h2>
+<div class="space-y-6">
+<div>
+<h3 class="text-xl font-semibold text-text-heading">Is Penny an AI budgeting app?</h3>
+<p class="text-text-body leading-relaxed mt-2">Yes. Penny is an AI-powered budgeting assistant that combines manual tracking, statement scanning, and calm, practical insights.</p>
+</div>
+<div>
+<h3 class="text-xl font-semibold text-text-heading">Does Penny require bank account integration?</h3>
+<p class="text-text-body leading-relaxed mt-2">No. Penny works without direct bank account connection. You can track manually or upload statements only when you choose.</p>
+</div>
+<div>
+<h3 class="text-xl font-semibold text-text-heading">Is Penny secure and privacy-first?</h3>
+<p class="text-text-body leading-relaxed mt-2">Yes. Penny is designed around user control. You decide what gets tracked, uploaded, and reviewed.</p>
+</div>
+<div>
+<h3 class="text-xl font-semibold text-text-heading">Who uses Penny?</h3>
+<p class="text-text-body leading-relaxed mt-2">Individuals, couples, families, freelancers, and privacy-conscious users who want clearer money awareness without complexity.</p>
+</div>
+<div>
+<h3 class="text-xl font-semibold text-text-heading">How is Penny different from Mint or YNAB?</h3>
+<p class="text-text-body leading-relaxed mt-2">Penny focuses on calm guidance, optional AI support, and a privacy-first workflow built for practical day-to-day clarity.</p>
+</div>
+</div>
 </div>
 </div>
 </section>

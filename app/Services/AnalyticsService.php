@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AnalyticsEvent;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
@@ -19,6 +20,14 @@ class AnalyticsService
         'reflection_generated',
         'chat_message_sent',
         'life_phase_selected',
+        'spreadsheet_generated',
+        'notification_permission_granted',
+        'welcome_notification_sent',
+        'weekly_notification_sent',
+        'monthly_notification_sent',
+        'shift_notification_sent',
+        'celebration_notification_sent',
+        'notification_clicked',
     ];
 
     private const BLOCKED_KEYS = [
@@ -36,23 +45,23 @@ class AnalyticsService
         'number',
     ];
 
-    public function track(string $eventName, array $data = []): void
+    public function track(string $eventName, array $data = [], ?User $subjectUser = null): void
     {
         if (! in_array($eventName, self::ALLOWED_EVENTS, true)) {
             return;
         }
 
-        $user = Auth::user();
+        $user = $subjectUser ?? Auth::user();
         if (
             $user
             && $user->onboarding_mode
-            && in_array($eventName, ['receipt_uploaded', 'statement_uploaded', 'reflection_generated', 'chat_message_sent'], true)
+            && in_array($eventName, ['receipt_uploaded', 'statement_uploaded', 'reflection_generated', 'chat_message_sent', 'spreadsheet_generated'], true)
         ) {
             return;
         }
 
         $payload = [
-            'user_id' => Auth::id(),
+            'user_id' => $user?->id,
             'event_name' => $eventName,
             'event_data' => $this->encodeData($data),
             'created_at' => now(),

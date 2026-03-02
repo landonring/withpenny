@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
 
-    <title>Penny - Because every penny counts</title>
+    <title>Penny Because every penny counts</title>
 
     <meta name="theme-color" content="#c6d2c4" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

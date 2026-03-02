@@ -34,6 +34,7 @@ class PlanUsageService
 
         $receiptUsed = $this->countEvents($user->id, 'receipt_uploaded', $monthStart, $monthEnd);
         $statementUsed = $this->countEvents($user->id, 'statement_uploaded', $monthStart, $monthEnd);
+        $spreadsheetUsed = $this->countEvents($user->id, 'spreadsheet_generated', $monthStart, $monthEnd);
         $chatUsed = $this->countEvents($user->id, 'chat_message_sent', $monthStart, $monthEnd);
         $insightDailyUsed = $this->countEvents($user->id, 'reflection_generated', $monthStart, $monthEnd, 'daily');
         $insightWeeklyUsed = $this->countEvents($user->id, 'reflection_generated', $monthStart, $monthEnd, 'weekly');
@@ -53,6 +54,12 @@ class PlanUsageService
                         'mode' => $limits['statement_uploads']['mode'],
                         'max_days_per_upload' => $limits['statement_uploads']['max_days_per_upload'],
                     ]
+                ),
+                'spreadsheet_exports' => $this->buildState(
+                    $limits['spreadsheet_exports']['limit'],
+                    $spreadsheetUsed,
+                    'month',
+                    $monthEnd
                 ),
             ],
             'insights' => [
@@ -99,6 +106,7 @@ class PlanUsageService
         $state = match ($key) {
             'receipt_scans' => $usage['features']['receipt_scans'],
             'statement_uploads' => $usage['features']['statement_uploads'],
+            'spreadsheet_exports' => $usage['features']['spreadsheet_exports'],
             'chat_messages' => $usage['chat']['messages'],
             'insights_daily' => $usage['insights']['daily'],
             'insights_weekly' => $usage['insights']['weekly'],
@@ -219,6 +227,7 @@ class PlanUsageService
             'premium' => [
                 'receipt_scans' => ['limit' => null, 'mode' => 'full'],
                 'statement_uploads' => ['limit' => null, 'max_days_per_upload' => null, 'mode' => 'full'],
+                'spreadsheet_exports' => ['limit' => null],
                 'insights' => [
                     'daily' => ['limit' => null],
                     'weekly' => ['limit' => null],
@@ -230,6 +239,7 @@ class PlanUsageService
             'pro' => [
                 'receipt_scans' => ['limit' => 20, 'mode' => 'full'],
                 'statement_uploads' => ['limit' => 10, 'max_days_per_upload' => 183, 'mode' => 'full'],
+                'spreadsheet_exports' => ['limit' => 5],
                 'insights' => [
                     'daily' => ['limit' => 10],
                     'weekly' => ['limit' => null],
@@ -241,6 +251,7 @@ class PlanUsageService
             default => [
                 'receipt_scans' => ['limit' => 5, 'mode' => 'basic'],
                 'statement_uploads' => ['limit' => 2, 'max_days_per_upload' => 30, 'mode' => 'basic'],
+                'spreadsheet_exports' => ['limit' => 1],
                 'insights' => [
                     'daily' => ['limit' => 0],
                     'weekly' => ['limit' => 2],
@@ -281,6 +292,7 @@ class PlanUsageService
             'features' => [
                 'receipt_scans' => array_merge($unlimitedMonth, ['mode' => 'full']),
                 'statement_uploads' => array_merge($unlimitedMonth, ['mode' => 'full', 'max_days_per_upload' => null]),
+                'spreadsheet_exports' => $unlimitedMonth,
             ],
             'insights' => [
                 'daily' => $unlimitedMonth,

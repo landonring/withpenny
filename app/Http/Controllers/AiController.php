@@ -10,6 +10,7 @@ use App\Services\PlanUsageService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use OpenAI\Laravel\Facades\OpenAI;
 
 class AiController extends Controller
@@ -22,43 +23,31 @@ class AiController extends Controller
     {
     }
 
-    private const SYSTEM_PROMPT = "You are Penny — a calm, supportive money companion.
-Your role is to help people who aren’t naturally good with money build better habits over time.
-You are not a financial advisor.
-You are warm, grounded, honest, encouraging, realistic, and non-judgmental.
-You are not sarcastic, condescending, overly cheerful, robotic, or passive when honesty is needed.
-You sound like a kind friend who tells the truth because they care.
+    private const SYSTEM_PROMPT = "You are Penny AI, a calm financial analyst for budgeting.
+Penny AI is observational, practical, structured, brief, and neutral.
+Penny AI is not a therapist, not motivational, and not dramatic.
 
-Speak in plain, human language with short, clear sentences.
-Avoid jargon or financial buzzwords.
-Be conversational, not instructional.
-Use one consistent voice everywhere.
-Do not talk about yourself. Avoid first-person language like “I”, “me”, “my”, or “Penny”.
-Use second-person language and focus on the user (“you”).
-Avoid phrases like “let’s” or “we”.
+Output rules:
+- Refer to yourself only as 'Penny AI'.
+- Never use first-person language: no 'I', 'me', 'my', or 'we'.
+- Avoid direct instruction phrasing like 'you should'.
+- Use neutral phrasing such as 'Penny AI suggests' or 'Penny AI observes'.
+- No exclamation marks.
+- Keep response length under 120 words unless detail is explicitly requested.
+- Provide at most one actionable suggestion.
 
-Honesty is allowed and encouraged. If something isn’t going well:
-- Say it clearly
-- Explain why
-- Offer a small, practical, optional next step
-Always pair honesty with empathy and context.
+When financial data is available and analysis is requested, use this structure:
+Observation:
+Meaning:
+Action:
 
-Assume the user may feel stressed, ashamed, or overwhelmed.
-Normalize mistakes, reduce fear around numbers, and focus on patterns over perfection.
-Celebrate small improvements.
-Never imply the user is lazy or should know better.
+When financial data is insufficient, return exactly:
+'Penny AI does not see enough data yet. Start by tracking every purchase for 7 days to establish a baseline.'
 
-When giving feedback, follow this structure:
-1) Observation
-2) Context
-3) Gentle suggestion
+When describing spreadsheet generation, keep it brief and structural:
+'Penny AI generated a monthly budget spreadsheet organized by Needs, Wants, and Future categories. Totals and summaries are automated.'";
 
-Tips should be small, realistic, actionable, and optional.
-Avoid long lists, strict rules, or moral language.
-Never shame, scold, threaten, or use fear-based language.
-
-If asked for advice, explain patterns and remind the user the decision is theirs.
-Your goal is to help the user feel calmer and more capable than when they opened the app.";
+    private const NO_DATA_MESSAGE = 'Penny AI does not see enough data yet. Start by tracking every purchase for 7 days to establish a baseline.';
 
     private const LIFE_PHASE_GUIDANCE = [
         'early_builder' => [
@@ -115,6 +104,10 @@ Your goal is to help the user feel calmer and more capable than when they opened
             ->get();
 
         $summary = $this->summarizeTransactions($transactions);
+        if (($summary['count'] ?? 0) === 0) {
+            return response()->json(['message' => self::NO_DATA_MESSAGE]);
+        }
+
         $savings = $this->summarizeSavings($user->id);
         $incomeTrend = $this->summarizeIncomeTrend($user->id);
         $lifePhaseContext = $this->lifePhaseContext($user);
@@ -131,8 +124,10 @@ Your goal is to help the user feel calmer and more capable than when they opened
             ."Savings journeys active: {$savings['active_count']}.\n"
             ."Savings total saved: {$savings['total_saved']}.\n"
             ."Savings total target: {$savings['total_target']}.\n"
-            ."If there is little or no data, offer a gentle invitation without pressure.\n"
-            ."Write 3-4 short sentences (40-70 words total) with one observation and one reassurance. End with a complete sentence.";
+            ."If transactions count is zero, return exactly: '".self::NO_DATA_MESSAGE."'\n"
+            ."Return under 120 words.\n"
+            ."Use exactly this format with one action only:\n"
+            ."Observation:\nMeaning:\nAction: Penny AI suggests ...";
 
         $response = $this->respondWithAi($prompt, 180);
         if ($response->getStatusCode() === 200) {
@@ -172,6 +167,10 @@ Your goal is to help the user feel calmer and more capable than when they opened
             ->get();
 
         $summary = $this->summarizeTransactions($transactions);
+        if (($summary['count'] ?? 0) === 0) {
+            return response()->json(['message' => self::NO_DATA_MESSAGE]);
+        }
+
         $incomeTrend = $this->summarizeIncomeTrend($user->id);
         $lifePhaseContext = $this->lifePhaseContext($user);
 
@@ -184,8 +183,10 @@ Your goal is to help the user feel calmer and more capable than when they opened
             ."Top categories: {$summary['top_categories']}.\n"
             ."Average monthly income (last 3 months): {$incomeTrend['average']}.\n"
             ."Income stability: {$incomeTrend['stability']}.\n"
-            ."If there is little or no data, offer a gentle invitation without pressure.\n"
-            ."Write 2-3 short sentences (25-45 words total) with one observation and one reassurance. End with a complete sentence.";
+            ."If transactions count is zero, return exactly: '".self::NO_DATA_MESSAGE."'\n"
+            ."Return under 120 words.\n"
+            ."Use exactly this format with one action only:\n"
+            ."Observation:\nMeaning:\nAction: Penny AI suggests ...";
 
         $response = $this->respondWithAi($prompt, 120);
         if ($response->getStatusCode() === 200) {
@@ -222,6 +223,10 @@ Your goal is to help the user feel calmer and more capable than when they opened
             ->get();
 
         $summary = $this->summarizeTransactions($transactions);
+        if (($summary['count'] ?? 0) === 0) {
+            return response()->json(['message' => self::NO_DATA_MESSAGE]);
+        }
+
         $incomeTrend = $this->summarizeIncomeTrend($user->id);
         $lifePhaseContext = $this->lifePhaseContext($user);
 
@@ -234,7 +239,10 @@ Your goal is to help the user feel calmer and more capable than when they opened
             ."Top categories: {$summary['top_categories']}.\n"
             ."Average monthly income (last 3 months): {$incomeTrend['average']}.\n"
             ."Income stability: {$incomeTrend['stability']}.\n"
-            ."Write 2-3 sentences (25-45 words total) focused on encouragement. End with a complete sentence.";
+            ."If transactions count is zero, return exactly: '".self::NO_DATA_MESSAGE."'\n"
+            ."Return under 120 words.\n"
+            ."Use exactly this format with one action only:\n"
+            ."Observation:\nMeaning:\nAction: Penny AI suggests ...";
 
         $response = $this->respondWithAi($prompt, 120);
         if ($response->getStatusCode() === 200) {
@@ -272,6 +280,10 @@ Your goal is to help the user feel calmer and more capable than when they opened
             ->get();
 
         $summary = $this->summarizeYearTransactions($transactions);
+        if (($summary['count'] ?? 0) === 0) {
+            return response()->json(['message' => self::NO_DATA_MESSAGE]);
+        }
+
         $savings = $this->summarizeSavings($user->id);
         $lifePhaseContext = $this->lifePhaseContext($user);
 
@@ -286,8 +298,10 @@ Your goal is to help the user feel calmer and more capable than when they opened
             ."Top categories: {$summary['top_categories']}.\n"
             ."Savings journeys active: {$savings['active_count']}.\n"
             ."Savings total saved: {$savings['total_saved']}.\n"
-            ."If there is little or no data, offer a gentle invitation without pressure.\n"
-            ."Write 4-5 short sentences (60-90 words total) with one observation and one reassurance. End with a complete sentence.";
+            ."If transactions count is zero, return exactly: '".self::NO_DATA_MESSAGE."'\n"
+            ."Return under 120 words.\n"
+            ."Use exactly this format with one action only:\n"
+            ."Observation:\nMeaning:\nAction: Penny AI suggests ...";
 
         $response = $this->respondWithAi($prompt, 220);
         if ($response->getStatusCode() === 200) {
@@ -319,6 +333,24 @@ Your goal is to help the user feel calmer and more capable than when they opened
         $this->debugEnabled = $request->boolean('debug');
         $plan = $this->planUsage->resolvePlan($user);
         $lifePhaseContext = $this->lifePhaseContext($user);
+        $rawMessage = trim((string) $validated['message']);
+
+        if (! $isOnboarding && ! $this->userHasTransactions($user->id)) {
+            return response()->json(['message' => self::NO_DATA_MESSAGE]);
+        }
+
+        if ($this->isSpreadsheetRequest($rawMessage)) {
+            return response()->json([
+                'message' => 'Penny AI generated a monthly budget spreadsheet organized by Needs, Wants, and Future categories. Totals and summaries are automated.',
+                'action' => [
+                    'type' => 'download_spreadsheet',
+                    'label' => 'Download spreadsheet',
+                    'payload' => [
+                        'month' => now()->format('Y-m'),
+                    ],
+                ],
+            ]);
+        }
 
         $prompt = '';
         if ($isOnboarding) {
@@ -339,7 +371,7 @@ Your goal is to help the user feel calmer and more capable than when they opened
             }
         }
 
-        $prompt .= "User message: {$validated['message']}\n".$lifePhaseContext;
+        $prompt .= "User message: {$rawMessage}\n".$lifePhaseContext;
 
         if ($isOnboarding) {
             $demoMonth = now()->format('Y-m');
@@ -372,8 +404,10 @@ Your goal is to help the user feel calmer and more capable than when they opened
                 ."Savings active {$savings['active_count']}, saved {$savings['total_saved']}.\n";
         }
 
-        $prompt .= "If the user expresses self-criticism, start with reassurance before any reflection. "
-            ."Reply in 1-2 short sentences (12-24 words). End with a complete sentence.";
+        $prompt .= "If there is insufficient financial data, return exactly: '".self::NO_DATA_MESSAGE."'\n"
+            ."If financial analysis is requested, use this exact structure with one action only:\n"
+            ."Observation:\nMeaning:\nAction: Penny AI suggests ...\n"
+            ."Keep output neutral, structured, and under 120 words. No exclamation marks.";
 
         $response = $this->respondWithAi($prompt, 80);
         if ($response->getStatusCode() === 200) {
@@ -399,7 +433,7 @@ Your goal is to help the user feel calmer and more capable than when they opened
 
         if ($apiKey === '') {
             return response()->json(array_merge([
-                'message' => 'Penny is resting right now. You can try again in a little while.',
+                'message' => 'Penny AI is temporarily unavailable. Please try again in a moment.',
             ], $this->debugData([
                 'reason' => 'openai_missing_key',
                 'provider' => 'openai',
@@ -424,7 +458,7 @@ Your goal is to help the user feel calmer and more capable than when they opened
             ]);
         } catch (\Throwable $exception) {
             return response()->json(array_merge([
-                'message' => 'Penny is resting right now. You can try again in a little while.',
+                'message' => 'Penny AI is temporarily unavailable. Please try again in a moment.',
             ], $this->debugData([
                 'reason' => 'exception',
                 'provider' => 'openai',
@@ -450,16 +484,78 @@ Your goal is to help the user feel calmer and more capable than when they opened
         $text = trim((string) $content);
 
         if ($text === '') {
-            $text = 'Penny is resting right now. You can try again in a little while.';
+            $text = 'Penny AI is temporarily unavailable. Please try again in a moment.';
         }
-
-        if (! preg_match('/[.!?]["\']?$/', $text)) {
-            $text = rtrim($text).'.';
-        }
+        $text = $this->normalizeAiText($text);
 
         return response()->json([
             'message' => $text,
         ]);
+    }
+
+    private function normalizeAiText(string $text): string
+    {
+        $normalized = trim(preg_replace('/\s+/', ' ', str_replace('!', '.', $text)) ?? '');
+        if ($normalized === '') {
+            return self::NO_DATA_MESSAGE;
+        }
+
+        $replacements = [
+            "/\bI'm\b/i" => 'Penny AI is',
+            "/\bI am\b/i" => 'Penny AI is',
+            "/\bI\b/i" => 'Penny AI',
+            "/\bme\b/i" => 'Penny AI',
+            "/\bmy\b/i" => "Penny AI's",
+            "/\bwe\b/i" => 'Penny AI',
+            '/\byou should\b/i' => 'Penny AI suggests',
+        ];
+        foreach ($replacements as $pattern => $replacement) {
+            $normalized = preg_replace($pattern, $replacement, $normalized) ?? $normalized;
+        }
+
+        if (! Str::contains($normalized, 'Penny AI')) {
+            $normalized = 'Penny AI notes: '.$normalized;
+        }
+
+        $words = preg_split('/\s+/', trim($normalized)) ?: [];
+        if (count($words) > 120) {
+            $normalized = implode(' ', array_slice($words, 0, 120));
+        }
+
+        $normalized = trim($normalized);
+        if (! preg_match('/[.?]["\']?$/', $normalized)) {
+            $normalized .= '.';
+        }
+
+        return $normalized;
+    }
+
+    private function userHasTransactions(int $userId): bool
+    {
+        return Transaction::query()->where('user_id', $userId)->exists();
+    }
+
+    private function isSpreadsheetRequest(string $message): bool
+    {
+        $normalized = Str::of($message)->lower()->toString();
+
+        $mentionsSpreadsheet = Str::contains($normalized, [
+            'spreadsheet',
+            'budget sheet',
+            'excel',
+            'xlsx',
+            'download sheet',
+        ]);
+        $mentionsGeneration = Str::contains($normalized, [
+            'generate',
+            'make',
+            'create',
+            'build',
+            'download',
+            'export',
+        ]);
+
+        return $mentionsSpreadsheet && $mentionsGeneration;
     }
 
     /**

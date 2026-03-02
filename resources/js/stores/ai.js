@@ -50,5 +50,12 @@ export async function generateYearlyReflection(year) {
 export async function sendChatMessage(message) {
     const request = axios.post('/api/ai/chat', { message }, { timeout: REQUEST_TIMEOUT });
     const { data } = await withTimeout(request);
-    return data.message;
+    if (typeof data === 'string') {
+        return { message: data, action: null };
+    }
+
+    return {
+        message: data?.message || '',
+        action: data?.action || null,
+    };
 }

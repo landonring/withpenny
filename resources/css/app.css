@@ -2480,6 +2480,32 @@ a:hover {
     border-bottom-right-radius: 8px;
 }
 
+.chat-action-button {
+    margin-top: 10px;
+    border: 1px solid rgba(18, 24, 21, 0.14);
+    background: #fff;
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.chat-action-button:hover:not(:disabled) {
+    background: #f7f3ec;
+    border-color: rgba(18, 24, 21, 0.22);
+    transform: translateY(-1px);
+}
+
+.chat-action-button:disabled {
+    opacity: 0.55;
+    cursor: default;
+    transform: none;
+}
+
 .chat-input-wrap {
     position: sticky;
     bottom: 0;

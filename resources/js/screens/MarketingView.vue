@@ -187,24 +187,6 @@
             <p v-if="billingError" class="form-error">{{ billingError }}</p>
         </section>
 
-        <section class="marketing-section" id="faq">
-            <h2 class="section-title">FAQ</h2>
-            <div class="faq-list">
-                <div v-for="(item, index) in faqItems" :key="item.q" class="faq-item">
-                    <button
-                        type="button"
-                        class="faq-question"
-                        :aria-expanded="openFaq === index"
-                        @click="setFaq(index)"
-                    >
-                        <span>{{ item.q }}</span>
-                        <span class="faq-icon" aria-hidden="true">{{ openFaq === index ? '–' : '+' }}</span>
-                    </button>
-                    <p v-if="openFaq === index" class="faq-answer">{{ item.a }}</p>
-                </div>
-            </div>
-        </section>
-
         <footer class="marketing-footer">
             <div>
                 <p class="section-copy">Privacy-first by design. No ads. No pressure.</p>
@@ -222,19 +204,6 @@ import { authState } from '../stores/auth';
 import { startCheckout } from '../stores/billing';
 
 const isDesktop = typeof window !== 'undefined' && window.__PENNY_DESKTOP__ === true;
-
-const faqItems = [
-    { q: 'Is Penny free?', a: 'Yes. Starter is free and stays that way. You can upgrade any time.' },
-    { q: 'Is my data safe?', a: 'Yes. Your data stays yours. Penny doesn’t sell it or run ads.' },
-    { q: 'Do I need to link a bank?', a: 'No. Penny works fully without bank connections.' },
-    { q: 'Does Penny judge me?', a: 'No. Penny is built to be calm, kind, and honest — never shaming.' },
-    { q: 'Can I use it offline?', a: 'Yes. You can keep going offline and it syncs when you’re back.' },
-];
-
-const openFaq = ref(0);
-const setFaq = (index) => {
-    openFaq.value = openFaq.value === index ? -1 : index;
-};
 
 const billingCycle = ref('monthly');
 const billingUnit = computed(() => (billingCycle.value === 'monthly' ? '/ month' : '/ year'));

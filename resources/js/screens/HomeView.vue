@@ -26,7 +26,7 @@
                 <div class="overview-summary-target" data-onboarding="home-summary">
                     <div class="balance-block">
                         <div class="balance-label">Current balance</div>
-                        <div class="balance-value">{{ formatCurrency(summary.currentBalance) }}</div>
+                        <div class="balance-value">{{ formatCurrency(summary.net) }}</div>
                     </div>
                     <div class="overview-stats">
                         <div class="stat-item">
@@ -36,10 +36,6 @@
                         <div class="stat-item">
                             <div class="metric-label">Total spent</div>
                             <div class="metric-value">{{ formatCurrency(summary.spendingTotal) }}</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="metric-label">Net</div>
-                            <div class="metric-value">{{ formatCurrency(summary.net) }}</div>
                         </div>
                     </div>
                 </div>

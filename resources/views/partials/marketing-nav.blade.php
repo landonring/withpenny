@@ -15,7 +15,6 @@
             <a class="hover:text-text-heading transition-colors" href="/#how">How it works</a>
             <a class="hover:text-text-heading transition-colors" href="/#install">How to install</a>
             <a class="hover:text-text-heading transition-colors" href="/#pricing">Pricing</a>
-            <a class="hover:text-text-heading transition-colors" href="/#faq">FAQ</a>
             <a class="hover:text-text-heading transition-colors" href="/budgeting-app-guide">Guide</a>
             <a class="hover:text-text-heading transition-colors" href="/blog">Blog</a>
         </div>
@@ -42,7 +41,6 @@
         <a href="/#how">About</a>
         <a href="/#install">Installation</a>
         <a href="/#pricing">Pricing</a>
-        <a href="/#faq">FAQ</a>
         <a href="/budgeting-app-guide">Guide</a>
         <a href="/blog">Blog</a>
         <a id="login-cta-mobile" href="/login">Login</a>

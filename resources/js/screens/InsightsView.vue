@@ -10,6 +10,26 @@
         </div>
 
         <div class="card insight-card" data-onboarding="insights">
+            <div class="card-title">Budget spreadsheet</div>
+            <p class="card-sub">Download a clear monthly spreadsheet with totals, categories, and transactions.</p>
+            <button
+                class="primary-button"
+                type="button"
+                :disabled="loadingSpreadsheet || spreadsheetLocked"
+                @click="handleSpreadsheetExport"
+            >
+                {{ loadingSpreadsheet ? 'Generating…' : 'Download budget sheet' }}
+            </button>
+            <p v-if="spreadsheetUsageText" class="muted">{{ spreadsheetUsageText }}</p>
+            <p v-if="spreadsheetLocked && spreadsheetIsZeroLimit" class="muted">Included on Pro and Premium.</p>
+            <p v-else-if="spreadsheetLocked" class="form-error">{{ spreadsheetLimitMessage }}</p>
+            <button v-if="spreadsheetLocked" class="ghost-button" type="button" @click="openSpreadsheetUpgrade">Upgrade</button>
+            <p v-if="spreadsheetNotice" :class="spreadsheetNoticeType === 'error' ? 'form-error' : 'muted'">
+                {{ spreadsheetNotice }}
+            </p>
+        </div>
+
+        <div class="card insight-card" data-onboarding="insights">
             <div class="card-title">Yearly overview</div>
             <p class="card-sub">A calm look at the year so far.</p>
             <button
@@ -89,6 +109,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { generateDailyOverview, generateMonthlyReflection, generateWeeklyCheckIn, generateYearlyReflection } from '../stores/ai';
+import { generateSpreadsheet } from '../stores/spreadsheets';
 import { transactionsState } from '../stores/transactions';
 import { ensureUsageStatus, usageState } from '../stores/usage';
 import { showUpgrade } from '../stores/upgrade';
@@ -101,23 +122,30 @@ const loadingDaily = ref(false);
 const loadingMonthly = ref(false);
 const loadingYearly = ref(false);
 const loadingWeekly = ref(false);
+const loadingSpreadsheet = ref(false);
+const spreadsheetNotice = ref('');
+const spreadsheetNoticeType = ref('info');
 const currentYear = new Date().getFullYear();
 const todayKey = new Date().toISOString().slice(0, 10);
 const insightUsage = computed(() => usageState.data?.insights || null);
+const featureUsage = computed(() => usageState.data?.features || null);
 const isPremium = computed(() => usageState.plan === 'premium');
 const monthlyLimit = computed(() => insightUsage.value?.monthly || null);
 const weeklyLimit = computed(() => insightUsage.value?.weekly || null);
 const dailyLimit = computed(() => insightUsage.value?.daily || null);
 const yearlyLimit = computed(() => insightUsage.value?.yearly || null);
+const spreadsheetLimit = computed(() => featureUsage.value?.spreadsheet_exports || null);
 
 const monthlyLocked = computed(() => !!monthlyLimit.value?.exhausted);
 const weeklyLocked = computed(() => !!weeklyLimit.value?.exhausted);
 const dailyLocked = computed(() => !!dailyLimit.value?.exhausted);
 const yearlyLocked = computed(() => !!yearlyLimit.value?.exhausted);
+const spreadsheetLocked = computed(() => !!spreadsheetLimit.value?.exhausted);
 const monthlyIsZeroLimit = computed(() => (monthlyLimit.value?.limit ?? null) === 0);
 const weeklyIsZeroLimit = computed(() => (weeklyLimit.value?.limit ?? null) === 0);
 const dailyIsZeroLimit = computed(() => (dailyLimit.value?.limit ?? null) === 0);
 const yearlyIsZeroLimit = computed(() => (yearlyLimit.value?.limit ?? null) === 0);
+const spreadsheetIsZeroLimit = computed(() => (spreadsheetLimit.value?.limit ?? null) === 0);
 
 const usageText = (entry, noun, period = 'month') => {
     if (!entry || entry.limit === null || entry.limit === 0 || isPremium.value) return '';
@@ -134,12 +162,17 @@ const monthlyUsageText = computed(() => usageText(monthlyLimit.value, 'monthly o
 const weeklyUsageText = computed(() => usageText(weeklyLimit.value, 'weekly check-ins'));
 const dailyUsageText = computed(() => usageText(dailyLimit.value, 'daily overviews'));
 const yearlyUsageText = computed(() => usageText(yearlyLimit.value, 'yearly overviews', 'year'));
+const spreadsheetUsageText = computed(() => usageText(spreadsheetLimit.value, 'spreadsheets'));
 const monthlyLimitMessage = computed(() => lockedMessage(monthlyLimit.value, 'monthly'));
 const weeklyLimitMessage = computed(() => lockedMessage(weeklyLimit.value, 'monthly'));
 const dailyLimitMessage = computed(() => lockedMessage(dailyLimit.value, 'monthly'));
 const yearlyLimitMessage = computed(() => lockedMessage(yearlyLimit.value, 'yearly'));
+const spreadsheetLimitMessage = computed(() => lockedMessage(spreadsheetLimit.value, 'monthly'));
 const openUpgrade = () => {
     showUpgrade(usageState.plan === 'starter' ? 'pro' : 'premium', 'insights');
+};
+const openSpreadsheetUpgrade = () => {
+    showUpgrade(usageState.plan === 'starter' ? 'pro' : 'premium', 'spreadsheet exports');
 };
 
 onMounted(() => {
@@ -149,6 +182,30 @@ onMounted(() => {
 const insightErrorMessage = (err) => {
     const message = err?.response?.data?.message;
     return message || 'Penny is resting right now. You can try again in a little while.';
+};
+
+const spreadsheetErrorMessage = (err) => {
+    const message = err?.response?.data?.message;
+    return message || 'We could not generate your spreadsheet right now. Please try again in a moment.';
+};
+
+const handleSpreadsheetExport = async () => {
+    if (spreadsheetLocked.value) return;
+    loadingSpreadsheet.value = true;
+    spreadsheetNotice.value = '';
+    spreadsheetNoticeType.value = 'info';
+
+    try {
+        await generateSpreadsheet();
+        spreadsheetNotice.value = 'Spreadsheet downloaded.';
+        await ensureUsageStatus(true);
+    } catch (err) {
+        spreadsheetNotice.value = spreadsheetErrorMessage(err);
+        spreadsheetNoticeType.value = 'error';
+        await ensureUsageStatus(true);
+    } finally {
+        loadingSpreadsheet.value = false;
+    }
 };
 
 const handleMonthly = async () => {

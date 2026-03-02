@@ -50,6 +50,21 @@
 <section class="px-6 pb-32">
     <div class="max-w-6xl mx-auto">
         <div class="article-grid">
+            <a class="article-card" href="/blog/how-ai-budgeting-works">
+                <p class="article-eyebrow">AI Budgeting</p>
+                <h2 class="article-card-title">How AI Budgeting Works</h2>
+                <p class="article-card-meta">How AI analyzes spending patterns and turns transactions into practical clarity.</p>
+            </a>
+            <a class="article-card" href="/blog/manual-vs-ai-budgeting">
+                <p class="article-eyebrow">Comparison</p>
+                <h2 class="article-card-title">Manual vs AI Budgeting</h2>
+                <p class="article-card-meta">A grounded comparison of spreadsheets, traditional tools, and AI-assisted workflows.</p>
+            </a>
+            <a class="article-card" href="/blog/budgeting-without-bank-linking">
+                <p class="article-eyebrow">Privacy</p>
+                <h2 class="article-card-title">Budget Without Bank Linking</h2>
+                <p class="article-card-meta">A practical privacy-first approach to budgeting without direct bank connections.</p>
+            </a>
             <a class="article-card" href="/blog/how-ai-is-changing-personal-budgeting">
                 <p class="article-eyebrow">AI</p>
                 <h2 class="article-card-title">How AI Is Changing Personal Budgeting</h2>

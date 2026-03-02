@@ -35,6 +35,15 @@
                     </div>
                     <div :class="['chat-bubble', message.role]">
                         <p>{{ message.text }}</p>
+                        <button
+                            v-if="message.role === 'assistant' && message.action?.type === 'download_spreadsheet'"
+                            class="chat-action-button"
+                            type="button"
+                            :disabled="downloadingSpreadsheet"
+                            @click="handleMessageAction(message.action)"
+                        >
+                            {{ message.action?.label || 'Download spreadsheet' }}
+                        </button>
                     </div>
                 </div>
                 <div v-if="loading" class="chat-row assistant chat-typing">
@@ -90,6 +99,7 @@
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { sendChatMessage } from '../stores/ai';
+import { generateSpreadsheet } from '../stores/spreadsheets';
 import { ensureUsageStatus, usageState } from '../stores/usage';
 import { showUpgrade } from '../stores/upgrade';
 import { onboardingState } from '../stores/onboarding';
@@ -110,6 +120,7 @@ const starterQuestions = [
 
 const draft = ref('');
 const loading = ref(false);
+const downloadingSpreadsheet = ref(false);
 const chatUsage = computed(() => usageState.data?.chat?.messages || null);
 const isPremium = computed(() => usageState.plan === 'premium');
 const chatLocked = computed(() => !!chatUsage.value?.exhausted);
@@ -126,6 +137,23 @@ const openUpgrade = () => {
 const chatErrorMessage = (err) => {
     const message = err?.response?.data?.message;
     return message || 'Penny is resting right now. You can try again in a little while.';
+};
+
+const spreadsheetErrorMessage = (err) => {
+    const message = err?.response?.data?.message;
+    return message || 'Penny AI could not generate the spreadsheet right now. Please try again in a moment.';
+};
+
+const normalizeAssistantResponse = (payload) => {
+    if (typeof payload === 'string') {
+        return { role: 'assistant', text: payload };
+    }
+
+    return {
+        role: 'assistant',
+        text: (payload?.message || '').toString().trim(),
+        action: payload?.action && typeof payload.action === 'object' ? payload.action : null,
+    };
 };
 
 const lastAssistantIndex = computed(() => {
@@ -156,7 +184,7 @@ const handleSend = async () => {
 
     try {
         const response = await sendChatMessage(text);
-        messages.value = [...messages.value, { role: 'assistant', text: response }];
+        messages.value = [...messages.value, normalizeAssistantResponse(response)];
         await ensureUsageStatus(true);
         persistMessages();
         scrollToBottom();
@@ -170,6 +198,26 @@ const handleSend = async () => {
         scrollToBottom();
     } finally {
         loading.value = false;
+    }
+};
+
+const handleMessageAction = async (action) => {
+    if (!action || action.type !== 'download_spreadsheet' || downloadingSpreadsheet.value) {
+        return;
+    }
+
+    downloadingSpreadsheet.value = true;
+    try {
+        await generateSpreadsheet(action.payload || {});
+    } catch (err) {
+        messages.value = [
+            ...messages.value,
+            { role: 'assistant', text: spreadsheetErrorMessage(err) },
+        ];
+        persistMessages();
+        scrollToBottom();
+    } finally {
+        downloadingSpreadsheet.value = false;
     }
 };
 

@@ -168,6 +168,8 @@ Route::get('/sitemap.xml', function () {
         '/',
         '/how-it-works',
         '/pricing',
+        '/best-ai-budgeting-app',
+        '/private-budgeting-app',
         '/blog',
         '/faq',
         '/privacy',
@@ -178,6 +180,7 @@ Route::get('/sitemap.xml', function () {
         'changefreq' => in_array($path, ['/', '/blog'], true) ? 'weekly' : 'monthly',
         'priority' => match ($path) {
             '/' => '1.0',
+            '/best-ai-budgeting-app', '/private-budgeting-app' => '0.9',
             '/blog' => '0.8',
             '/pricing' => '0.9',
             default => '0.7',
@@ -248,8 +251,13 @@ Route::redirect('/updates', '/');
 Route::view('/how-it-works', 'marketing');
 Route::view('/pricing', 'marketing');
 Route::view('/faq', 'marketing');
+Route::view('/best-ai-budgeting-app', 'best-ai-budgeting-app');
+Route::view('/private-budgeting-app', 'private-budgeting-app');
 Route::view('/budgeting-app-guide', 'budgeting-app-guide');
 Route::view('/blog', 'blog.index');
+Route::view('/blog/how-ai-budgeting-works', 'blog.how-ai-budgeting-works');
+Route::view('/blog/manual-vs-ai-budgeting', 'blog.manual-vs-ai-budgeting');
+Route::view('/blog/budgeting-without-bank-linking', 'blog.budgeting-without-bank-linking');
 Route::view('/blog/privacy-budgeting-app', 'blog.privacy-budgeting-app');
 Route::view('/blog/manual-budgeting-benefits', 'blog.manual-budgeting-benefits');
 Route::view('/blog/ai-budgeting-tools', 'blog.ai-budgeting-tools');
