@@ -95,7 +95,7 @@ details > summary::-webkit-details-marker {
 }
 
 .marketing-faq-item {
-    border: 1px solid #ddd7cc;
+    border: 1px solid rgba(143, 138, 130, 0.26);
     border-radius: 12px;
     background: #fff;
     overflow: hidden;
@@ -121,21 +121,25 @@ details > summary::-webkit-details-marker {
 }
 
 .marketing-faq-icon {
-    width: 20px;
-    min-width: 20px;
+    width: 16px;
+    min-width: 16px;
+    height: 16px;
     display: inline-flex;
     justify-content: center;
     align-items: center;
-    color: #66736a;
+    color: #6b7d72;
     font-size: 0;
     line-height: 0;
 }
 
 .marketing-faq-icon::before {
-    content: "+";
-    font-size: 22px;
-    line-height: 1;
-    font-weight: 400;
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-right: 1.6px solid currentColor;
+    border-bottom: 1.6px solid currentColor;
+    transform: rotate(45deg) translateY(-1px);
+    transition: transform 0.18s ease;
 }
 
 .marketing-faq-item[open] .marketing-faq-icon {
@@ -143,7 +147,7 @@ details > summary::-webkit-details-marker {
 }
 
 .marketing-faq-item[open] .marketing-faq-icon::before {
-    content: "-";
+    transform: rotate(-135deg) translateY(-1px);
 }
 
 .marketing-faq-answer {

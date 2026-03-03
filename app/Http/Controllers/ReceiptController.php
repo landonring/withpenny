@@ -84,6 +84,7 @@ class ReceiptController extends Controller
     public function show(Request $request, Receipt $receipt)
     {
         $this->authorizeReceipt($request, $receipt);
+        $receipt = $this->processInlineIfQueueWorkerUnavailable($receipt);
 
         return response()->json(
             $this->serializeReceiptPayload($receipt, $this->planUsage->isStarter($request->user()))
@@ -241,9 +242,56 @@ class ReceiptController extends Controller
             'flagged' => false,
         ]);
 
-        ProcessReceiptScanJob::dispatch($receipt->id, $storedPaths);
+        if ($this->shouldProcessInline()) {
+            ProcessReceiptScanJob::dispatchSync($receipt->id, $storedPaths);
+        } else {
+            ProcessReceiptScanJob::dispatch($receipt->id, $storedPaths);
+        }
 
         return [$receipt->refresh(), $storedPaths];
+    }
+
+    private function shouldProcessInline(): bool
+    {
+        $queueConnection = (string) config('queue.default', 'sync');
+
+        if ($queueConnection === 'sync') {
+            return true;
+        }
+
+        return app()->environment(['local', 'testing']) && $queueConnection === 'database';
+    }
+
+    private function processInlineIfQueueWorkerUnavailable(Receipt $receipt): Receipt
+    {
+        if (! $this->shouldProcessInline()) {
+            return $receipt;
+        }
+
+        if (! in_array((string) $receipt->processing_status, ['queued', 'processing'], true)) {
+            return $receipt;
+        }
+
+        $data = is_array($receipt->extracted_data) ? $receipt->extracted_data : [];
+        $pendingImages = $data['pending_images'] ?? null;
+        if (! is_array($pendingImages) || empty($pendingImages)) {
+            return $receipt;
+        }
+
+        $paths = [];
+        foreach ($pendingImages as $path) {
+            if (is_string($path) && $path !== '') {
+                $paths[] = $path;
+            }
+        }
+
+        if (empty($paths)) {
+            return $receipt;
+        }
+
+        ProcessReceiptScanJob::dispatchSync($receipt->id, $paths);
+
+        return $receipt->fresh() ?? $receipt;
     }
 
     /**

@@ -1931,7 +1931,7 @@ a:hover {
 }
 
 .faq-list details {
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.12);
     border-radius: 12px;
     background: #fff;
     padding: 0 14px;
@@ -1956,15 +1956,18 @@ a:hover {
 }
 
 .faq-list summary::after {
-    content: '+';
-    font-size: 22px;
-    font-weight: 400;
-    line-height: 1;
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-right: 1.6px solid var(--muted);
+    border-bottom: 1.6px solid var(--muted);
+    transform: rotate(45deg) translateY(-1px);
+    transition: transform 0.18s ease;
     color: var(--muted);
 }
 
 .faq-list details[open] summary::after {
-    content: '-';
+    transform: rotate(-135deg) translateY(-1px);
 }
 
 .faq-list p {

@@ -146,6 +146,7 @@ class BankStatementController extends Controller
     public function show(Request $request, BankStatementImport $import)
     {
         $this->authorizeImport($request, $import);
+        $import = $this->processInlineIfQueueWorkerUnavailable($import);
 
         return response()->json([
             'import' => $this->serializeImport($import),
@@ -402,9 +403,61 @@ class BankStatementController extends Controller
             'total_rows' => 0,
         ]);
 
-        ProcessBankStatementImportJob::dispatch($import->id, $pendingFiles);
+        if ($this->shouldProcessInline()) {
+            ProcessBankStatementImportJob::dispatchSync($import->id, $pendingFiles);
+        } else {
+            ProcessBankStatementImportJob::dispatch($import->id, $pendingFiles);
+        }
 
         return $import->refresh();
+    }
+
+    private function shouldProcessInline(): bool
+    {
+        $queueConnection = (string) config('queue.default', 'sync');
+
+        if ($queueConnection === 'sync') {
+            return true;
+        }
+
+        return app()->environment(['local', 'testing']) && $queueConnection === 'database';
+    }
+
+    private function processInlineIfQueueWorkerUnavailable(BankStatementImport $import): BankStatementImport
+    {
+        if (! $this->shouldProcessInline()) {
+            return $import;
+        }
+
+        if (! in_array((string) $import->processing_status, ['queued', 'processing'], true)) {
+            return $import;
+        }
+
+        $queuedFiles = $import->meta['queued_files'] ?? null;
+        if (! is_array($queuedFiles) || empty($queuedFiles)) {
+            return $import;
+        }
+
+        $pendingFiles = [];
+        foreach ($queuedFiles as $storagePath) {
+            if (! is_string($storagePath) || $storagePath === '') {
+                continue;
+            }
+
+            $pendingFiles[] = [
+                'name' => basename($storagePath),
+                'mime' => null,
+                'storage_path' => $storagePath,
+            ];
+        }
+
+        if (empty($pendingFiles)) {
+            return $import;
+        }
+
+        ProcessBankStatementImportJob::dispatchSync($import->id, $pendingFiles);
+
+        return $import->fresh() ?? $import;
     }
 
     private function cleanupPendingFiles(BankStatementImport $import): void
