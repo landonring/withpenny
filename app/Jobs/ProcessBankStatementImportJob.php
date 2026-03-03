@@ -33,6 +33,11 @@ class ProcessBankStatementImportJob implements ShouldQueue
             return;
         }
 
+        if (in_array((string) $import->processing_status, ['completed', 'failed'], true)) {
+            $this->cleanupFiles();
+            return;
+        }
+
         $import->update([
             'processing_status' => 'processing',
             'processing_error' => null,

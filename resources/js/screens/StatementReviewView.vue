@@ -174,6 +174,8 @@ const transactions = ref([]);
 const summary = ref(null);
 const processingStatus = ref('completed');
 const processingError = ref('');
+const pollAttempts = ref(0);
+const maxPollAttempts = 40;
 let pollTimer = null;
 const categories = categoryLabels;
 const isProcessing = computed(() =>
@@ -250,6 +252,16 @@ const loadImport = async () => {
         };
 
         if (isProcessing.value) {
+            pollAttempts.value += 1;
+            if (pollAttempts.value >= maxPollAttempts) {
+                processingStatus.value = 'failed';
+                processingError.value = processingError.value || 'Processing is taking longer than expected. Please try this upload again.';
+                if (pollTimer) {
+                    clearTimeout(pollTimer);
+                    pollTimer = null;
+                }
+                return;
+            }
             if (pollTimer) {
                 clearTimeout(pollTimer);
             }
@@ -259,6 +271,9 @@ const loadImport = async () => {
         } else if (pollTimer) {
             clearTimeout(pollTimer);
             pollTimer = null;
+            pollAttempts.value = 0;
+        } else {
+            pollAttempts.value = 0;
         }
     } catch (err) {
         error.value = err?.response?.data?.message || 'Unable to load this statement.';

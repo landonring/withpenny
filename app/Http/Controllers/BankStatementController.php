@@ -383,6 +383,7 @@ class BankStatementController extends Controller
             'transactions' => [],
             'meta' => [
                 'queued_files' => array_map(fn ($item) => $item['storage_path'], $pendingFiles),
+                'queued_file_entries' => $pendingFiles,
                 'queued_at' => now()->toIso8601String(),
                 'review' => [
                     'recommended' => false,
@@ -416,11 +417,7 @@ class BankStatementController extends Controller
     {
         $queueConnection = (string) config('queue.default', 'sync');
 
-        if ($queueConnection === 'sync') {
-            return true;
-        }
-
-        return app()->environment(['local', 'testing']) && $queueConnection === 'database';
+        return in_array($queueConnection, ['sync', 'database'], true);
     }
 
     private function processInlineIfQueueWorkerUnavailable(BankStatementImport $import): BankStatementImport
@@ -429,33 +426,68 @@ class BankStatementController extends Controller
             return $import;
         }
 
-        if (! in_array((string) $import->processing_status, ['queued', 'processing'], true)) {
-            return $import;
+        $status = (string) $import->processing_status;
+        if ($status !== 'queued') {
+            if (
+                $status !== 'processing'
+                || ! $import->processing_started_at
+                || $import->processing_started_at->gt(now()->subMinutes(3))
+            ) {
+                return $import;
+            }
         }
 
-        $queuedFiles = $import->meta['queued_files'] ?? null;
+        $meta = is_array($import->meta) ? $import->meta : [];
+        $queuedEntries = $meta['queued_file_entries'] ?? null;
+        $pendingFiles = [];
+
+        if (is_array($queuedEntries) && ! empty($queuedEntries)) {
+            foreach ($queuedEntries as $entry) {
+                if (! is_array($entry)) {
+                    continue;
+                }
+
+                $storagePath = (string) ($entry['storage_path'] ?? '');
+                if ($storagePath === '') {
+                    continue;
+                }
+
+                $pendingFiles[] = [
+                    'name' => (string) ($entry['name'] ?? basename($storagePath)),
+                    'mime' => $entry['mime'] ?? null,
+                    'storage_path' => $storagePath,
+                ];
+            }
+        }
+
+        if (! empty($pendingFiles)) {
+            ProcessBankStatementImportJob::dispatchSync($import->id, $pendingFiles);
+            return $import->fresh() ?? $import;
+        }
+
+        $queuedFiles = $meta['queued_files'] ?? null;
         if (! is_array($queuedFiles) || empty($queuedFiles)) {
             return $import;
         }
 
-        $pendingFiles = [];
+        $fallbackFiles = [];
         foreach ($queuedFiles as $storagePath) {
             if (! is_string($storagePath) || $storagePath === '') {
                 continue;
             }
 
-            $pendingFiles[] = [
+            $fallbackFiles[] = [
                 'name' => basename($storagePath),
                 'mime' => null,
                 'storage_path' => $storagePath,
             ];
         }
 
-        if (empty($pendingFiles)) {
+        if (empty($fallbackFiles)) {
             return $import;
         }
 
-        ProcessBankStatementImportJob::dispatchSync($import->id, $pendingFiles);
+        ProcessBankStatementImportJob::dispatchSync($import->id, $fallbackFiles);
 
         return $import->fresh() ?? $import;
     }

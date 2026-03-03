@@ -128,13 +128,16 @@ const saving = ref(false);
 const error = ref('');
 const formReady = ref(false);
 const processingError = ref('');
+const pollAttempts = ref(0);
+const maxPollAttempts = 40;
+const processingTimedOut = ref(false);
 let pollTimer = null;
 
 const receipt = computed(() => receiptState.current);
 const suggestions = computed(() => receiptState.suggestions || {});
 const isProcessing = computed(() => {
     const status = String(receipt.value?.processing_status || '');
-    return status === 'queued' || status === 'processing';
+    return !processingTimedOut.value && (status === 'queued' || status === 'processing');
 });
 const lineItems = ref([]);
 const lineDate = ref(new Date().toISOString().slice(0, 10));
@@ -199,7 +202,22 @@ const refreshReceipt = async () => {
     hydrateForm();
     hydrateLineItems();
 
+    const status = String(receipt.value?.processing_status || '');
+    if (status !== 'queued' && status !== 'processing') {
+        processingTimedOut.value = false;
+    }
+
     if (isProcessing.value) {
+        pollAttempts.value += 1;
+        if (pollAttempts.value >= maxPollAttempts) {
+            processingError.value = processingError.value || 'Processing is taking longer than expected. Please try scanning this receipt again.';
+            processingTimedOut.value = true;
+            if (pollTimer) {
+                clearTimeout(pollTimer);
+                pollTimer = null;
+            }
+            return;
+        }
         if (pollTimer) clearTimeout(pollTimer);
         pollTimer = setTimeout(() => {
             refreshReceipt();
@@ -207,6 +225,9 @@ const refreshReceipt = async () => {
     } else if (pollTimer) {
         clearTimeout(pollTimer);
         pollTimer = null;
+        pollAttempts.value = 0;
+    } else {
+        pollAttempts.value = 0;
     }
 };
 

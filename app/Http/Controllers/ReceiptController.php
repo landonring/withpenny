@@ -255,11 +255,7 @@ class ReceiptController extends Controller
     {
         $queueConnection = (string) config('queue.default', 'sync');
 
-        if ($queueConnection === 'sync') {
-            return true;
-        }
-
-        return app()->environment(['local', 'testing']) && $queueConnection === 'database';
+        return in_array($queueConnection, ['sync', 'database'], true);
     }
 
     private function processInlineIfQueueWorkerUnavailable(Receipt $receipt): Receipt
@@ -268,8 +264,15 @@ class ReceiptController extends Controller
             return $receipt;
         }
 
-        if (! in_array((string) $receipt->processing_status, ['queued', 'processing'], true)) {
-            return $receipt;
+        $status = (string) $receipt->processing_status;
+        if ($status !== 'queued') {
+            if (
+                $status !== 'processing'
+                || ! $receipt->processing_started_at
+                || $receipt->processing_started_at->gt(now()->subMinutes(3))
+            ) {
+                return $receipt;
+            }
         }
 
         $data = is_array($receipt->extracted_data) ? $receipt->extracted_data : [];

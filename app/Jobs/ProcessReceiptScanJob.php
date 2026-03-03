@@ -31,6 +31,11 @@ class ProcessReceiptScanJob implements ShouldQueue
             return;
         }
 
+        if (in_array((string) $receipt->processing_status, ['completed', 'failed'], true)) {
+            $this->cleanupExtraImages();
+            return;
+        }
+
         $receipt->update([
             'processing_status' => 'processing',
             'processing_error' => null,
