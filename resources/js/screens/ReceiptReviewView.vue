@@ -34,6 +34,9 @@
 
         <div class="card">
             <p class="card-sub">You can adjust anything before saving. Nothing is saved until you confirm.</p>
+            <p v-if="isProcessing" class="muted">Processing your receipt…</p>
+            <p v-if="processingError" class="form-error">{{ processingError }}</p>
+            <p v-if="warningsText && !isProcessing" class="muted">{{ warningsText }}</p>
             <div v-if="lineItems.length" class="line-items-card">
                 <p class="card-sub">Each line below will save as its own transaction. Edit anything you need.</p>
                 <div class="line-items">
@@ -76,7 +79,7 @@
                 v-else-if="formReady"
                 :model-value="form"
                 :error="error"
-                :loading="saving"
+                :loading="saving || isProcessing"
                 submit-label="Save spending"
                 @submit="handleSubmit"
                 @cancel="handleCancel"
@@ -92,8 +95,8 @@
                     <button class="ghost-button" type="button" @click="handleCancel">
                         Cancel
                     </button>
-                    <button class="primary-button" type="button" :disabled="saving" @click="handleSubmitItems">
-                        {{ saving ? 'Saving…' : `Save ${lineItems.length} items` }}
+                    <button class="primary-button" type="button" :disabled="saving || isProcessing" @click="handleSubmitItems">
+                        {{ saving ? 'Saving…' : (isProcessing ? 'Processing…' : `Save ${lineItems.length} items`) }}
                     </button>
                 </div>
             </div>
@@ -101,7 +104,7 @@
 
         <div class="review-actions">
             <button class="ghost-button" type="button" @click="rescan">Re-scan</button>
-            <button class="danger-button" type="button" :disabled="saving" @click="discard">
+            <button class="danger-button" type="button" :disabled="saving || isProcessing" @click="discard">
                 Discard
             </button>
         </div>
@@ -111,7 +114,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import TransactionForm from '../components/TransactionForm.vue';
 import { receiptState, fetchReceipt, discardReceipt } from '../stores/receipts';
@@ -124,9 +127,15 @@ const router = useRouter();
 const saving = ref(false);
 const error = ref('');
 const formReady = ref(false);
+const processingError = ref('');
+let pollTimer = null;
 
 const receipt = computed(() => receiptState.current);
 const suggestions = computed(() => receiptState.suggestions || {});
+const isProcessing = computed(() => {
+    const status = String(receipt.value?.processing_status || '');
+    return status === 'queued' || status === 'processing';
+});
 const lineItems = ref([]);
 const lineDate = ref(new Date().toISOString().slice(0, 10));
 const lineItemsTotal = computed(() => {
@@ -139,10 +148,17 @@ const displayTotal = computed(() => {
     return suggestions.value.amount ? formatCurrency(suggestions.value.amount) : 'Not sure yet';
 });
 const suggestionIntro = computed(() => {
+    if (isProcessing.value) {
+        return 'Penny is still reading this receipt. You can review once extraction finishes.';
+    }
     if (!receiptState.rawText) {
         return 'We could not read this clearly — you can still enter it manually.';
     }
     return 'Suggested details — adjust anything you want.';
+});
+const warningsText = computed(() => {
+    const warnings = Array.isArray(receiptState.warnings) ? receiptState.warnings : [];
+    return warnings.join(' ');
 });
 
 const form = ref({
@@ -177,21 +193,40 @@ const hydrateLineItems = () => {
     lineDate.value = suggestions.value.date ?? new Date().toISOString().slice(0, 10);
 };
 
+const refreshReceipt = async () => {
+    await fetchReceipt(route.params.id);
+    processingError.value = String(receiptState.current?.processing_error || '');
+    hydrateForm();
+    hydrateLineItems();
+
+    if (isProcessing.value) {
+        if (pollTimer) clearTimeout(pollTimer);
+        pollTimer = setTimeout(() => {
+            refreshReceipt();
+        }, 1800);
+    } else if (pollTimer) {
+        clearTimeout(pollTimer);
+        pollTimer = null;
+    }
+};
+
 onMounted(async () => {
     initTransactions();
     try {
-        if (!receiptState.current || String(receiptState.current.id) !== String(route.params.id)) {
-            await fetchReceipt(route.params.id);
-        }
-        hydrateForm();
-        hydrateLineItems();
+        await refreshReceipt();
     } catch (err) {
         error.value = 'We could not load this receipt. You can try scanning again.';
     }
 });
 
+onBeforeUnmount(() => {
+    if (pollTimer) {
+        clearTimeout(pollTimer);
+    }
+});
+
 const handleSubmit = async (payload) => {
-    if (!receipt.value) return;
+    if (!receipt.value || isProcessing.value) return;
     saving.value = true;
     error.value = '';
 
@@ -210,7 +245,7 @@ const handleSubmit = async (payload) => {
 };
 
 const handleSubmitItems = async () => {
-    if (!receipt.value || !lineItems.value.length) return;
+    if (!receipt.value || !lineItems.value.length || isProcessing.value) return;
     saving.value = true;
     error.value = '';
 
@@ -256,7 +291,7 @@ const handleCancel = () => {
 };
 
 const discard = async () => {
-    if (!receipt.value) return;
+    if (!receipt.value || isProcessing.value) return;
     await discardReceipt(receipt.value.id);
     router.push({ name: 'scan' });
 };

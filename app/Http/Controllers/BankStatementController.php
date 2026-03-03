@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessBankStatementImportJob;
 use App\Models\BankStatementImport;
 use App\Models\Transaction;
 use App\Services\DemoDataService;
+use App\Services\Ingestion\StatementIngestionService;
+use App\Services\Ingestion\TransactionNormalizationService;
 use App\Services\OnboardingService;
 use App\Services\PlanUsageService;
-use App\Services\Statements\PdfStatementParser;
 use App\Services\Statements\StatementParser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -21,6 +22,8 @@ class BankStatementController extends Controller
         private readonly PlanUsageService $planUsage,
         private readonly DemoDataService $demoData,
         private readonly OnboardingService $onboarding,
+        private readonly StatementIngestionService $ingestion,
+        private readonly TransactionNormalizationService $normalizer,
     )
     {
     }
@@ -31,9 +34,10 @@ class BankStatementController extends Controller
             $validated = $request->validate([
                 'file' => ['required', 'file', 'max:25600'],
             ], [
-                'file.required' => 'Please upload a PDF statement file.',
+                'file.required' => 'Please upload a statement file.',
             ]);
-            $this->assertPdfUpload($validated['file'], 'file');
+
+            $this->assertStatementUpload($validated['file'], 'file');
 
             $import = $this->createDemoImport($request);
             $this->onboarding->rememberImportId($request, $import->id);
@@ -55,62 +59,38 @@ class BankStatementController extends Controller
         $validated = $request->validate([
             'file' => ['required', 'file', 'max:25600'],
         ], [
-            'file.required' => 'Please upload a PDF statement file.',
+            'file.required' => 'Please upload a statement file.',
         ]);
-        $this->assertPdfUpload($validated['file'], 'file');
 
-        [$transactions, $summary, $extractionMeta] = $this->parseSinglePdf($validated['file'], $request);
+        $this->assertStatementUpload($validated['file'], 'file');
 
-        if (empty($transactions)) {
-            return response()->json([
-                'message' => "We couldn't find any transactions in this PDF statement.",
-            ], 422);
-        }
-
-        [$transactions, $planWindowMeta] = $this->applyStatementDateWindowForPlan($request, $transactions);
-
-        $transactions = $this->flagDuplicates($request->user()->id, $transactions);
-        if ($this->planUsage->isStarter($request->user())) {
-            $transactions = $this->toBasicStatementTransactions($transactions);
-        }
-
-        $meta = $this->mergeImportMeta($summary, $planWindowMeta, $extractionMeta);
-
-        $import = BankStatementImport::create([
-            'user_id' => $request->user()->id,
-            'transactions' => $transactions,
-            'meta' => $meta,
-            'masked_account' => null,
-            'source' => 'pdf',
-            'extraction_confidence' => $extractionMeta['extraction_confidence'] ?? null,
-            'balance_mismatch' => (bool) ($extractionMeta['balance_mismatch'] ?? false),
-            'extraction_method' => $extractionMeta['extraction_method'] ?? null,
-        ]);
+        $import = $this->queueImport($request, [$validated['file']]);
+        $status = $import->processing_status === 'completed' ? 201 : 202;
 
         return response()->json([
             'import' => $this->serializeImport($import),
-        ], 201);
+        ], $status);
     }
 
     public function scanImages(Request $request)
     {
         if ($request->user()->onboarding_mode) {
             $request->validate([
-                'files' => ['nullable', 'array', 'max:6'],
+                'files' => ['nullable', 'array', 'max:12'],
                 'files.*' => ['required', 'file', 'max:25600'],
-                'images' => ['nullable', 'array', 'max:6'],
+                'images' => ['nullable', 'array', 'max:12'],
                 'images.*' => ['required', 'file', 'max:25600'],
             ]);
 
             $files = $request->file('files', []);
             $images = $request->file('images', []);
+            $documents = array_merge($files, $images);
             foreach ($files as $index => $file) {
-                $this->assertPdfUpload($file, "files.$index");
+                $this->assertStatementUpload($file, "files.$index");
             }
             foreach ($images as $index => $file) {
-                $this->assertPdfUpload($file, "images.$index");
+                $this->assertStatementUpload($file, "images.$index");
             }
-            $documents = array_merge($files, $images);
 
             $import = $this->createDemoImport($request);
             $this->onboarding->rememberImportId($request, $import->id);
@@ -130,79 +110,37 @@ class BankStatementController extends Controller
         }
 
         $request->validate([
-            'files' => ['nullable', 'array', 'max:6'],
+            'files' => ['nullable', 'array', 'max:12'],
             'files.*' => ['required', 'file', 'max:25600'],
-            'images' => ['nullable', 'array', 'max:6'],
+            'images' => ['nullable', 'array', 'max:12'],
             'images.*' => ['required', 'file', 'max:25600'],
         ], [
-            'files.required' => 'Please upload at least one PDF statement file.',
+            'files.required' => 'Please upload at least one statement file.',
         ]);
 
         $files = $request->file('files', []);
         $images = $request->file('images', []);
         $documents = array_merge($files, $images);
+
         if (empty($documents)) {
             throw ValidationException::withMessages([
-                'files' => ['Please upload at least one PDF statement file.'],
+                'files' => ['Please upload at least one statement file.'],
             ]);
         }
+
         foreach ($files as $index => $file) {
-            $this->assertPdfUpload($file, "files.$index");
+            $this->assertStatementUpload($file, "files.$index");
         }
         foreach ($images as $index => $file) {
-            $this->assertPdfUpload($file, "images.$index");
+            $this->assertStatementUpload($file, "images.$index");
         }
 
-        $allTransactions = [];
-        $summaries = [];
-        $extractionMetas = [];
-
-        foreach ($documents as $file) {
-            [$transactions, $summary, $meta] = $this->parseSinglePdf($file, $request);
-            if (! empty($transactions)) {
-                $allTransactions = array_merge($allTransactions, $transactions);
-            }
-            if (is_array($summary)) {
-                $summaries[] = $summary;
-            }
-            if (is_array($meta)) {
-                $extractionMetas[] = $meta;
-            }
-        }
-
-        if (empty($allTransactions)) {
-            return response()->json([
-                'message' => "We couldn't find any transactions in those PDF statements.",
-            ], 422);
-        }
-
-        $allTransactions = $this->dedupeTransactions($allTransactions);
-
-        [$allTransactions, $planWindowMeta] = $this->applyStatementDateWindowForPlan($request, $allTransactions);
-
-        $allTransactions = $this->flagDuplicates($request->user()->id, $allTransactions);
-        if ($this->planUsage->isStarter($request->user())) {
-            $allTransactions = $this->toBasicStatementTransactions($allTransactions);
-        }
-
-        $summary = $this->mergeStatementSummaries($summaries);
-        $extractionMeta = $this->mergeExtractionMeta($extractionMetas);
-        $meta = $this->mergeImportMeta($summary, $planWindowMeta, $extractionMeta);
-
-        $import = BankStatementImport::create([
-            'user_id' => $request->user()->id,
-            'transactions' => $allTransactions,
-            'meta' => $meta,
-            'masked_account' => null,
-            'source' => 'pdf',
-            'extraction_confidence' => $extractionMeta['extraction_confidence'] ?? null,
-            'balance_mismatch' => (bool) ($extractionMeta['balance_mismatch'] ?? false),
-            'extraction_method' => $extractionMeta['extraction_method'] ?? null,
-        ]);
+        $import = $this->queueImport($request, $documents);
+        $status = $import->processing_status === 'completed' ? 201 : 202;
 
         return response()->json([
             'import' => $this->serializeImport($import),
-        ], 201);
+        ], $status);
     }
 
     public function show(Request $request, BankStatementImport $import)
@@ -217,6 +155,18 @@ class BankStatementController extends Controller
     public function confirm(Request $request, BankStatementImport $import)
     {
         $this->authorizeImport($request, $import);
+
+        if (in_array((string) $import->processing_status, ['queued', 'processing'], true)) {
+            return response()->json([
+                'message' => 'This statement is still processing. Please wait before confirming.',
+            ], 409);
+        }
+
+        if ((string) $import->processing_status === 'failed') {
+            return response()->json([
+                'message' => 'Statement parsing could not be automated. Please review manually or upload a clearer file.',
+            ], 422);
+        }
 
         if ($request->user()->onboarding_mode) {
             $validated = $request->validate([
@@ -258,6 +208,8 @@ class BankStatementController extends Controller
             'transactions.*.type' => ['required', 'in:income,spending'],
             'transactions.*.category' => ['nullable', 'string', 'max:50'],
             'transactions.*.include' => ['required', 'boolean'],
+            'transactions.*.confidence_score' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'transactions.*.flagged' => ['nullable', 'boolean'],
         ]);
 
         return DB::transaction(function () use ($request, $import, $validated) {
@@ -282,7 +234,7 @@ class BankStatementController extends Controller
                 $maxDate = max($dates);
                 $existing = Transaction::query()
                     ->where('user_id', $request->user()->id)
-                    ->where('source', 'statement')
+                    ->whereIn('source', ['statement', 'bank_upload'])
                     ->whereBetween('transaction_date', [$minDate, $maxDate])
                     ->get(['transaction_date', 'amount', 'note', 'type']);
 
@@ -298,6 +250,7 @@ class BankStatementController extends Controller
                 if (! $item['include']) {
                     continue;
                 }
+
                 $type = $item['type'] === 'income' ? 'income' : 'spending';
                 $category = $type === 'income' ? 'Income' : $this->sanitizeStatementCategory($item['category'] ?? null);
                 $date = $item['date'];
@@ -309,17 +262,18 @@ class BankStatementController extends Controller
                     continue;
                 }
 
-                $toCreate[] = [
-                    'user_id' => $request->user()->id,
-                    'amount' => $item['amount'],
+                $normalized = [
+                    'source' => 'bank_upload',
+                    'date' => $date,
+                    'description' => $description,
+                    'amount' => (float) $item['amount'],
                     'category' => $category,
-                    'note' => $item['description'],
-                    'transaction_date' => $item['date'],
-                    'source' => 'statement',
+                    'confidence_score' => $item['confidence_score'] ?? $lockedImport->confidence_score,
+                    'flagged' => (bool) ($item['flagged'] ?? false),
                     'type' => $type,
-                    'created_at' => now(),
-                    'updated_at' => now(),
                 ];
+
+                $toCreate[] = $this->normalizer->toTransactionInsert($normalized, $request->user()->id);
             }
 
             if (! empty($toCreate)) {
@@ -339,7 +293,10 @@ class BankStatementController extends Controller
     public function destroy(Request $request, BankStatementImport $import)
     {
         $this->authorizeImport($request, $import);
+
+        $this->cleanupPendingFiles($import);
         $import->delete();
+
         if ($request->user()->onboarding_mode) {
             $this->onboarding->forgetImportId($request);
             $this->onboarding->setStep($request->user(), 1, $request);
@@ -366,6 +323,7 @@ class BankStatementController extends Controller
             'Shopping',
             'Subscriptions',
             'Misc',
+            'Income',
         ];
 
         if ($category && in_array($category, $allowed, true)) {
@@ -375,311 +333,92 @@ class BankStatementController extends Controller
         return 'Misc';
     }
 
-    private function assertPdfUpload($file, string $field): void
+    private function assertStatementUpload($file, string $field): void
     {
         $name = strtolower((string) $file->getClientOriginalName());
         $clientMime = strtolower((string) $file->getClientMimeType());
         $detectedMime = strtolower((string) $file->getMimeType());
 
-        $isPdf = str_ends_with($name, '.pdf')
-            || str_contains($clientMime, 'pdf')
-            || str_contains($detectedMime, 'pdf');
+        $isSupported = $this->ingestion->detectFormat($name, $clientMime) !== null
+            || $this->ingestion->detectFormat($name, $detectedMime) !== null;
 
-        if ($isPdf) {
+        if ($isSupported) {
             return;
         }
 
         throw ValidationException::withMessages([
-            $field => ['Only PDF bank statements are supported.'],
+            $field => ['Supported formats are PDF, CSV, OFX, and QFX.'],
         ]);
     }
 
     /**
-     * @return array{0: array<int, array<string,mixed>>, 1: array<string,mixed>, 2: array<string,mixed>}
+     * @param array<int, mixed> $files
      */
-    private function parseSinglePdf($file, Request $request): array
+    private function queueImport(Request $request, array $files): BankStatementImport
     {
-        $path = $file->store('tmp');
-        $absolutePath = Storage::disk('local')->path($path);
-        $debug = $request->boolean('debug_statement_parse') || (bool) config('statements.debug', false);
-
-        try {
-            $parser = new PdfStatementParser();
-            $result = $parser->parseDocument($absolutePath, $debug);
-
-            $transactions = $result['transactions'] ?? [];
-            $summary = $result['summary'] ?? [];
-            $meta = [
-                'extraction_method' => $result['extraction_method'] ?? null,
-                'extraction_confidence' => $result['extraction_confidence'] ?? null,
-                'balance_mismatch' => (bool) ($result['balance_mismatch'] ?? false),
-                'parser_stats' => $result['stats'] ?? [],
-            ];
-
-            if ($debug && isset($result['debug'])) {
-                $meta['parser_debug'] = $result['debug'];
-            }
-
-            return [$transactions, $summary, $meta];
-        } catch (\Throwable $error) {
-            Log::warning('statement_parse_failed', [
-                'error' => $error->getMessage(),
-                'file_name' => $file->getClientOriginalName(),
-                'mime' => $file->getClientMimeType(),
-            ]);
-
-            throw ValidationException::withMessages([
-                'file' => ['We could not process that PDF statement. Try a clearer digital export.'],
-            ]);
-        } finally {
-            Storage::disk('local')->delete($path);
-        }
-    }
-
-    /**
-     * @param array<int, array<string, mixed>> $transactions
-     * @return array<int, array<string, mixed>>
-     */
-    private function dedupeTransactions(array $transactions): array
-    {
-        $seen = [];
-        $deduped = [];
-
-        foreach ($transactions as $item) {
-            $description = strtolower(trim((string) ($item['description'] ?? '')));
-            $description = preg_replace('/\s+/', ' ', $description);
-            $key = strtolower((string) ($item['date'] ?? ''))
-                .'|'.number_format((float) ($item['amount'] ?? 0), 2, '.', '')
-                .'|'.strtolower((string) ($item['type'] ?? 'spending'))
-                .'|'.$description;
-
-            if (isset($seen[$key])) {
-                continue;
-            }
-
-            $seen[$key] = true;
-            $deduped[] = $item;
-        }
-
-        usort($deduped, fn ($a, $b) => strcmp((string) ($a['date'] ?? ''), (string) ($b['date'] ?? '')));
-
-        return $deduped;
-    }
-
-    /**
-     * @param array<int, array<string,mixed>> $summaries
-     * @return array<string,mixed>|null
-     */
-    private function mergeStatementSummaries(array $summaries): ?array
-    {
-        if (empty($summaries)) {
-            return null;
-        }
-
-        $firstOpening = null;
-        $lastClosing = null;
-
-        foreach ($summaries as $summary) {
-            if ($firstOpening === null && isset($summary['opening_balance']) && is_numeric($summary['opening_balance'])) {
-                $firstOpening = (float) $summary['opening_balance'];
-            }
-            if (isset($summary['closing_balance']) && is_numeric($summary['closing_balance'])) {
-                $lastClosing = (float) $summary['closing_balance'];
-            }
-        }
-
-        $change = null;
-        if ($firstOpening !== null && $lastClosing !== null) {
-            $change = $lastClosing - $firstOpening;
-        }
-
-        return [
-            'opening_balance' => $firstOpening,
-            'closing_balance' => $lastClosing,
-            'balance_change' => $change,
-        ];
-    }
-
-    /**
-     * @param array<int, array<string,mixed>> $metas
-     * @return array<string,mixed>
-     */
-    private function mergeExtractionMeta(array $metas): array
-    {
-        if (empty($metas)) {
-            return [
-                'extraction_method' => null,
-                'extraction_confidence' => 'low',
-                'balance_mismatch' => false,
+        $pendingFiles = [];
+        foreach ($files as $file) {
+            $storedPath = $file->store('tmp/statement-ingest');
+            $pendingFiles[] = [
+                'name' => (string) $file->getClientOriginalName(),
+                'mime' => (string) $file->getClientMimeType(),
+                'storage_path' => $storedPath,
             ];
         }
 
-        $methods = array_values(array_filter(array_map(fn ($meta) => $meta['extraction_method'] ?? null, $metas)));
-        $confidences = array_values(array_filter(array_map(fn ($meta) => $meta['extraction_confidence'] ?? null, $metas)));
-
-        $hasLow = in_array('low', $confidences, true);
-        $hasMedium = in_array('medium', $confidences, true);
-
-        $confidence = $hasLow ? 'low' : ($hasMedium ? 'medium' : 'high');
-        $balanceMismatch = collect($metas)->contains(fn ($meta) => (bool) ($meta['balance_mismatch'] ?? false));
-
-        $method = null;
-        if (! empty($methods)) {
-            $unique = array_values(array_unique($methods));
-            $method = count($unique) === 1 ? $unique[0] : 'mixed';
-        }
-
-        return [
-            'extraction_method' => $method,
-            'extraction_confidence' => $confidence,
-            'balance_mismatch' => $balanceMismatch,
-            'sources' => $methods,
-            'parser_stats' => $metas,
-        ];
-    }
-
-    private function flagDuplicates(int $userId, array $transactions): array
-    {
-        $dates = array_column($transactions, 'date');
-        if (empty($dates)) {
-            return $transactions;
-        }
-
-        $min = min($dates);
-        $max = max($dates);
-
-        $existing = Transaction::query()
-            ->where('user_id', $userId)
-            ->whereBetween('transaction_date', [$min, $max])
-            ->get(['transaction_date', 'amount', 'note', 'type']);
-
-        $existingMap = [];
-        foreach ($existing as $row) {
-            $key = $row->transaction_date.'|'.$row->amount.'|'.($row->type ?? 'spending');
-            $existingMap[$key][] = $this->normalizeDescription($row->note ?? '');
-        }
-
-        return array_map(function ($item) use ($existingMap) {
-            $key = $item['date'].'|'.$item['amount'].'|'.($item['type'] ?? 'spending');
-            if (isset($existingMap[$key])) {
-                $candidate = $this->normalizeDescription($item['description']);
-                foreach ($existingMap[$key] as $existingDescription) {
-                    if ($this->isSimilarDescription($candidate, $existingDescription)) {
-                        $item['duplicate'] = true;
-                        break;
-                    }
-                }
+        $firstName = (string) ($pendingFiles[0]['name'] ?? 'statement');
+        $detectedFormats = [];
+        foreach ($pendingFiles as $entry) {
+            $detected = $this->ingestion->detectFormat($entry['name'], $entry['mime'] ?? null);
+            if ($detected !== null) {
+                $detectedFormats[] = $detected;
             }
-            return $item;
-        }, $transactions);
-    }
-
-    private function normalizeDescription(string $value): string
-    {
-        $normalized = strtolower(trim(preg_replace('/\s+/', ' ', $value)));
-        return preg_replace('/[^a-z0-9 ]/', '', $normalized);
-    }
-
-    private function isSimilarDescription(string $a, string $b): bool
-    {
-        if ($a === '' || $b === '') {
-            return false;
         }
+        $uniqueFormats = array_values(array_unique($detectedFormats));
+        $fileFormat = count($uniqueFormats) === 1 ? $uniqueFormats[0] : 'mixed';
 
-        if ($a === $b) {
-            return true;
-        }
-
-        similar_text($a, $b, $percent);
-        return $percent >= 85.0;
-    }
-
-    private function applyStatementDateWindowForPlan(Request $request, array $transactions): array
-    {
-        $maxDays = $this->planUsage->statementMaxDaysPerUpload($request->user());
-        if ($maxDays === null) {
-            return [$transactions, null];
-        }
-
-        $dates = collect($transactions)
-            ->pluck('date')
-            ->filter()
-            ->map(fn ($date) => strtotime((string) $date))
-            ->filter(fn ($timestamp) => $timestamp !== false)
-            ->values();
-
-        if ($dates->count() < 2) {
-            return [$transactions, null];
-        }
-
-        $minTimestamp = (int) $dates->min();
-        $maxTimestamp = (int) $dates->max();
-        $spanDays = (int) floor(($maxTimestamp - $minTimestamp) / 86400) + 1;
-
-        if ($spanDays <= $maxDays) {
-            return [$transactions, null];
-        }
-
-        $minAllowedTimestamp = $maxTimestamp - (($maxDays - 1) * 86400);
-        $filteredTransactions = array_values(array_filter($transactions, function ($item) use ($minAllowedTimestamp, $maxTimestamp) {
-            $timestamp = strtotime((string) ($item['date'] ?? ''));
-            if ($timestamp === false) {
-                return true;
-            }
-
-            return $timestamp >= $minAllowedTimestamp && $timestamp <= $maxTimestamp;
-        }));
-
-        if (empty($filteredTransactions)) {
-            return [$transactions, null];
-        }
-
-        return [
-            $filteredTransactions,
-            [
-                'applied' => true,
-                'limit_days' => $maxDays,
-                'original_span_days' => $spanDays,
-                'message' => "This statement spans {$spanDays} days. Penny imported the most recent {$maxDays} days for your plan.",
+        $import = BankStatementImport::query()->create([
+            'user_id' => $request->user()->id,
+            'transactions' => [],
+            'meta' => [
+                'queued_files' => array_map(fn ($item) => $item['storage_path'], $pendingFiles),
+                'queued_at' => now()->toIso8601String(),
+                'review' => [
+                    'recommended' => false,
+                    'message' => null,
+                ],
             ],
-        ];
+            'masked_account' => null,
+            'source' => 'pending',
+            'file_name' => $firstName,
+            'file_format' => $fileFormat,
+            'processing_status' => 'queued',
+            'processing_started_at' => now(),
+            'extraction_confidence' => null,
+            'balance_mismatch' => false,
+            'extraction_method' => null,
+            'confidence_score' => null,
+            'flagged_rows' => 0,
+            'total_rows' => 0,
+        ]);
+
+        ProcessBankStatementImportJob::dispatch($import->id, $pendingFiles);
+
+        return $import->refresh();
     }
 
-    private function mergeImportMeta(?array $summary, ?array $planWindowMeta, ?array $extractionMeta = null): ?array
+    private function cleanupPendingFiles(BankStatementImport $import): void
     {
-        if ($summary === null && $planWindowMeta === null && $extractionMeta === null) {
-            return null;
+        $queued = $import->meta['queued_files'] ?? null;
+        if (! is_array($queued)) {
+            return;
         }
 
-        $meta = is_array($summary) ? $summary : [];
-
-        if ($planWindowMeta !== null) {
-            $meta['plan_window'] = $planWindowMeta;
+        foreach ($queued as $path) {
+            if (is_string($path) && $path !== '') {
+                Storage::disk('local')->delete($path);
+            }
         }
-
-        if ($extractionMeta !== null) {
-            $meta['extraction'] = $extractionMeta;
-        }
-
-        return $meta;
-    }
-
-    private function toBasicStatementTransactions(array $transactions): array
-    {
-        return array_map(function ($item) {
-            $type = ($item['type'] ?? 'spending') === 'income' ? 'income' : 'spending';
-
-            return [
-                'id' => $item['id'] ?? null,
-                'date' => $item['date'] ?? null,
-                'description' => $item['description'] ?? '',
-                'amount' => $item['amount'] ?? 0,
-                'type' => $type,
-                'category' => $type === 'income' ? 'Income' : 'Misc',
-                'duplicate' => (bool) ($item['duplicate'] ?? false),
-                'include' => $item['include'] ?? true,
-            ];
-        }, $transactions);
     }
 
     private function serializeImport(BankStatementImport $import): array
@@ -688,6 +427,14 @@ class BankStatementController extends Controller
             'id' => $import->id,
             'transactions' => $import->transactions,
             'meta' => $import->meta,
+            'source' => $import->source,
+            'file_name' => $import->file_name,
+            'file_format' => $import->file_format,
+            'processing_status' => $import->processing_status,
+            'processing_error' => $import->processing_error,
+            'confidence_score' => $import->confidence_score,
+            'flagged_rows' => (int) $import->flagged_rows,
+            'total_rows' => (int) $import->total_rows,
             'extraction_confidence' => $import->extraction_confidence,
             'balance_mismatch' => (bool) $import->balance_mismatch,
             'extraction_method' => $import->extraction_method,
@@ -704,9 +451,17 @@ class BankStatementController extends Controller
             'meta' => $payload['meta'],
             'masked_account' => 'Demo account',
             'source' => 'onboarding_demo',
+            'file_name' => 'demo-statement.pdf',
+            'file_format' => 'pdf',
+            'processing_status' => 'completed',
+            'processing_started_at' => now(),
+            'processing_completed_at' => now(),
             'extraction_confidence' => $payload['extraction_confidence'] ?? 'high',
             'balance_mismatch' => (bool) ($payload['balance_mismatch'] ?? false),
-            'extraction_method' => $payload['extraction_method'] ?? 'pdf_text',
+            'extraction_method' => $payload['extraction_method'] ?? 'ai_pdf',
+            'confidence_score' => 99,
+            'flagged_rows' => 0,
+            'total_rows' => count($payload['transactions'] ?? []),
         ]);
     }
 }

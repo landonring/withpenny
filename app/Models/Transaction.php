@@ -21,11 +21,15 @@ class Transaction extends Model
         'transaction_date',
         'source',
         'type',
+        'confidence_score',
+        'flagged',
     ];
 
     protected $casts = [
         'transaction_date' => 'date',
         'amount' => 'decimal:2',
+        'confidence_score' => 'decimal:2',
+        'flagged' => 'boolean',
     ];
 
     public function receipt(): BelongsTo

@@ -76,6 +76,9 @@ class TransactionController extends Controller
 
         $validated['transaction_date'] = $validated['transaction_date'] ?? now()->toDateString();
         $validated['type'] = $validated['type'] ?? 'spending';
+        $validated['source'] = $validated['source'] ?? 'manual';
+        $validated['confidence_score'] = 100;
+        $validated['flagged'] = false;
 
         $transaction = $request->user()->transactions()->create($validated);
 

@@ -15,11 +15,11 @@
 
         <div class="scan-actions">
             <label class="primary-button scan-choice" data-onboarding="upload" :class="{ disabled: pages.length >= maxPages }">
-                Choose PDF files
+                Choose statement files
                 <input
                     ref="libraryInput"
                     type="file"
-                    accept=".pdf,application/pdf"
+                    accept=".pdf,.csv,.ofx,.qfx,application/pdf,text/csv"
                     :disabled="pages.length >= maxPages || statementLimitReached"
                     multiple
                     @change="handleLibrary"
@@ -33,12 +33,12 @@
                 <div v-for="page in pages" :key="page.id" class="page-thumb">
                     <div class="page-file">
                         <span class="page-file-name">{{ page.name }}</span>
-                        <span class="page-file-type">PDF</span>
+                        <span class="page-file-type">{{ page.fileType }}</span>
                     </div>
                     <button class="page-remove" type="button" @click="removePage(page.id)">Remove</button>
                 </div>
             </div>
-            <p class="muted">Up to {{ maxPages }} statement PDFs across months.</p>
+            <p class="muted">Up to {{ maxPages }} statement files across months.</p>
         </div>
 
         <div class="scan-actions">
@@ -90,13 +90,16 @@ onMounted(() => {
 });
 
 const handleLibrary = (event) => {
+    const allowedExtensions = ['pdf', 'csv', 'ofx', 'qfx'];
+    const allowedMimes = ['application/pdf', 'text/csv', 'application/csv', 'application/vnd.ms-excel'];
     const files = Array.from(event.target.files || []).filter((file) => {
         const mime = String(file.type || '').toLowerCase();
         const name = String(file.name || '').toLowerCase();
-        return mime === 'application/pdf' || name.endsWith('.pdf');
+        const ext = name.includes('.') ? name.split('.').pop() : '';
+        return allowedMimes.includes(mime) || allowedExtensions.includes(ext);
     });
     if (!files.length) {
-        error.value = 'Upload statement PDFs only.';
+        error.value = 'Upload PDF, CSV, OFX, or QFX statement files.';
         event.target.value = '';
         return;
     }
@@ -104,9 +107,16 @@ const handleLibrary = (event) => {
     error.value = '';
 
     files.slice(0, maxPages - pages.value.length).forEach((file) => {
+        const lower = String(file.name || '').toLowerCase();
+        const extension = lower.includes('.') ? lower.split('.').pop() : '';
         pages.value = [
             ...pages.value,
-            { id: `${Date.now()}-${Math.random()}`, blob: file, name: file.name || 'statement.pdf' },
+            {
+                id: `${Date.now()}-${Math.random()}`,
+                blob: file,
+                name: file.name || 'statement.pdf',
+                fileType: String(extension || 'pdf').toUpperCase(),
+            },
         ];
     });
 

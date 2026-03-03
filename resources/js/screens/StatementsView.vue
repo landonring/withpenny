@@ -20,11 +20,11 @@
 
             <div class="statement-entry-actions">
                 <button class="primary-button" type="button" :disabled="statementLimitReached" @click="openStatementsScan">
-                    Choose statement PDFs
+                    Choose statement files
                 </button>
             </div>
             <p class="muted">
-                Choose statement PDF files. You can select multiple files and months at once.
+                Choose statement files (PDF, CSV, OFX, or QFX). You can select multiple files and months at once.
             </p>
 
             <p v-if="error" class="form-error">{{ error }}</p>

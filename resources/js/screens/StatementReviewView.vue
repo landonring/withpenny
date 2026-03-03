@@ -65,9 +65,10 @@
         </div>
 
         <div v-if="loading" class="muted">Preparing your statement…</div>
+        <div v-else-if="isProcessing" class="muted">Processing your upload…</div>
         <div v-else-if="!transactions.length" class="card">
             <div class="card-title">No transactions found</div>
-            <p class="card-sub">You can try a different file or keep things manual.</p>
+            <p class="card-sub">{{ processingError || 'You can try a different file or keep things manual.' }}</p>
         </div>
 
         <div v-else class="statement-list" data-onboarding="review-two-rows">
@@ -145,9 +146,9 @@
                 data-onboarding="review-confirm-button"
                 type="button"
                 @click="handleConfirm"
-                :disabled="saving"
+                :disabled="saving || isProcessing"
             >
-                {{ saving ? 'Saving…' : 'Confirm import' }}
+                {{ saving ? 'Saving…' : (isProcessing ? 'Processing…' : 'Confirm import') }}
             </button>
         </div>
 
@@ -156,7 +157,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { confirmStatement, discardStatement, fetchStatement } from '../stores/statements';
 import { categoryLabels } from '../data/categories';
@@ -171,7 +172,13 @@ const saving = ref(false);
 const error = ref('');
 const transactions = ref([]);
 const summary = ref(null);
+const processingStatus = ref('completed');
+const processingError = ref('');
+let pollTimer = null;
 const categories = categoryLabels;
+const isProcessing = computed(() =>
+    processingStatus.value === 'queued' || processingStatus.value === 'processing'
+);
 const showNoIncomeNote = computed(() =>
     transactions.value.length > 0 && !transactions.value.some((item) => item.type === 'income')
 );
@@ -219,9 +226,12 @@ const totals = computed(() => {
 const loadImport = async () => {
     loading.value = true;
     error.value = '';
+    processingError.value = '';
 
     try {
         const data = await fetchStatement(route.params.id);
+        processingStatus.value = String(data.processing_status || 'completed');
+        processingError.value = String(data.processing_error || '');
         const list = (data.transactions || []).map((item) => ({
             ...item,
             type: item.type === 'income' ? 'income' : 'spending',
@@ -238,6 +248,18 @@ const loadImport = async () => {
                 ?? data.meta?.extraction?.extraction_confidence
                 ?? null,
         };
+
+        if (isProcessing.value) {
+            if (pollTimer) {
+                clearTimeout(pollTimer);
+            }
+            pollTimer = setTimeout(() => {
+                loadImport();
+            }, 1800);
+        } else if (pollTimer) {
+            clearTimeout(pollTimer);
+            pollTimer = null;
+        }
     } catch (err) {
         error.value = err?.response?.data?.message || 'Unable to load this statement.';
     } finally {
@@ -247,6 +269,12 @@ const loadImport = async () => {
 
 onMounted(() => {
     loadImport();
+});
+
+onBeforeUnmount(() => {
+    if (pollTimer) {
+        clearTimeout(pollTimer);
+    }
 });
 
 const toggleInclude = (item) => {
@@ -268,6 +296,8 @@ const handleConfirm = async () => {
             type: item.type === 'income' ? 'income' : 'spending',
             category: item.type === 'income' ? 'Income' : item.category,
             include: !!item.include,
+            confidence_score: Number.isFinite(Number(item.confidence_score)) ? Number(item.confidence_score) : null,
+            flagged: !!item.flagged,
         }));
         const included = payload.filter((item) => item.include);
         if (!included.length) {

@@ -7,9 +7,25 @@ export const receiptState = reactive({
     suggestions: null,
     lineItems: [],
     rawText: '',
+    warnings: [],
     loading: false,
     error: '',
 });
+
+function applyReceiptPayload(data) {
+    receiptState.current = {
+        ...(data?.receipt || {}),
+        image_url: data?.image_url,
+        processing_status: data?.processing_status ?? data?.receipt?.processing_status ?? null,
+        processing_error: data?.processing_error ?? data?.receipt?.processing_error ?? null,
+        confidence_score: data?.confidence_score ?? data?.receipt?.confidence_score ?? null,
+        flagged: data?.flagged ?? data?.receipt?.flagged ?? false,
+    };
+    receiptState.suggestions = data?.suggestions || {};
+    receiptState.lineItems = data?.line_items || [];
+    receiptState.rawText = data?.raw_text || '';
+    receiptState.warnings = data?.warnings || [];
+}
 
 export async function scanReceipt(file) {
     await ensureAuthReady();
@@ -23,13 +39,7 @@ export async function scanReceipt(file) {
         const { data } = await axios.post('/api/receipts/scan', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
-        receiptState.current = {
-            ...data.receipt,
-            image_url: data.image_url,
-        };
-        receiptState.suggestions = data.suggestions || {};
-        receiptState.lineItems = data.line_items || [];
-        receiptState.rawText = data.raw_text || '';
+        applyReceiptPayload(data);
         return receiptState.current;
     } catch (error) {
         receiptState.error = error?.response?.data?.message || 'Unable to scan right now.';
@@ -53,13 +63,7 @@ export async function scanReceiptImages(files) {
         const { data } = await axios.post('/api/receipts/scan-images', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
-        receiptState.current = {
-            ...data.receipt,
-            image_url: data.image_url,
-        };
-        receiptState.suggestions = data.suggestions || {};
-        receiptState.lineItems = data.line_items || [];
-        receiptState.rawText = data.raw_text || '';
+        applyReceiptPayload(data);
         return receiptState.current;
     } catch (error) {
         receiptState.error = error?.response?.data?.message || 'Unable to scan right now.';
@@ -76,13 +80,7 @@ export async function fetchReceipt(id) {
 
     try {
         const { data } = await axios.get(`/api/receipts/${id}`);
-        receiptState.current = {
-            ...data.receipt,
-            image_url: data.image_url,
-        };
-        receiptState.suggestions = data.suggestions || {};
-        receiptState.lineItems = data.line_items || [];
-        receiptState.rawText = data.raw_text || '';
+        applyReceiptPayload(data);
         return receiptState.current;
     } catch (error) {
         receiptState.error = error?.response?.data?.message || 'Unable to load receipt.';
@@ -103,6 +101,7 @@ export async function discardReceipt(id) {
         receiptState.suggestions = null;
         receiptState.lineItems = [];
         receiptState.rawText = '';
+        receiptState.warnings = [];
     } finally {
         receiptState.loading = false;
     }

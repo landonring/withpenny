@@ -148,6 +148,57 @@ class BankStatementUsageTest extends TestCase
             ->assertJsonValidationErrors(['images.0']);
     }
 
+    public function test_upload_accepts_csv_and_parses_structured_transactions(): void
+    {
+        $user = User::factory()->create();
+
+        $csv = implode("\n", [
+            'Date,Description,Amount',
+            '2026-02-01,Payroll Deposit,1200.00',
+            '2026-02-02,Grocery Store,-48.12',
+        ]);
+
+        $file = UploadedFile::fake()->createWithContent('statement.csv', $csv);
+
+        $response = $this->actingAs($user)
+            ->postJson('/api/statements/upload', ['file' => $file])
+            ->assertStatus(201);
+
+        $response
+            ->assertJsonPath('import.file_format', 'csv')
+            ->assertJsonPath('import.processing_status', 'completed')
+            ->assertJsonCount(2, 'import.transactions');
+    }
+
+    public function test_confirm_is_blocked_while_import_is_processing(): void
+    {
+        $user = User::factory()->create();
+        $import = BankStatementImport::query()->create([
+            'user_id' => $user->id,
+            'transactions' => [],
+            'meta' => null,
+            'masked_account' => null,
+            'source' => 'pending',
+            'processing_status' => 'processing',
+        ]);
+
+        $this->actingAs($user)
+            ->postJson("/api/statements/{$import->id}/confirm", [
+                'transactions' => [
+                    [
+                        'date' => '2026-02-01',
+                        'description' => 'Sample Row',
+                        'amount' => 10.00,
+                        'type' => 'spending',
+                        'category' => 'Misc',
+                        'include' => true,
+                    ],
+                ],
+            ])
+            ->assertStatus(409)
+            ->assertJsonPath('message', 'This statement is still processing. Please wait before confirming.');
+    }
+
     private function createImport(User $user): BankStatementImport
     {
         return BankStatementImport::query()->create([

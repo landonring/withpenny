@@ -376,27 +376,27 @@
 <div class="max-w-5xl mx-auto">
 <div class="bg-card border border-border-soft rounded-2xl p-8 md:p-12 space-y-6">
 <h2 class="text-3xl md:text-4xl font-serif font-medium text-text-heading">Frequently asked questions</h2>
-<div class="space-y-6">
-<div>
-<h3 class="text-xl font-semibold text-text-heading">Is Penny an AI budgeting app?</h3>
-<p class="text-text-body leading-relaxed mt-2">Yes. Penny is an AI-powered budgeting assistant that combines manual tracking, statement scanning, and calm, practical insights.</p>
-</div>
-<div>
-<h3 class="text-xl font-semibold text-text-heading">Does Penny require bank account integration?</h3>
-<p class="text-text-body leading-relaxed mt-2">No. Penny works without direct bank account connection. You can track manually or upload statements only when you choose.</p>
-</div>
-<div>
-<h3 class="text-xl font-semibold text-text-heading">Is Penny secure and privacy-first?</h3>
-<p class="text-text-body leading-relaxed mt-2">Yes. Penny is designed around user control. You decide what gets tracked, uploaded, and reviewed.</p>
-</div>
-<div>
-<h3 class="text-xl font-semibold text-text-heading">Who uses Penny?</h3>
-<p class="text-text-body leading-relaxed mt-2">Individuals, couples, families, freelancers, and privacy-conscious users who want clearer money awareness without complexity.</p>
-</div>
-<div>
-<h3 class="text-xl font-semibold text-text-heading">How is Penny different from Mint or YNAB?</h3>
-<p class="text-text-body leading-relaxed mt-2">Penny focuses on calm guidance, optional AI support, and a privacy-first workflow built for practical day-to-day clarity.</p>
-</div>
+<div class="marketing-faq-list">
+<details class="marketing-faq-item" open>
+<summary class="marketing-faq-question">Is Penny an AI budgeting app?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+<p class="marketing-faq-answer">Yes. Penny is an AI-powered budgeting assistant that combines manual tracking, statement scanning, and calm, practical insights.</p>
+</details>
+<details class="marketing-faq-item">
+<summary class="marketing-faq-question">Does Penny require bank account integration?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+<p class="marketing-faq-answer">No. Penny works without direct bank account connection. You can track manually or upload statements only when you choose.</p>
+</details>
+<details class="marketing-faq-item">
+<summary class="marketing-faq-question">Is Penny secure and privacy-first?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+<p class="marketing-faq-answer">Yes. Penny is designed around user control. You decide what gets tracked, uploaded, and reviewed.</p>
+</details>
+<details class="marketing-faq-item">
+<summary class="marketing-faq-question">Who uses Penny?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+<p class="marketing-faq-answer">Individuals, couples, families, freelancers, and privacy-conscious users who want clearer money awareness without complexity.</p>
+</details>
+<details class="marketing-faq-item">
+<summary class="marketing-faq-question">How is Penny different from Mint or YNAB?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+<p class="marketing-faq-answer">Penny focuses on calm guidance, optional AI support, and a privacy-first workflow built for practical day-to-day clarity.</p>
+</details>
 </div>
 </div>
 </div>

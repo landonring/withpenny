@@ -304,7 +304,7 @@ class AuthController extends Controller
         $user = $request->user();
 
         $transactionsTotal = $user->transactions()->count();
-        $transactionsImported = $user->transactions()->where('source', 'statement')->count();
+        $transactionsImported = $user->transactions()->whereIn('source', ['statement', 'bank_upload'])->count();
         $journeys = $user->savingsJourneys()->count();
         $receipts = $user->receipts()->count();
         $imports = $user->bankStatementImports()->count();
@@ -320,7 +320,7 @@ class AuthController extends Controller
 
     public function deleteImportedTransactions(Request $request)
     {
-        $deleted = $request->user()->transactions()->where('source', 'statement')->delete();
+        $deleted = $request->user()->transactions()->whereIn('source', ['statement', 'bank_upload'])->delete();
 
         return response()->json([
             'deleted' => $deleted,

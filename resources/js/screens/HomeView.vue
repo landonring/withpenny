@@ -114,7 +114,7 @@
                     ref="statementInput"
                     class="sr-only statement-input"
                     type="file"
-                    accept=".pdf,application/pdf"
+                    accept=".pdf,.csv,.ofx,.qfx,application/pdf,text/csv"
                     multiple
                     :disabled="statementUploading"
                     @change="handleStatementUpload"
@@ -442,13 +442,16 @@ const handleStatementUpload = async (event) => {
     statementUploading.value = true;
 
     try {
-        const allPdfs = files.every((file) => {
+        const allowedExtensions = ['pdf', 'csv', 'ofx', 'qfx'];
+        const allowedMimes = ['application/pdf', 'text/csv', 'application/csv', 'application/vnd.ms-excel'];
+        const allSupported = files.every((file) => {
             const mime = String(file.type || '').toLowerCase();
             const name = String(file.name || '').toLowerCase();
-            return mime === 'application/pdf' || name.endsWith('.pdf');
+            const extension = name.includes('.') ? name.split('.').pop() : '';
+            return allowedMimes.includes(mime) || allowedExtensions.includes(extension);
         });
-        if (!allPdfs) {
-            throw new Error('Upload statement PDFs only.');
+        if (!allSupported) {
+            throw new Error('Upload PDF, CSV, OFX, or QFX statement files.');
         }
 
         const importData = await scanStatementImages(files);
