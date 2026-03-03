@@ -221,20 +221,28 @@
             <p>That is the point.</p>
 
             <h2>FAQ</h2>
-            <h3>How much time should a beginner spend budgeting each week?</h3>
-            <p>Ten to fifteen minutes is enough for most people. Keep it short so you can repeat it.</p>
-
-            <h3>What if my income changes each month?</h3>
-            <p>Use a range and adjust your targets. Your budget can be flexible while still giving you structure.</p>
-
-            <h3>Do I need a complicated spreadsheet?</h3>
-            <p>No. A simple app or notebook works well. The method matters more than the tool.</p>
-
-            <h3>How long does it take to feel confident?</h3>
-            <p>Most people feel calmer after two to three months of consistent check-ins.</p>
-
-            <h3>Is the Needs, Wants, and Future method enough?</h3>
-            <p>For many beginners, yes. You can always expand later if you want more detail.</p>
+            <div class="marketing-faq-list">
+                <details class="marketing-faq-item" open>
+                    <summary class="marketing-faq-question">How much time should a beginner spend budgeting each week?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Ten to fifteen minutes is enough for most people. Keep it short so you can repeat it.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">What if my income changes each month?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Use a range and adjust your targets. Your budget can be flexible while still giving you structure.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Do I need a complicated spreadsheet?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">No. A simple app or notebook works well. The method matters more than the tool.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">How long does it take to feel confident?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Most people feel calmer after two to three months of consistent check-ins.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Is the Needs, Wants, and Future method enough?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">For many beginners, yes. You can always expand later if you want more detail.</p>
+                </details>
+            </div>
 
             <h2>Suggested internal links</h2>
             <ul>

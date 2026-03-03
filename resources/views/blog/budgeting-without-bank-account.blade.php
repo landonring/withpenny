@@ -210,20 +210,28 @@
             <p>It keeps you present.</p>
 
             <h2>FAQ</h2>
-            <h3>Is budgeting without bank account access less accurate?</h3>
-            <p>It can be slightly less precise, but it is still effective for noticing trends and making choices. Many people prefer this tradeoff.</p>
-
-            <h3>How often should I update a manual budget?</h3>
-            <p>Once a week works well for most people. If that feels too much, start with twice a month.</p>
-
-            <h3>Do I need to track every purchase?</h3>
-            <p>No. Tracking the big categories and the biggest transactions is often enough to build clarity.</p>
-
-            <h3>Can a privacy budgeting app still provide insights?</h3>
-            <p>Yes. Penny offers optional AI reflections based on the data you choose to enter.</p>
-
-            <h3>What if I want to connect accounts later?</h3>
-            <p>You can still use other tools for automation and keep Penny as a calm, manual reflection space.</p>
+            <div class="marketing-faq-list">
+                <details class="marketing-faq-item" open>
+                    <summary class="marketing-faq-question">Is budgeting without bank account access less accurate?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">It can be slightly less precise, but it is still effective for noticing trends and making choices. Many people prefer this tradeoff.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">How often should I update a manual budget?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Once a week works well for most people. If that feels too much, start with twice a month.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Do I need to track every purchase?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">No. Tracking the big categories and the biggest transactions is often enough to build clarity.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Can a privacy budgeting app still provide insights?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Yes. Penny offers optional AI reflections based on the data you choose to enter.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">What if I want to connect accounts later?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">You can still use other tools for automation and keep Penny as a calm, manual reflection space.</p>
+                </details>
+            </div>
 
             <h2>Suggested internal links</h2>
             <ul>

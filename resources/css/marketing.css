@@ -88,3 +88,68 @@ details > summary::-webkit-details-marker {
     letter-spacing: 0.08em;
     margin-left: 6px;
 }
+
+.marketing-faq-list {
+    display: grid;
+    gap: 10px;
+}
+
+.marketing-faq-item {
+    border: 1px solid #ddd7cc;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.marketing-faq-question {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 18px;
+    color: #2f3a33;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.45;
+    cursor: pointer;
+}
+
+.marketing-faq-question:focus-visible {
+    outline: 2px solid #8ca28e;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.marketing-faq-icon {
+    width: 20px;
+    min-width: 20px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    color: #66736a;
+    font-size: 0;
+    line-height: 0;
+}
+
+.marketing-faq-icon::before {
+    content: "+";
+    font-size: 22px;
+    line-height: 1;
+    font-weight: 400;
+}
+
+.marketing-faq-item[open] .marketing-faq-icon {
+    transform: none;
+}
+
+.marketing-faq-item[open] .marketing-faq-icon::before {
+    content: "-";
+}
+
+.marketing-faq-answer {
+    margin: 0;
+    padding: 0 18px 16px;
+    color: #5f6b63;
+    font-size: 0.96rem;
+    line-height: 1.6;
+}

@@ -210,7 +210,7 @@
         <section class="card marketing-section" id="pricing-faq">
             <h2 class="section-title">Pricing FAQ</h2>
             <div class="faq-list">
-                <details>
+                <details open>
                     <summary>Is Starter really free?</summary>
                     <p>Yes. Starter stays free, and you can take as long as you need.</p>
                 </details>

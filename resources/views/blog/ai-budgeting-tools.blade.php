@@ -175,20 +175,28 @@
             <p>That balance is the real advantage.</p>
 
             <h2>FAQ</h2>
-            <h3>Do AI budgeting tools replace manual tracking?</h3>
-            <p>No. The strongest results come from pairing light manual tracking with optional AI summaries.</p>
-
-            <h3>Is personal finance AI accurate?</h3>
-            <p>It can be accurate about trends in the data you provide. It is not a replacement for your judgment or context.</p>
-
-            <h3>What is the best cadence for a weekly money reflection?</h3>
-            <p>Pick a consistent day and keep it short. Fifteen minutes or less is enough for most people.</p>
-
-            <h3>Can I turn off AI reflections in Penny?</h3>
-            <p>Yes. The reflections are optional. You can use Penny as a fully manual budgeting app.</p>
-
-            <h3>Does AI make budgeting feel more overwhelming?</h3>
-            <p>It can if it is too frequent or too intense. That is why a gentle, optional approach matters.</p>
+            <div class="marketing-faq-list">
+                <details class="marketing-faq-item" open>
+                    <summary class="marketing-faq-question">Do AI budgeting tools replace manual tracking?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">No. The strongest results come from pairing light manual tracking with optional AI summaries.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Is personal finance AI accurate?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">It can be accurate about trends in the data you provide. It is not a replacement for your judgment or context.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">What is the best cadence for a weekly money reflection?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Pick a consistent day and keep it short. Fifteen minutes or less is enough for most people.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Can I turn off AI reflections in Penny?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Yes. The reflections are optional. You can use Penny as a fully manual budgeting app.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Does AI make budgeting feel more overwhelming?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">It can if it is too frequent or too intense. That is why a gentle, optional approach matters.</p>
+                </details>
+            </div>
 
             <h2>Suggested internal links</h2>
             <ul>

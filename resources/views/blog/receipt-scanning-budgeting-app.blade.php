@@ -226,20 +226,28 @@
             <p>After uploading, you can archive the receipt so it does not clutter your inbox. A clean inbox makes the habit easier to maintain.</p>
 
             <h2>FAQ</h2>
-            <h3>Do receipt scanning apps store my data?</h3>
-            <p>It depends on the app. Always review privacy details and choose a tool that aligns with your comfort level.</p>
-
-            <h3>Is OCR accurate enough for budgeting?</h3>
-            <p>It is accurate enough for totals, but a quick review is still recommended for peace of mind.</p>
-
-            <h3>Do I need to scan every receipt?</h3>
-            <p>No. Use receipt uploads for key transactions and keep the rest simple.</p>
-
-            <h3>Does Penny use automatic camera capture?</h3>
-            <p>Penny uses uploads by photo. You decide what to upload and when.</p>
-
-            <h3>Can receipt uploads replace manual tracking?</h3>
-            <p>They can reduce typing, but manual review keeps the process grounded and accurate.</p>
+            <div class="marketing-faq-list">
+                <details class="marketing-faq-item" open>
+                    <summary class="marketing-faq-question">Do receipt scanning apps store my data?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">It depends on the app. Always review privacy details and choose a tool that aligns with your comfort level.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Is OCR accurate enough for budgeting?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">It is accurate enough for totals, but a quick review is still recommended for peace of mind.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Do I need to scan every receipt?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">No. Use receipt uploads for key transactions and keep the rest simple.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Does Penny use automatic camera capture?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Penny uses uploads by photo. You decide what to upload and when.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Can receipt uploads replace manual tracking?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">They can reduce typing, but manual review keeps the process grounded and accurate.</p>
+                </details>
+            </div>
 
             <h2>Suggested internal links</h2>
             <ul>

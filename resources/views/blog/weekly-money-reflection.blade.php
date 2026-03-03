@@ -197,20 +197,28 @@
             <p>It matters.</p>
 
             <h2>FAQ</h2>
-            <h3>How long should a weekly budget review take?</h3>
-            <p>Ten to fifteen minutes is enough. The goal is consistency, not depth.</p>
-
-            <h3>Do I need a monthly budget reflection if I do weekly reviews?</h3>
-            <p>It is helpful but not required. Monthly reviews add perspective, but weekly reviews are the core habit.</p>
-
-            <h3>What if I skip a week?</h3>
-            <p>Just return the next week. The habit matters more than the streak.</p>
-
-            <h3>Can AI reflections replace my review?</h3>
-            <p>No. They can summarize, but your judgment and context are still essential.</p>
-
-            <h3>How do I make reviews feel less stressful?</h3>
-            <p>Keep them short, focus on one change, and end with a small positive note.</p>
+            <div class="marketing-faq-list">
+                <details class="marketing-faq-item" open>
+                    <summary class="marketing-faq-question">How long should a weekly budget review take?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Ten to fifteen minutes is enough. The goal is consistency, not depth.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Do I need a monthly budget reflection if I do weekly reviews?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">It is helpful but not required. Monthly reviews add perspective, but weekly reviews are the core habit.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">What if I skip a week?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Just return the next week. The habit matters more than the streak.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Can AI reflections replace my review?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">No. They can summarize, but your judgment and context are still essential.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">How do I make reviews feel less stressful?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Keep them short, focus on one change, and end with a small positive note.</p>
+                </details>
+            </div>
 
             <h2>Suggested internal links</h2>
             <ul>

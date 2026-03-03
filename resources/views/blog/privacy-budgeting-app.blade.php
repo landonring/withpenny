@@ -182,20 +182,28 @@
             <p>When the process feels like a small ritual instead of a report, it is easier to maintain. Over time, the clarity builds on its own.</p>
 
             <h2>FAQ</h2>
-            <h3>Is a privacy budgeting app less accurate?</h3>
-            <p>It can be just as accurate if you track the transactions that matter most to you. Many people find that focusing on key categories and totals is enough to build clarity.</p>
-
-            <h3>Will a manual budgeting app take too much time?</h3>
-            <p>Not if you keep the scope small. Five to ten minutes a week is often enough to stay connected to your money.</p>
-
-            <h3>What if I want some automation later?</h3>
-            <p>You can still use automation in other tools while keeping Penny as your calm reflection space. The point is choice, not restriction.</p>
-
-            <h3>Does a budgeting app without bank linking still help with habits?</h3>
-            <p>Yes. In fact, many people find habits stick better when they are actively involved in the process.</p>
-
-            <h3>Is Penny only for people who avoid bank linking?</h3>
-            <p>No. Penny is for anyone who wants a quieter, more intentional way to budget, whether or not they use other tools.</p>
+            <div class="marketing-faq-list">
+                <details class="marketing-faq-item" open>
+                    <summary class="marketing-faq-question">Is a privacy budgeting app less accurate?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">It can be just as accurate if you track the transactions that matter most to you. Many people find that focusing on key categories and totals is enough to build clarity.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Will a manual budgeting app take too much time?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Not if you keep the scope small. Five to ten minutes a week is often enough to stay connected to your money.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">What if I want some automation later?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">You can still use automation in other tools while keeping Penny as your calm reflection space. The point is choice, not restriction.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Does a budgeting app without bank linking still help with habits?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Yes. In fact, many people find habits stick better when they are actively involved in the process.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Is Penny only for people who avoid bank linking?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">No. Penny is for anyone who wants a quieter, more intentional way to budget, whether or not they use other tools.</p>
+                </details>
+            </div>
 
             <h2>Suggested internal links</h2>
             <ul>

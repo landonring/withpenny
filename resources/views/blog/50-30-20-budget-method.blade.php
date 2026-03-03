@@ -224,20 +224,28 @@
             <p>Small wins matter.</p>
 
             <h2>FAQ</h2>
-            <h3>Is the 50 30 20 budget good for beginners?</h3>
-            <p>Yes. It is simple and easy to understand, which makes it a good starting point.</p>
-
-            <h3>Do I need to hit the exact percentages?</h3>
-            <p>No. Use the percentages as a guide. Adjust them to fit your reality.</p>
-
-            <h3>What if my needs are more than 50 percent?</h3>
-            <p>That is common. Try a 60 20 20 or similar split and revisit later.</p>
-
-            <h3>Can I use this method with manual tracking?</h3>
-            <p>Yes. Manual tracking works well because there are only three categories to manage.</p>
-
-            <h3>How often should I review the method?</h3>
-            <p>Once a month is enough for most people. Keep the reviews short and practical.</p>
+            <div class="marketing-faq-list">
+                <details class="marketing-faq-item" open>
+                    <summary class="marketing-faq-question">Is the 50 30 20 budget good for beginners?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Yes. It is simple and easy to understand, which makes it a good starting point.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Do I need to hit the exact percentages?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">No. Use the percentages as a guide. Adjust them to fit your reality.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">What if my needs are more than 50 percent?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">That is common. Try a 60 20 20 or similar split and revisit later.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Can I use this method with manual tracking?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Yes. Manual tracking works well because there are only three categories to manage.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">How often should I review the method?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Once a month is enough for most people. Keep the reviews short and practical.</p>
+                </details>
+            </div>
 
             <h2>Suggested internal links</h2>
             <ul>

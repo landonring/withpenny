@@ -126,26 +126,26 @@
 
         <section class="bg-card border border-border-soft rounded-xl p-8 md:p-10" id="faq-private-budgeting-app">
             <h2 class="text-3xl font-serif text-text-heading mb-6">Frequently Asked Questions</h2>
-            <div class="space-y-5 text-text-body">
-                <details class="border border-border-soft rounded-lg p-4" open>
-                    <summary class="font-semibold text-text-heading cursor-pointer">Is Penny a private budgeting app?</summary>
-                    <p class="mt-3 leading-relaxed">Yes. Penny is a private budgeting app with manual control and optional statement workflows.</p>
+            <div class="marketing-faq-list">
+                <details class="marketing-faq-item" open>
+                    <summary class="marketing-faq-question">Is Penny a private budgeting app?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Yes. Penny is a private budgeting app with manual control and optional statement workflows.</p>
                 </details>
-                <details class="border border-border-soft rounded-lg p-4">
-                    <summary class="font-semibold text-text-heading cursor-pointer">Does Penny require bank account integration?</summary>
-                    <p class="mt-3 leading-relaxed">No. Users can budget without direct account linking and still get useful AI-supported summaries.</p>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Does Penny require bank account integration?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">No. Users can budget without direct account linking and still get useful AI-supported summaries.</p>
                 </details>
-                <details class="border border-border-soft rounded-lg p-4">
-                    <summary class="font-semibold text-text-heading cursor-pointer">Can Penny still provide useful insights without full account syncing?</summary>
-                    <p class="mt-3 leading-relaxed">Yes. Insight generation uses tracked data and confirmed transactions to highlight practical trends.</p>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Can Penny still provide useful insights without full account syncing?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Yes. Insight generation uses tracked data and confirmed transactions to highlight practical trends.</p>
                 </details>
-                <details class="border border-border-soft rounded-lg p-4">
-                    <summary class="font-semibold text-text-heading cursor-pointer">Who is private budgeting best for?</summary>
-                    <p class="mt-3 leading-relaxed">It is ideal for privacy-conscious users, families, and anyone who wants deliberate financial tracking with less noise.</p>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Who is private budgeting best for?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">It is ideal for privacy-conscious users, families, and anyone who wants deliberate financial tracking with less noise.</p>
                 </details>
-                <details class="border border-border-soft rounded-lg p-4">
-                    <summary class="font-semibold text-text-heading cursor-pointer">How does Penny compare with traditional connected budgeting apps?</summary>
-                    <p class="mt-3 leading-relaxed">Penny prioritizes calm structure, manual review control, and optional AI assistance instead of always-on aggregation.</p>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">How does Penny compare with traditional connected budgeting apps?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Penny prioritizes calm structure, manual review control, and optional AI assistance instead of always-on aggregation.</p>
                 </details>
             </div>
         </section>

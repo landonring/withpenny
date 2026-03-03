@@ -191,20 +191,28 @@
             <p>If you want fewer notifications and less maintenance, a PWA can feel like a simpler baseline. You can still set your own reminders, but the app itself stays quiet.</p>
 
             <h2>FAQ</h2>
-            <h3>Is a PWA budgeting app secure?</h3>
-            <p>Yes. Security depends on the app itself, not the distribution method. A PWA can be just as secure as a native app.</p>
-
-            <h3>Can a PWA work offline?</h3>
-            <p>Some features can, depending on how the app is built. Penny is designed to be lightweight and fast when you are online.</p>
-
-            <h3>How do I install a budgeting app without app store access?</h3>
-            <p>Open the app in your browser and choose "Add to Home Screen" or the install option in the browser menu.</p>
-
-            <h3>Will a PWA feel like a real app?</h3>
-            <p>Yes. Once installed, it opens like a native app and can live on your home screen.</p>
-
-            <h3>Is a PWA good for long-term use?</h3>
-            <p>It can be. Many people prefer the lightness and flexibility of a PWA for daily budgeting habits.</p>
+            <div class="marketing-faq-list">
+                <details class="marketing-faq-item" open>
+                    <summary class="marketing-faq-question">Is a PWA budgeting app secure?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Yes. Security depends on the app itself, not the distribution method. A PWA can be just as secure as a native app.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Can a PWA work offline?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Some features can, depending on how the app is built. Penny is designed to be lightweight and fast when you are online.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">How do I install a budgeting app without app store access?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Open the app in your browser and choose "Add to Home Screen" or the install option in the browser menu.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Will a PWA feel like a real app?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Yes. Once installed, it opens like a native app and can live on your home screen.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Is a PWA good for long-term use?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">It can be. Many people prefer the lightness and flexibility of a PWA for daily budgeting habits.</p>
+                </details>
+            </div>
 
             <h2>Suggested internal links</h2>
             <ul>

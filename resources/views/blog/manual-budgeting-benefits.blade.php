@@ -213,20 +213,28 @@
             <p>Start with one category if that is all you can manage this week.</p>
 
             <h2>FAQ</h2>
-            <h3>Are manual budgeting benefits only for beginners?</h3>
-            <p>No. Many experienced budgeters return to manual tracking because it keeps them grounded and helps them notice small shifts before they grow.</p>
-
-            <h3>Does mindful budgeting mean tracking every purchase?</h3>
-            <p>Not at all. Mindful budgeting is about awareness, not perfection. You can choose a smaller set of transactions to track and still build clarity.</p>
-
-            <h3>Is budgeting without linking bank account access secure?</h3>
-            <p>Yes. It can feel more secure for people who prefer not to share bank credentials. You control what data enters your budget.</p>
-
-            <h3>How long does manual budgeting take each week?</h3>
-            <p>Most people spend five to fifteen minutes. Consistency matters more than duration.</p>
-
-            <h3>Can manual budgeting work for variable income?</h3>
-            <p>Yes. In fact, manual check-ins can be especially helpful when income changes because they encourage regular adjustments.</p>
+            <div class="marketing-faq-list">
+                <details class="marketing-faq-item" open>
+                    <summary class="marketing-faq-question">Are manual budgeting benefits only for beginners?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">No. Many experienced budgeters return to manual tracking because it keeps them grounded and helps them notice small shifts before they grow.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Does mindful budgeting mean tracking every purchase?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Not at all. Mindful budgeting is about awareness, not perfection. You can choose a smaller set of transactions to track and still build clarity.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Is budgeting without linking bank account access secure?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Yes. It can feel more secure for people who prefer not to share bank credentials. You control what data enters your budget.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">How long does manual budgeting take each week?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Most people spend five to fifteen minutes. Consistency matters more than duration.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Can manual budgeting work for variable income?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Yes. In fact, manual check-ins can be especially helpful when income changes because they encourage regular adjustments.</p>
+                </details>
+            </div>
 
             <h2>Suggested internal links</h2>
             <ul>

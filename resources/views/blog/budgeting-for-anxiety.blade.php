@@ -224,20 +224,28 @@
             <p>It is okay to move at your own pace.</p>
 
             <h2>FAQ</h2>
-            <h3>Is budgeting for anxiety different from regular budgeting?</h3>
-            <p>Yes. It focuses on nervous system safety and sustainable habits rather than maximum detail or strict rules.</p>
-
-            <h3>How can a calm budgeting app reduce stress?</h3>
-            <p>By limiting noise, using gentle language, and letting you control the pace. These details make it easier to return after a hard week.</p>
-
-            <h3>What if I still feel overwhelmed?</h3>
-            <p>Reduce the scope further. Track fewer items, shorten the review, and celebrate small wins. The goal is to keep the loop open.</p>
-
-            <h3>Is manual budgeting better for anxiety?</h3>
-            <p>For many people, yes. Manual check-ins can feel more grounding because they keep you involved in a slower, intentional way.</p>
-
-            <h3>Can I use AI reflections if I am anxious?</h3>
-            <p>Yes, but use them gently. Keep them optional and short. If they add stress, skip them.</p>
+            <div class="marketing-faq-list">
+                <details class="marketing-faq-item" open>
+                    <summary class="marketing-faq-question">Is budgeting for anxiety different from regular budgeting?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Yes. It focuses on nervous system safety and sustainable habits rather than maximum detail or strict rules.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">How can a calm budgeting app reduce stress?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">By limiting noise, using gentle language, and letting you control the pace. These details make it easier to return after a hard week.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">What if I still feel overwhelmed?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Reduce the scope further. Track fewer items, shorten the review, and celebrate small wins. The goal is to keep the loop open.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Is manual budgeting better for anxiety?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">For many people, yes. Manual check-ins can feel more grounding because they keep you involved in a slower, intentional way.</p>
+                </details>
+                <details class="marketing-faq-item">
+                    <summary class="marketing-faq-question">Can I use AI reflections if I am anxious?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
+                    <p class="marketing-faq-answer">Yes, but use them gently. Keep them optional and short. If they add stress, skip them.</p>
+                </details>
+            </div>
 
             <h2>Suggested internal links</h2>
             <ul>
