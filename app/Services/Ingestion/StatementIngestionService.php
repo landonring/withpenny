@@ -215,6 +215,78 @@ class StatementIngestionService
                     'error' => null,
                 ];
             }
+
+            $permissiveRows = $this->parseWithPermissiveLineFallback($rawTextTrimmed);
+            if (! empty($permissiveRows)) {
+                $fallbackRange = $this->rangeFromRows($permissiveRows);
+                $statementRange = $this->mergeRange($statementRange, $fallbackRange);
+                return [
+                    'rows' => $permissiveRows,
+                    'raw_text' => $rawText,
+                    'invalid_rows' => 0,
+                    'statement_range' => $statementRange,
+                    'error' => null,
+                ];
+            }
+        }
+
+        $ocrText = $this->extractPdfTextViaOcr($path);
+        $ocrTrimmed = trim($ocrText);
+        if ($ocrTrimmed !== '') {
+            $combinedRaw = trim($rawTextTrimmed === '' ? $ocrTrimmed : ($rawTextTrimmed."\n\n".$ocrTrimmed));
+            $combinedRange = $this->mergeRange($statementRange, $this->detectStatementRange($ocrTrimmed));
+
+            try {
+                $ocrAi = $this->aiExtractor->extractStatementTransactions($ocrTrimmed);
+                $ocrRows = [];
+                foreach (($ocrAi['transactions'] ?? []) as $item) {
+                    if (! is_array($item)) {
+                        continue;
+                    }
+                    $ocrRows[] = [
+                        'date' => $item['date'] ?? null,
+                        'description' => $item['description'] ?? null,
+                        'amount' => $item['amount'] ?? null,
+                        'type' => $this->normalizeStatementType((string) ($item['type'] ?? 'debit')),
+                        'include' => true,
+                        'duplicate' => false,
+                    ];
+                }
+
+                if (! empty($ocrRows)) {
+                    return [
+                        'rows' => $ocrRows,
+                        'raw_text' => $combinedRaw,
+                        'invalid_rows' => 0,
+                        'statement_range' => $combinedRange,
+                        'error' => null,
+                    ];
+                }
+            } catch (\Throwable) {
+                // Continue through deterministic OCR fallbacks.
+            }
+
+            $ocrTextRows = $this->parseWithRawTextFallbackParser($ocrTrimmed);
+            if (! empty($ocrTextRows)) {
+                return [
+                    'rows' => $ocrTextRows,
+                    'raw_text' => $combinedRaw,
+                    'invalid_rows' => 0,
+                    'statement_range' => $combinedRange,
+                    'error' => null,
+                ];
+            }
+
+            $ocrPermissiveRows = $this->parseWithPermissiveLineFallback($ocrTrimmed);
+            if (! empty($ocrPermissiveRows)) {
+                return [
+                    'rows' => $ocrPermissiveRows,
+                    'raw_text' => $combinedRaw,
+                    'invalid_rows' => 0,
+                    'statement_range' => $combinedRange,
+                    'error' => null,
+                ];
+            }
         }
 
         return [
@@ -297,6 +369,79 @@ class StatementIngestionService
         return $rows;
     }
 
+    /**
+     * @return array<int, array<string,mixed>>
+     */
+    private function parseWithPermissiveLineFallback(string $text): array
+    {
+        $lines = preg_split('/\r\n|\r|\n/', $text) ?: [];
+        if (empty($lines)) {
+            return [];
+        }
+
+        $rows = [];
+        $seen = [];
+        $year = StatementParser::extractStatementYear($text) ?: (int) date('Y');
+        $monthPattern = StatementParser::monthPattern();
+
+        foreach ($lines as $line) {
+            $line = preg_replace('/\s+/u', ' ', trim((string) $line)) ?? '';
+            if ($line === '') {
+                continue;
+            }
+
+            $dateToken = StatementParser::extractDateToken($line, $monthPattern);
+            if (! $dateToken) {
+                continue;
+            }
+
+            $date = StatementParser::parseDate($dateToken, $year);
+            if ($date === null) {
+                continue;
+            }
+
+            $amounts = StatementParser::extractAmounts($line);
+            if (empty($amounts)) {
+                continue;
+            }
+
+            $amountRaw = (string) end($amounts);
+            $signedAmount = StatementParser::parseAmount($amountRaw);
+            $amount = abs($signedAmount);
+            if ($amount <= 0) {
+                continue;
+            }
+
+            $description = StatementParser::extractDescription($line, $dateToken, $amounts);
+            $description = StatementParser::sanitizeDescription($description);
+            if ($description === '' || $this->isSummaryRow($description)) {
+                continue;
+            }
+
+            $type = $this->normalizeStatementType(
+                StatementParser::determineType($signedAmount, $description, $amountRaw, $line)
+            );
+
+            $key = strtolower($date.'|'.number_format($amount, 2, '.', '').'|'.$type.'|'.$description);
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+
+            $rows[] = [
+                'date' => $date,
+                'description' => $description,
+                'amount' => $amount,
+                'type' => $type,
+                'include' => true,
+                'duplicate' => false,
+                'flagged' => false,
+            ];
+        }
+
+        return $rows;
+    }
+
     private function extractPdfText(string $path): string
     {
         $pdftotext = trim((string) shell_exec('command -v pdftotext'));
@@ -321,6 +466,57 @@ class StatementIngestionService
         }
 
         return '';
+    }
+
+    private function extractPdfTextViaOcr(string $path): string
+    {
+        $pdftoppm = trim((string) shell_exec('command -v pdftoppm'));
+        $tesseract = trim((string) shell_exec('command -v tesseract'));
+        if ($pdftoppm === '' || $tesseract === '') {
+            return '';
+        }
+
+        $tmpDir = storage_path('app/ocr/pdf-'.uniqid('', true));
+        if (! is_dir($tmpDir)) {
+            @mkdir($tmpDir, 0775, true);
+        }
+
+        $prefix = $tmpDir.'/page';
+        $command = escapeshellcmd($pdftoppm)
+            .' -f 1 -l 4 -r 220 -gray -png '
+            .escapeshellarg($path).' '
+            .escapeshellarg($prefix)
+            .' >/dev/null 2>&1';
+        shell_exec($command);
+
+        $images = glob($tmpDir.'/page-*.png') ?: [];
+        sort($images);
+        $parts = [];
+
+        foreach ($images as $imagePath) {
+            $ocr = $this->runTesseractInline($tesseract, $imagePath);
+            if ($ocr !== '') {
+                $parts[] = $ocr;
+            }
+            @unlink($imagePath);
+        }
+
+        @rmdir($tmpDir);
+
+        return trim(implode("\n\n", $parts));
+    }
+
+    private function runTesseractInline(string $tesseractPath, string $imagePath): string
+    {
+        if (! is_file($imagePath)) {
+            return '';
+        }
+
+        $command = escapeshellcmd($tesseractPath)
+            .' '.escapeshellarg($imagePath)
+            .' stdout --oem 1 --psm 6 -l eng 2>/dev/null';
+
+        return trim((string) shell_exec($command));
     }
 
     /**
