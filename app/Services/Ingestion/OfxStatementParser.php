@@ -17,10 +17,8 @@ class OfxStatementParser
             return [];
         }
 
-        preg_match_all('/<STMTTRN>(.*?)<\/STMTTRN>/is', $normalized, $matches);
-        $blocks = $matches[1] ?? [];
-
-        if (empty($blocks)) {
+        $blocks = $this->extractTransactionBlocks($normalized);
+        if ($blocks === []) {
             return [];
         }
 
@@ -48,7 +46,7 @@ class OfxStatementParser
                 continue;
             }
 
-            $description = trim($name.' '.$memo);
+            $description = trim(html_entity_decode($name.' '.$memo, ENT_QUOTES | ENT_HTML5));
             $description = StatementParser::sanitizeDescription($description);
             if ($description === '') {
                 continue;
@@ -66,6 +64,25 @@ class OfxStatementParser
         }
 
         return $rows;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function extractTransactionBlocks(string $content): array
+    {
+        if (preg_match_all('/<STMTTRN>(.*?)<\/STMTTRN>/is', $content, $matches) && ! empty($matches[1])) {
+            return array_values(array_filter(array_map('trim', $matches[1])));
+        }
+
+        $parts = preg_split('/<STMTTRN>/i', $content) ?: [];
+        if (count($parts) <= 1) {
+            return [];
+        }
+
+        array_shift($parts);
+
+        return array_values(array_filter(array_map(static fn ($part) => trim((string) $part), $parts)));
     }
 
     private function extractTag(string $block, string $tag): ?string

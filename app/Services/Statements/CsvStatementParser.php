@@ -8,12 +8,17 @@ class CsvStatementParser
 {
     public function parse(string $path): array
     {
+        if (! is_file($path)) {
+            return [];
+        }
+
+        $delimiter = $this->detectDelimiter($path);
         $handle = fopen($path, 'r');
         if (! $handle) {
             return [];
         }
 
-        $header = fgetcsv($handle);
+        $header = $this->readCsvRow($handle, $delimiter);
         if (! $header) {
             fclose($handle);
             return [];
@@ -26,7 +31,7 @@ class CsvStatementParser
             $this->appendRow($rows, $header, $map);
         }
 
-        while (($data = fgetcsv($handle)) !== false) {
+        while (($data = $this->readCsvRow($handle, $delimiter)) !== null) {
             $this->appendRow($rows, $data, $map);
         }
 
@@ -35,9 +40,68 @@ class CsvStatementParser
         return $rows;
     }
 
+    private function detectDelimiter(string $path): string
+    {
+        $candidates = [',', ';', "\t", '|'];
+        $scores = array_fill_keys($candidates, 0);
+        $handle = fopen($path, 'r');
+        if (! $handle) {
+            return ',';
+        }
+
+        $sampled = 0;
+        while (! feof($handle) && $sampled < 8) {
+            $line = trim((string) fgets($handle));
+            if ($line === '') {
+                continue;
+            }
+
+            foreach ($candidates as $delimiter) {
+                $scores[$delimiter] += substr_count($line, $delimiter);
+            }
+
+            $sampled += 1;
+        }
+
+        fclose($handle);
+
+        $bestDelimiter = ',';
+        $bestScore = -1;
+        foreach ($scores as $delimiter => $score) {
+            if ($score > $bestScore) {
+                $bestDelimiter = $delimiter;
+                $bestScore = $score;
+            }
+        }
+
+        return $bestScore > 0 ? $bestDelimiter : ',';
+    }
+
+    private function readCsvRow($handle, string $delimiter): ?array
+    {
+        $row = fgetcsv($handle, 0, $delimiter, '"', '\\');
+        if ($row === false) {
+            return null;
+        }
+
+        $clean = array_map(static function ($value) {
+            return is_string($value) ? trim($value) : $value;
+        }, $row);
+
+        if (isset($clean[0]) && is_string($clean[0])) {
+            $clean[0] = preg_replace('/^\xEF\xBB\xBF/', '', $clean[0]) ?? $clean[0];
+        }
+
+        return $clean;
+    }
+
     private function mapHeaders(array $header): array
     {
-        $normalized = array_map(fn ($value) => strtolower(preg_replace('/[^a-z0-9]/', '', $value)), $header);
+        $normalized = array_map(function ($value) {
+            $value = is_string($value) ? trim($value) : '';
+            $value = preg_replace('/^\xEF\xBB\xBF/', '', $value) ?? $value;
+            return strtolower(preg_replace('/[^a-z0-9]/', '', $value));
+        }, $header);
         $map = [
             'date' => null,
             'description' => null,
@@ -105,7 +169,7 @@ class CsvStatementParser
         $dateRaw = $data[$map['date']] ?? null;
         $descRaw = $data[$map['description']] ?? null;
 
-        if (! $dateRaw || ! $descRaw) {
+        if (trim((string) $dateRaw) === '' || trim((string) $descRaw) === '') {
             return;
         }
 
