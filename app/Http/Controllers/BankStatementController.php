@@ -394,7 +394,7 @@ class BankStatementController extends Controller
             'source' => 'pending',
             'file_name' => $firstName,
             'file_format' => $fileFormat,
-            'processing_status' => 'queued',
+            'processing_status' => 'processing',
             'processing_started_at' => now(),
             'extraction_confidence' => null,
             'balance_mismatch' => false,

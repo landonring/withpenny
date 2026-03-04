@@ -5,6 +5,7 @@ namespace App\Services\Ingestion;
 use App\Services\Statements\CsvStatementParser;
 use App\Services\Statements\PdfStatementParser;
 use App\Services\Statements\StatementParser;
+use Illuminate\Support\Facades\Log;
 
 class StatementIngestionService
 {
@@ -93,6 +94,16 @@ class StatementIngestionService
 
         $validated = $this->validateRows($rawRows, $statementRange);
         $invalidRows += (int) $validated['invalid_rows'];
+        $processingError = null;
+        if ((int) $validated['total_rows'] === 0) {
+            $processingError = ! empty($errors)
+                ? (string) $errors[0]
+                : 'We could not extract transactions from this file.';
+            Log::warning('statement_ingestion_empty_result', [
+                'errors' => $errors,
+                'formats' => $formats,
+            ]);
+        }
 
         $confidence = $this->scoreConfidence(
             (int) $validated['total_rows'],
@@ -138,6 +149,7 @@ class StatementIngestionService
             'flagged_rows' => (int) $validated['flagged_rows'],
             'total_rows' => (int) $validated['total_rows'],
             'raw_extraction_cache' => $this->truncateRawLog(implode("\n\n---\n\n", array_filter($rawLogs))),
+            'processing_error' => $processingError,
         ];
     }
 
@@ -147,8 +159,40 @@ class StatementIngestionService
     private function processPdf(string $path, string $name): array
     {
         $rawText = $this->extractPdfText($path);
-        $statementRange = $this->detectStatementRange($rawText);
         $rawTextTrimmed = trim($rawText);
+        $rawTextLength = mb_strlen($rawTextTrimmed);
+        Log::info('statement_pdf_text_extraction', [
+            'file' => $name,
+            'text_length' => $rawTextLength,
+        ]);
+
+        if ($rawTextLength < 180) {
+            $ocrText = $this->extractPdfTextViaOcr($path);
+            $ocrTrimmed = trim($ocrText);
+            $ocrLength = mb_strlen($ocrTrimmed);
+            Log::info('statement_pdf_ocr_extraction', [
+                'file' => $name,
+                'ocr_length' => $ocrLength,
+            ]);
+
+            if ($ocrLength > 0) {
+                $rawText = trim($rawTextTrimmed === '' ? $ocrTrimmed : ($rawTextTrimmed."\n\n".$ocrTrimmed));
+                $rawTextTrimmed = $rawText;
+                $rawTextLength = mb_strlen($rawTextTrimmed);
+            }
+        }
+
+        if ($rawTextLength === 0) {
+            return [
+                'rows' => [],
+                'raw_text' => '',
+                'invalid_rows' => 1,
+                'statement_range' => ['min' => null, 'max' => null],
+                'error' => 'Unable to read this statement. Try another file.',
+            ];
+        }
+
+        $statementRange = $this->detectStatementRange($rawText);
         $aiError = null;
 
         if ($rawTextTrimmed !== '') {
@@ -302,7 +346,7 @@ class StatementIngestionService
             'raw_text' => $rawText,
             'invalid_rows' => 1,
             'statement_range' => $statementRange,
-            'error' => $aiError,
+            'error' => $aiError ?: 'We could not extract transactions from this file.',
         ];
     }
 

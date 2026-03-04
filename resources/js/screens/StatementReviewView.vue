@@ -67,8 +67,8 @@
         <div v-if="loading" class="muted">Preparing your statement…</div>
         <div v-else-if="isProcessing" class="muted">Processing your upload…</div>
         <div v-else-if="!transactions.length" class="card">
-            <div class="card-title">No transactions found</div>
-            <p class="card-sub">{{ processingError || 'You can try a different file or keep things manual.' }}</p>
+            <div class="card-title">{{ processingError ? 'Import failed' : 'No transactions found' }}</div>
+            <p class="card-sub">{{ processingError || 'We could not extract transactions from this file.' }}</p>
         </div>
 
         <div v-else class="statement-list" data-onboarding="review-two-rows">
@@ -146,7 +146,7 @@
                 data-onboarding="review-confirm-button"
                 type="button"
                 @click="handleConfirm"
-                :disabled="saving || isProcessing"
+                :disabled="saving || isProcessing || !transactions.length"
             >
                 {{ saving ? 'Saving…' : (isProcessing ? 'Processing…' : 'Confirm import') }}
             </button>

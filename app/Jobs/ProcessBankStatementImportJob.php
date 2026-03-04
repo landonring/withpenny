@@ -9,6 +9,7 @@ use App\Services\PlanUsageService;
 use App\Services\Statements\StatementParser;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ProcessBankStatementImportJob implements ShouldQueue
@@ -94,8 +95,36 @@ class ProcessBankStatementImportJob implements ShouldQueue
             }
 
             if (empty($transactions)) {
+                $message = (string) ($result['processing_error'] ?? 'We could not extract transactions from this file.');
                 $meta['review']['recommended'] = true;
-                $meta['review']['message'] = 'No transactions were extracted automatically. Manual review is required.';
+                $meta['review']['message'] = $message;
+                Log::warning('statement_import_no_transactions', [
+                    'import_id' => $import->id,
+                    'user_id' => $import->user_id,
+                    'file_name' => $import->file_name,
+                    'source' => $result['source'] ?? null,
+                    'errors' => $meta['validation']['errors'] ?? [],
+                ]);
+
+                $import->update([
+                    'transactions' => [],
+                    'meta' => $meta,
+                    'source' => (string) ($result['source'] ?? 'mixed'),
+                    'file_name' => (string) ($this->files[0]['name'] ?? null),
+                    'file_format' => (string) ($result['source'] ?? 'mixed'),
+                    'extraction_method' => (string) ($result['extraction_method'] ?? 'mixed'),
+                    'extraction_confidence' => (string) ($result['extraction_confidence'] ?? 'low'),
+                    'balance_mismatch' => false,
+                    'confidence_score' => $result['confidence_score'] ?? 0,
+                    'flagged_rows' => $result['flagged_rows'] ?? 0,
+                    'total_rows' => $result['total_rows'] ?? 0,
+                    'raw_extraction_cache' => $result['raw_extraction_cache'] ?? null,
+                    'processing_status' => 'failed',
+                    'processing_error' => $message,
+                    'processing_completed_at' => now(),
+                ]);
+
+                return;
             }
 
             $import->update([
