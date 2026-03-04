@@ -172,16 +172,21 @@ class StatementIngestionService
                 }
 
                 if (! empty($rows)) {
-                    return [
-                        'rows' => $rows,
-                        'raw_text' => $rawText,
-                        'invalid_rows' => 0,
-                        'statement_range' => $statementRange,
-                        'error' => null,
-                    ];
-                }
+                    $validatedAi = $this->validateRows($rows, $statementRange);
+                    if (($validatedAi['total_rows'] ?? 0) > 0) {
+                        return [
+                            'rows' => $validatedAi['rows'],
+                            'raw_text' => $rawText,
+                            'invalid_rows' => (int) ($validatedAi['invalid_rows'] ?? 0),
+                            'statement_range' => $statementRange,
+                            'error' => null,
+                        ];
+                    }
 
-                $aiError = "AI extraction returned no transaction rows for {$name}.";
+                    $aiError = "AI extraction returned malformed rows for {$name}.";
+                } else {
+                    $aiError = "AI extraction returned no transaction rows for {$name}.";
+                }
             } catch (\Throwable $error) {
                 $aiError = "AI extraction failed for {$name}. Review required.";
             }
@@ -254,13 +259,16 @@ class StatementIngestionService
                 }
 
                 if (! empty($ocrRows)) {
-                    return [
-                        'rows' => $ocrRows,
-                        'raw_text' => $combinedRaw,
-                        'invalid_rows' => 0,
-                        'statement_range' => $combinedRange,
-                        'error' => null,
-                    ];
+                    $validatedOcrAi = $this->validateRows($ocrRows, $combinedRange);
+                    if (($validatedOcrAi['total_rows'] ?? 0) > 0) {
+                        return [
+                            'rows' => $validatedOcrAi['rows'],
+                            'raw_text' => $combinedRaw,
+                            'invalid_rows' => (int) ($validatedOcrAi['invalid_rows'] ?? 0),
+                            'statement_range' => $combinedRange,
+                            'error' => null,
+                        ];
+                    }
                 }
             } catch (\Throwable) {
                 // Continue through deterministic OCR fallbacks.
