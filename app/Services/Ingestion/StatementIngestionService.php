@@ -3,6 +3,7 @@
 namespace App\Services\Ingestion;
 
 use App\Services\Statements\CsvStatementParser;
+use App\Services\Statements\PdfStatementParser;
 use App\Services\Statements\StatementParser;
 
 class StatementIngestionService
@@ -12,6 +13,7 @@ class StatementIngestionService
         private readonly OfxStatementParser $ofxParser,
         private readonly AiStructuredExtractionService $aiExtractor,
         private readonly TransactionNormalizationService $normalizer,
+        private readonly PdfStatementParser $pdfParser,
     )
     {
     }
@@ -145,53 +147,104 @@ class StatementIngestionService
     private function processPdf(string $path, string $name): array
     {
         $rawText = $this->extractPdfText($path);
-        if (trim($rawText) === '') {
-            return [
-                'rows' => [],
-                'raw_text' => '',
-                'invalid_rows' => 1,
-                'statement_range' => ['min' => null, 'max' => null],
-                'error' => "No readable text found in {$name}.",
-            ];
-        }
-
         $statementRange = $this->detectStatementRange($rawText);
+        $rawTextTrimmed = trim($rawText);
+        $aiError = null;
 
-        try {
-            $aiResult = $this->aiExtractor->extractStatementTransactions($rawText);
-            $rows = [];
+        if ($rawTextTrimmed !== '') {
+            try {
+                $aiResult = $this->aiExtractor->extractStatementTransactions($rawText);
+                $rows = [];
 
-            foreach ($aiResult['transactions'] as $item) {
-                if (! is_array($item)) {
-                    continue;
+                foreach ($aiResult['transactions'] as $item) {
+                    if (! is_array($item)) {
+                        continue;
+                    }
+
+                    $rows[] = [
+                        'date' => $item['date'] ?? null,
+                        'description' => $item['description'] ?? null,
+                        'amount' => $item['amount'] ?? null,
+                        'type' => $this->normalizeStatementType((string) ($item['type'] ?? 'debit')),
+                        'include' => true,
+                        'duplicate' => false,
+                    ];
                 }
 
-                $rows[] = [
-                    'date' => $item['date'] ?? null,
-                    'description' => $item['description'] ?? null,
-                    'amount' => $item['amount'] ?? null,
-                    'type' => $this->normalizeStatementType((string) ($item['type'] ?? 'debit')),
-                    'include' => true,
-                    'duplicate' => false,
-                ];
-            }
+                if (! empty($rows)) {
+                    return [
+                        'rows' => $rows,
+                        'raw_text' => $rawText,
+                        'invalid_rows' => 0,
+                        'statement_range' => $statementRange,
+                        'error' => null,
+                    ];
+                }
 
+                $aiError = "AI extraction returned no transaction rows for {$name}.";
+            } catch (\Throwable $error) {
+                $aiError = "AI extraction failed for {$name}. Review required.";
+            }
+        } else {
+            $aiError = "No readable text found in {$name}.";
+        }
+
+        $fallbackRows = $this->parseWithPdfFallbackParser($path);
+        if (! empty($fallbackRows)) {
+            $fallbackRange = $this->rangeFromRows($fallbackRows);
+            $statementRange = $this->mergeRange($statementRange, $fallbackRange);
             return [
-                'rows' => $rows,
+                'rows' => $fallbackRows,
                 'raw_text' => $rawText,
                 'invalid_rows' => 0,
                 'statement_range' => $statementRange,
                 'error' => null,
             ];
-        } catch (\Throwable $error) {
-            return [
-                'rows' => [],
-                'raw_text' => $rawText,
-                'invalid_rows' => 1,
-                'statement_range' => $statementRange,
-                'error' => "AI extraction failed for {$name}. Review required.",
+        }
+
+        return [
+            'rows' => [],
+            'raw_text' => $rawText,
+            'invalid_rows' => 1,
+            'statement_range' => $statementRange,
+            'error' => $aiError,
+        ];
+    }
+
+    /**
+     * @return array<int, array<string,mixed>>
+     */
+    private function parseWithPdfFallbackParser(string $path): array
+    {
+        try {
+            $parsed = $this->pdfParser->parseDocument($path);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $transactions = $parsed['transactions'] ?? null;
+        if (! is_array($transactions)) {
+            return [];
+        }
+
+        $rows = [];
+        foreach ($transactions as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $rows[] = [
+                'date' => $item['date'] ?? null,
+                'description' => $item['description'] ?? null,
+                'amount' => $item['amount'] ?? null,
+                'type' => $this->normalizeStatementType((string) ($item['type'] ?? 'debit')),
+                'include' => true,
+                'duplicate' => false,
+                'flagged' => false,
             ];
         }
+
+        return $rows;
     }
 
     private function extractPdfText(string $path): string
