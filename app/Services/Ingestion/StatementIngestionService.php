@@ -202,6 +202,21 @@ class StatementIngestionService
             ];
         }
 
+        if ($rawTextTrimmed !== '') {
+            $rawTextRows = $this->parseWithRawTextFallbackParser($rawTextTrimmed);
+            if (! empty($rawTextRows)) {
+                $fallbackRange = $this->rangeFromRows($rawTextRows);
+                $statementRange = $this->mergeRange($statementRange, $fallbackRange);
+                return [
+                    'rows' => $rawTextRows,
+                    'raw_text' => $rawText,
+                    'invalid_rows' => 0,
+                    'statement_range' => $statementRange,
+                    'error' => null,
+                ];
+            }
+        }
+
         return [
             'rows' => [],
             'raw_text' => $rawText,
@@ -229,6 +244,41 @@ class StatementIngestionService
 
         $rows = [];
         foreach ($transactions as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $rows[] = [
+                'date' => $item['date'] ?? null,
+                'description' => $item['description'] ?? null,
+                'amount' => $item['amount'] ?? null,
+                'type' => $this->normalizeStatementType((string) ($item['type'] ?? 'debit')),
+                'include' => true,
+                'duplicate' => false,
+                'flagged' => false,
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return array<int, array<string,mixed>>
+     */
+    private function parseWithRawTextFallbackParser(string $rawText): array
+    {
+        try {
+            $parsed = $this->pdfParser->parseText($rawText);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        if (! is_array($parsed) || empty($parsed)) {
+            return [];
+        }
+
+        $rows = [];
+        foreach ($parsed as $item) {
             if (! is_array($item)) {
                 continue;
             }
