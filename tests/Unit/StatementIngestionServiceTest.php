@@ -13,6 +13,68 @@ use Tests\TestCase;
 
 class StatementIngestionServiceTest extends TestCase
 {
+    public function test_process_files_retries_with_focused_ai_text_when_first_ai_pass_returns_empty(): void
+    {
+        $payload = implode("\n", [
+            'BT',
+            '/F1 12 Tf',
+            '72 720 Td',
+            '(01/13/2026 PAYROLL DEPOSIT +1200.00) Tj',
+            'T*',
+            '(01/14/2026 COFFEE SHOP -4.50) Tj',
+            'ET',
+        ]);
+        $path = $this->writeTempPdf($payload);
+
+        $ai = new class extends AiStructuredExtractionService {
+            public int $calls = 0;
+
+            public function isEnabled(): bool
+            {
+                return true;
+            }
+
+            public function extractStatementTransactions(string $rawText): array
+            {
+                $this->calls++;
+
+                if ($this->calls === 1) {
+                    return [
+                        'transactions' => [],
+                        'attempts' => 1,
+                    ];
+                }
+
+                return [
+                    'transactions' => [
+                        [
+                            'date' => '2026-01-13',
+                            'description' => 'PAYROLL DEPOSIT',
+                            'amount' => 1200.00,
+                            'type' => 'credit',
+                        ],
+                    ],
+                    'attempts' => 1,
+                ];
+            }
+        };
+
+        $service = $this->makeService($ai);
+        $result = $service->processFiles([
+            [
+                'name' => 'sample.pdf',
+                'path' => $path,
+                'mime' => 'application/pdf',
+            ],
+        ]);
+
+        @unlink($path);
+
+        $this->assertSame(2, $ai->calls);
+        $this->assertSame(1, (int) ($result['total_rows'] ?? 0));
+        $this->assertNull($result['processing_error'] ?? null);
+    }
+
     public function test_process_files_uses_stream_fallback_when_pdf_text_tools_are_unavailable(): void
     {
         $payload = implode("\n", [
@@ -87,9 +149,9 @@ class StatementIngestionServiceTest extends TestCase
         $this->assertNull($result['processing_error'] ?? null);
     }
 
-    private function makeService(): StatementIngestionService
+    private function makeService(?AiStructuredExtractionService $ai = null): StatementIngestionService
     {
-        $ai = new AiStructuredExtractionService();
+        $ai ??= new AiStructuredExtractionService();
         $category = new CategorySuggestionService($ai);
         $normalizer = new TransactionNormalizationService($category);
 

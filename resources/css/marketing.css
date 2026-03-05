@@ -165,7 +165,7 @@ details > summary::-webkit-details-marker {
     letter-spacing: 0.12em;
     font-size: 0.78rem;
     font-weight: 700;
-    color: #4f7d8f;
+    color: #2c3e36;
 }
 
 .marketing-faq-heading {
@@ -175,14 +175,14 @@ details > summary::-webkit-details-marker {
     font-size: clamp(2rem, 4vw, 3.125rem);
     font-weight: 500;
     line-height: 1.12;
-    color: #2e5578;
+    color: #2c3e36;
 }
 
 .marketing-faq-subheading {
     margin: 0 auto;
     max-width: 44rem;
     text-align: center;
-    color: #6d7d90;
+    color: #2c3e36;
     font-size: 1.05rem;
     line-height: 1.6;
 }
@@ -201,16 +201,16 @@ details > summary::-webkit-details-marker {
 
 .marketing-faq-list--centered .marketing-faq-question {
     padding: 18px 22px;
-    color: #2e4667;
+    color: #2c3e36;
     font-size: 1.04rem;
     font-weight: 600;
 }
 
 .marketing-faq-list--centered .marketing-faq-icon {
-    color: #4a7f86;
+    color: #c7d4c6;
 }
 
 .marketing-faq-list--centered .marketing-faq-answer {
     padding: 0 22px 18px;
-    color: #6d7d90;
+    color: #2c3e36;
 }

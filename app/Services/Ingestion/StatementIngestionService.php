@@ -199,49 +199,18 @@ class StatementIngestionService
         $aiError = null;
 
         if ($rawTextTrimmed !== '') {
-            try {
-                $aiResult = $this->aiExtractor->extractStatementTransactions($rawText);
-                $rows = [];
-
-                foreach ($aiResult['transactions'] as $item) {
-                    if (! is_array($item)) {
-                        continue;
-                    }
-
-                    $rows[] = [
-                        'date' => $item['date'] ?? null,
-                        'description' => $item['description'] ?? null,
-                        'amount' => $item['amount'] ?? null,
-                        'type' => $this->normalizeStatementType((string) ($item['type'] ?? 'debit')),
-                        'include' => true,
-                        'duplicate' => false,
-                    ];
-                }
-
-                if (! empty($rows)) {
-                    $validatedAi = $this->validateRows($rows, $statementRange);
-                    if (($validatedAi['total_rows'] ?? 0) > 0) {
-                        return [
-                            'rows' => $validatedAi['rows'],
-                            'raw_text' => $rawText,
-                            'invalid_rows' => (int) ($validatedAi['invalid_rows'] ?? 0),
-                            'statement_range' => $statementRange,
-                            'error' => null,
-                        ];
-                    }
-
-                    $aiError = "AI extraction returned malformed rows for {$name}.";
-                } else {
-                    $aiError = "AI extraction returned no transaction rows for {$name}.";
-                }
-            } catch (\Throwable $error) {
-                Log::warning('statement_pdf_ai_extraction_failed', [
-                    'file' => $name,
-                    'message' => $error->getMessage(),
-                    'ai_enabled' => $this->aiExtractor->isEnabled(),
-                ]);
-                $aiError = "AI extraction failed for {$name}. Review required.";
+            $aiExtraction = $this->extractRowsViaAi($rawTextTrimmed, $statementRange, $name, 'pdf_text');
+            if (! empty($aiExtraction['rows'])) {
+                return [
+                    'rows' => $aiExtraction['rows'],
+                    'raw_text' => $rawText,
+                    'invalid_rows' => (int) ($aiExtraction['invalid_rows'] ?? 0),
+                    'statement_range' => $statementRange,
+                    'error' => null,
+                ];
             }
+
+            $aiError = $aiExtraction['error'] ?? null;
         } else {
             $aiError = "No readable text found in {$name}.";
         }
@@ -283,37 +252,18 @@ class StatementIngestionService
             $combinedRaw = trim($rawTextTrimmed === '' ? $ocrTrimmed : ($rawTextTrimmed."\n\n".$ocrTrimmed));
             $combinedRange = $this->mergeRange($statementRange, $this->detectStatementRange($ocrTrimmed));
 
-            try {
-                $ocrAi = $this->aiExtractor->extractStatementTransactions($ocrTrimmed);
-                $ocrRows = [];
-                foreach (($ocrAi['transactions'] ?? []) as $item) {
-                    if (! is_array($item)) {
-                        continue;
-                    }
-                    $ocrRows[] = [
-                        'date' => $item['date'] ?? null,
-                        'description' => $item['description'] ?? null,
-                        'amount' => $item['amount'] ?? null,
-                        'type' => $this->normalizeStatementType((string) ($item['type'] ?? 'debit')),
-                        'include' => true,
-                        'duplicate' => false,
-                    ];
-                }
-
-                if (! empty($ocrRows)) {
-                    $validatedOcrAi = $this->validateRows($ocrRows, $combinedRange);
-                    if (($validatedOcrAi['total_rows'] ?? 0) > 0) {
-                        return [
-                            'rows' => $validatedOcrAi['rows'],
-                            'raw_text' => $combinedRaw,
-                            'invalid_rows' => (int) ($validatedOcrAi['invalid_rows'] ?? 0),
-                            'statement_range' => $combinedRange,
-                            'error' => null,
-                        ];
-                    }
-                }
-            } catch (\Throwable) {
-                // Continue through deterministic OCR fallbacks.
+            $ocrAiExtraction = $this->extractRowsViaAi($ocrTrimmed, $combinedRange, $name, 'ocr_text');
+            if (! empty($ocrAiExtraction['rows'])) {
+                return [
+                    'rows' => $ocrAiExtraction['rows'],
+                    'raw_text' => $combinedRaw,
+                    'invalid_rows' => (int) ($ocrAiExtraction['invalid_rows'] ?? 0),
+                    'statement_range' => $combinedRange,
+                    'error' => null,
+                ];
+            }
+            if ($aiError === null && ! empty($ocrAiExtraction['error'])) {
+                $aiError = (string) $ocrAiExtraction['error'];
             }
 
             $ocrTextRows = $this->parseWithRawTextFallbackParser($ocrTrimmed);
@@ -338,6 +288,209 @@ class StatementIngestionService
             'statement_range' => $statementRange,
             'error' => $this->buildPdfFailureMessage($name, $aiError, $tooling),
         ];
+    }
+
+    /**
+     * @param array{min:?string,max:?string} $statementRange
+     * @return array{rows:array<int,array<string,mixed>>, invalid_rows:int, error:?string}
+     */
+    private function extractRowsViaAi(string $text, array $statementRange, string $name, string $context): array
+    {
+        try {
+            $firstPass = $this->runAiExtractionPass($text, $statementRange);
+            if ($firstPass['status'] === 'success') {
+                return [
+                    'rows' => $firstPass['rows'],
+                    'invalid_rows' => $firstPass['invalid_rows'],
+                    'error' => null,
+                ];
+            }
+
+            $aiError = $firstPass['status'] === 'invalid'
+                ? "AI extraction returned malformed rows for {$name}."
+                : "AI extraction returned no transaction rows for {$name}.";
+        } catch (\Throwable $error) {
+            Log::warning('statement_pdf_ai_extraction_failed', [
+                'file' => $name,
+                'context' => $context,
+                'stage' => 'primary',
+                'message' => $error->getMessage(),
+                'ai_enabled' => $this->aiExtractor->isEnabled(),
+            ]);
+
+            return [
+                'rows' => [],
+                'invalid_rows' => 0,
+                'error' => "AI extraction failed for {$name}. Review required.",
+            ];
+        }
+
+        $focusedText = $this->buildFocusedAiText($text);
+        if ($focusedText === '') {
+            return [
+                'rows' => [],
+                'invalid_rows' => 0,
+                'error' => $aiError,
+            ];
+        }
+
+        Log::info('statement_pdf_ai_focus_retry', [
+            'file' => $name,
+            'context' => $context,
+            'focused_length' => mb_strlen($focusedText),
+        ]);
+
+        try {
+            $focusedPass = $this->runAiExtractionPass($focusedText, $statementRange);
+            if ($focusedPass['status'] === 'success') {
+                Log::info('statement_pdf_ai_focus_retry_success', [
+                    'file' => $name,
+                    'context' => $context,
+                    'transactions' => count($focusedPass['rows']),
+                ]);
+
+                return [
+                    'rows' => $focusedPass['rows'],
+                    'invalid_rows' => $focusedPass['invalid_rows'],
+                    'error' => null,
+                ];
+            }
+
+            return [
+                'rows' => [],
+                'invalid_rows' => 0,
+                'error' => $focusedPass['status'] === 'invalid'
+                    ? "AI extraction returned malformed rows for {$name}."
+                    : $aiError,
+            ];
+        } catch (\Throwable $error) {
+            Log::warning('statement_pdf_ai_extraction_failed', [
+                'file' => $name,
+                'context' => $context,
+                'stage' => 'focused_retry',
+                'message' => $error->getMessage(),
+                'ai_enabled' => $this->aiExtractor->isEnabled(),
+            ]);
+
+            return [
+                'rows' => [],
+                'invalid_rows' => 0,
+                'error' => $aiError,
+            ];
+        }
+    }
+
+    /**
+     * @param array{min:?string,max:?string} $statementRange
+     * @return array{status:'success'|'empty'|'invalid', rows:array<int,array<string,mixed>>, invalid_rows:int}
+     */
+    private function runAiExtractionPass(string $text, array $statementRange): array
+    {
+        $aiResult = $this->aiExtractor->extractStatementTransactions($text);
+        $rows = $this->mapAiTransactionsToRows((array) ($aiResult['transactions'] ?? []));
+        if (empty($rows)) {
+            return [
+                'status' => 'empty',
+                'rows' => [],
+                'invalid_rows' => 0,
+            ];
+        }
+
+        $validated = $this->validateRows($rows, $statementRange);
+        if (($validated['total_rows'] ?? 0) <= 0) {
+            return [
+                'status' => 'invalid',
+                'rows' => [],
+                'invalid_rows' => (int) ($validated['invalid_rows'] ?? 0),
+            ];
+        }
+
+        return [
+            'status' => 'success',
+            'rows' => $validated['rows'],
+            'invalid_rows' => (int) ($validated['invalid_rows'] ?? 0),
+        ];
+    }
+
+    /**
+     * @param array<int,mixed> $transactions
+     * @return array<int, array<string,mixed>>
+     */
+    private function mapAiTransactionsToRows(array $transactions): array
+    {
+        $rows = [];
+
+        foreach ($transactions as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $rows[] = [
+                'date' => $item['date'] ?? null,
+                'description' => $item['description'] ?? null,
+                'amount' => $item['amount'] ?? null,
+                'type' => $this->normalizeStatementType((string) ($item['type'] ?? 'debit')),
+                'include' => true,
+                'duplicate' => false,
+                'flagged' => false,
+            ];
+        }
+
+        return $rows;
+    }
+
+    private function buildFocusedAiText(string $text): string
+    {
+        $lines = preg_split('/\r\n|\r|\n/', $text) ?: [];
+        if (empty($lines)) {
+            return '';
+        }
+
+        $monthPattern = StatementParser::monthPattern();
+        $candidateIndexes = [];
+        foreach ($lines as $index => $rawLine) {
+            $line = preg_replace('/\s+/u', ' ', trim((string) $rawLine)) ?? '';
+            if ($line === '') {
+                continue;
+            }
+
+            $hasDate = $this->extractDateTokenPermissive($line, $monthPattern) !== null
+                || preg_match('/\b\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?\b/', $line) === 1;
+            $hasAmount = ! empty(StatementParser::extractAmounts($line));
+            $hasTxnKeyword = preg_match('/\b(debit|credit|purchase|payment|deposit|withdrawal|pos|ach|atm|transfer|check)\b/i', $line) === 1;
+
+            if (($hasDate && $hasAmount) || (($hasDate || $hasAmount) && $hasTxnKeyword)) {
+                $candidateIndexes[$index] = true;
+                if ($index > 0) {
+                    $candidateIndexes[$index - 1] = true;
+                }
+                $candidateIndexes[$index + 1] = true;
+            }
+        }
+
+        if (empty($candidateIndexes)) {
+            return '';
+        }
+
+        ksort($candidateIndexes);
+        $focusedLines = [];
+        foreach (array_keys($candidateIndexes) as $index) {
+            if (! isset($lines[$index])) {
+                continue;
+            }
+
+            $line = preg_replace('/\s+/u', ' ', trim((string) $lines[$index])) ?? '';
+            if ($line !== '') {
+                $focusedLines[] = $line;
+            }
+        }
+
+        $focusedLines = array_values(array_unique($focusedLines));
+        if (empty($focusedLines)) {
+            return '';
+        }
+
+        return implode("\n", array_slice($focusedLines, 0, 260));
     }
 
     /**
