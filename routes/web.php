@@ -16,7 +16,6 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UsageController;
 use App\Http\Controllers\WebauthnController;
 use App\Http\Controllers\BillingController;
-use Illuminate\Support\Facades\File;
 use Laravel\Cashier\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -162,46 +161,62 @@ if (class_exists(\Laravel\Cashier\Cashier::class)) {
 
 Route::get('/sitemap.xml', function () {
     $today = now()->toDateString();
-    $baseUrl = 'https://withpenny.app';
+    $baseUrl = rtrim((string) config('app.url', 'https://withpenny.app'), '/');
+    if ($baseUrl === '') {
+        $baseUrl = 'https://withpenny.app';
+    }
 
-    $coreUrls = collect([
-        '/',
-        '/how-it-works',
-        '/pricing',
-        '/best-ai-budgeting-app',
-        '/private-budgeting-app',
-        '/blog',
-        '/faq',
-        '/privacy',
-        '/terms',
-    ])->map(fn (string $path) => [
-        'loc' => $baseUrl . ($path === '/' ? '' : $path),
-        'lastmod' => $today,
-        'changefreq' => in_array($path, ['/', '/blog'], true) ? 'weekly' : 'monthly',
-        'priority' => match ($path) {
-            '/' => '1.0',
-            '/best-ai-budgeting-app', '/private-budgeting-app' => '0.9',
-            '/blog' => '0.8',
-            '/pricing' => '0.9',
-            default => '0.7',
-        },
-    ]);
+    $excludedPrefixes = ['/api/', '/admin', '/storage/', '/stripe/'];
+    $excludedExact = ['/up', '/{any}'];
 
-    $blogUrls = collect(File::glob(resource_path('views/blog/*.blade.php')))
-        ->filter(fn (string $file) => basename($file) !== 'index.blade.php')
-        ->map(function (string $file) {
-            $slug = basename($file, '.blade.php');
+    $allUrls = collect(Route::getRoutes()->getRoutes())
+        ->filter(function ($route) {
+            $methods = $route->methods();
+            return in_array('GET', $methods, true);
+        })
+        ->map(function ($route) {
+            $uri = '/'.ltrim((string) $route->uri(), '/');
+            if ($uri !== '/') {
+                $uri = rtrim($uri, '/');
+            }
+            return $uri;
+        })
+        ->reject(function (string $uri) use ($excludedPrefixes, $excludedExact) {
+            if (in_array($uri, $excludedExact, true)) {
+                return true;
+            }
+
+            if (str_contains($uri, '{')) {
+                return true;
+            }
+
+            foreach ($excludedPrefixes as $prefix) {
+                if (str_starts_with($uri, $prefix)) {
+                    return true;
+                }
+            }
+
+            return false;
+        })
+        ->unique()
+        ->sort()
+        ->values()
+        ->map(function (string $path) use ($baseUrl, $today) {
+            $changefreq = in_array($path, ['/', '/blog'], true) ? 'weekly' : 'monthly';
+            $priority = match (true) {
+                $path === '/' => '1.0',
+                $path === '/pricing' => '0.9',
+                str_starts_with($path, '/blog/') => '0.7',
+                default => '0.8',
+            };
+
             return [
-                'loc' => "https://withpenny.app/blog/{$slug}",
-                'lastmod' => date('Y-m-d', filemtime($file)),
-                'changefreq' => 'monthly',
-                'priority' => '0.7',
+                'loc' => $baseUrl.($path === '/' ? '' : $path),
+                'lastmod' => $today,
+                'changefreq' => $changefreq,
+                'priority' => $priority,
             ];
-        });
-
-    $allUrls = $coreUrls
-        ->merge($blogUrls)
-        ->unique('loc')
+        })
         ->values();
 
     $xml = collect([

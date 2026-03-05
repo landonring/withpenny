@@ -157,3 +157,60 @@ details > summary::-webkit-details-marker {
     font-size: 0.96rem;
     line-height: 1.6;
 }
+
+.marketing-faq-eyebrow {
+    margin: 0;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #4f7d8f;
+}
+
+.marketing-faq-heading {
+    margin: 0;
+    text-align: center;
+    font-family: "Inter", sans-serif;
+    font-size: clamp(2rem, 4vw, 3.125rem);
+    font-weight: 500;
+    line-height: 1.12;
+    color: #2e5578;
+}
+
+.marketing-faq-subheading {
+    margin: 0 auto;
+    max-width: 44rem;
+    text-align: center;
+    color: #6d7d90;
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+
+.marketing-faq-list--centered {
+    max-width: 40.5rem;
+    margin: 0 auto;
+    gap: 12px;
+}
+
+.marketing-faq-list--centered .marketing-faq-item {
+    border-color: #d6dde6;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.marketing-faq-list--centered .marketing-faq-question {
+    padding: 18px 22px;
+    color: #2e4667;
+    font-size: 1.04rem;
+    font-weight: 600;
+}
+
+.marketing-faq-list--centered .marketing-faq-icon {
+    color: #4a7f86;
+}
+
+.marketing-faq-list--centered .marketing-faq-answer {
+    padding: 0 22px 18px;
+    color: #6d7d90;
+}

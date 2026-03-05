@@ -1173,3 +1173,171 @@ grid-template-columns:1fr;
 font-size:24px;
 }
 }
+
+/* Global FAQ style normalization for marketing pages */
+.marketing-faq-list{
+display:grid;
+gap:10px;
+}
+
+.marketing-faq-item{
+border:1px solid rgba(143,138,130,.26);
+border-radius:12px;
+background:#fff;
+overflow:hidden;
+}
+
+.marketing-faq-question{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:12px;
+padding:15px 18px;
+color:#2f3a33;
+font-size:1rem;
+font-weight:600;
+line-height:1.45;
+cursor:pointer;
+}
+
+.marketing-faq-icon{
+width:16px;
+min-width:16px;
+height:16px;
+display:inline-flex;
+justify-content:center;
+align-items:center;
+color:#6b7d72;
+font-size:0;
+line-height:0;
+}
+
+.marketing-faq-icon::before{
+content:"";
+width:7px;
+height:7px;
+border-right:1.6px solid currentColor;
+border-bottom:1.6px solid currentColor;
+transform:rotate(45deg) translateY(-1px);
+transition:transform .18s ease;
+}
+
+.marketing-faq-item[open] .marketing-faq-icon::before{
+transform:rotate(-135deg) translateY(-1px);
+}
+
+.marketing-faq-answer{
+margin:0;
+padding:0 18px 16px;
+color:#5f6b63;
+font-size:.96rem;
+line-height:1.6;
+}
+
+.marketing-faq-eyebrow{
+margin:0;
+text-align:center;
+text-transform:uppercase;
+letter-spacing:.12em;
+font-size:.78rem;
+font-weight:700;
+color:#4f7d8f;
+}
+
+.marketing-faq-heading{
+margin:0;
+text-align:center;
+font-family:Inter,sans-serif;
+font-size:clamp(2rem,4vw,3.125rem);
+font-weight:500;
+line-height:1.12;
+color:#2e5578;
+}
+
+.marketing-faq-subheading{
+margin:0 auto;
+max-width:44rem;
+text-align:center;
+color:#6d7d90;
+font-size:1.05rem;
+line-height:1.6;
+}
+
+.marketing-faq-list--centered{
+max-width:40.5rem;
+margin:0 auto;
+gap:12px;
+}
+
+.marketing-faq-list--centered .marketing-faq-item{
+border:1px solid #d6dde6;
+border-radius:12px;
+background:#f8fafc;
+}
+
+.marketing-faq-list--centered .marketing-faq-question{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:12px;
+padding:18px 22px;
+color:#2e4667;
+font-size:1.04rem;
+font-weight:600;
+line-height:1.45;
+cursor:pointer;
+}
+
+.marketing-faq-list--centered .marketing-faq-icon{
+width:16px;
+min-width:16px;
+height:16px;
+display:inline-flex;
+justify-content:center;
+align-items:center;
+color:#4a7f86;
+font-size:0;
+line-height:0;
+}
+
+.marketing-faq-list--centered .marketing-faq-icon::before{
+content:"";
+width:7px;
+height:7px;
+border-right:1.6px solid currentColor;
+border-bottom:1.6px solid currentColor;
+transform:rotate(45deg) translateY(-1px);
+transition:transform .18s ease;
+}
+
+.marketing-faq-list--centered .marketing-faq-item[open] .marketing-faq-icon::before{
+transform:rotate(-135deg) translateY(-1px);
+}
+
+.marketing-faq-list--centered .marketing-faq-answer{
+margin:0;
+padding:0 22px 18px;
+color:#6d7d90;
+font-size:.98rem;
+line-height:1.6;
+}
+
+@media (max-width:767px){
+.marketing-faq-heading{
+font-size:2.35rem;
+}
+
+.marketing-faq-subheading{
+font-size:.96rem;
+}
+
+.marketing-faq-list--centered .marketing-faq-question{
+padding:15px 16px;
+font-size:.95rem;
+}
+
+.marketing-faq-list--centered .marketing-faq-answer{
+padding:0 16px 15px;
+font-size:.93rem;
+}
+}

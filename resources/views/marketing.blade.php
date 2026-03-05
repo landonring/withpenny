@@ -374,9 +374,11 @@
 </section>
 <section class="w-full py-24 px-6 border-t border-border-soft/50" id="faq">
 <div class="max-w-5xl mx-auto">
-<div class="bg-card border border-border-soft rounded-2xl p-8 md:p-12 space-y-6">
-<h2 class="text-3xl md:text-4xl font-serif font-medium text-text-heading">Frequently asked questions</h2>
-<div class="marketing-faq-list">
+<div class="space-y-6">
+<p class="marketing-faq-eyebrow">Support</p>
+<h2 class="marketing-faq-heading">Frequently Asked Questions</h2>
+<p class="marketing-faq-subheading">Everything you need to know about Penny and our calm, practical approach to budgeting.</p>
+<div class="marketing-faq-list marketing-faq-list--centered">
 <details class="marketing-faq-item" open>
 <summary class="marketing-faq-question">Is Penny an AI budgeting app?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
 <p class="marketing-faq-answer">Yes. Penny is an AI-powered budgeting assistant that combines manual tracking, statement scanning, and calm, practical insights.</p>
