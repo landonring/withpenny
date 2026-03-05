@@ -969,80 +969,6 @@ margin-bottom:14px;
 padding:56px 28px 36px;
 }
 
-.best-ai-page .best-ai-faq-section h2{
-text-align:center;
-margin:0 0 26px;
-font-family:"Playfair Display",serif;
-font-size:clamp(38px,3.5vw,56px);
-line-height:1.06;
-font-weight:600;
-letter-spacing:-0.02em;
-color:#1f2522;
-}
-
-.best-ai-page .best-ai-faq-section .marketing-faq-list{
-max-width:1220px;
-margin:0 auto;
-border-top:2px solid #d8d3c8;
-}
-
-.best-ai-page .best-ai-faq-section .marketing-faq-item{
-margin:0;
-padding:0;
-border:none;
-border-radius:0;
-background:transparent;
-border-bottom:2px solid #d8d3c8;
-}
-
-.best-ai-page .best-ai-faq-section .marketing-faq-question{
-display:flex;
-align-items:center;
-justify-content:space-between;
-gap:16px;
-padding:16px 2px;
-font-size:clamp(16px,1.35vw,26px);
-line-height:1.2;
-font-weight:700;
-color:#1f2623;
-list-style:none;
-}
-
-.best-ai-page .best-ai-faq-section .marketing-faq-question::-webkit-details-marker{
-display:none;
-}
-
-.best-ai-page .best-ai-faq-section .marketing-faq-icon{
-font-size:0;
-line-height:0;
-margin-left:14px;
-width:24px;
-height:24px;
-display:grid;
-place-items:center;
-color:#6b746f;
-}
-
-.best-ai-page .best-ai-faq-section .marketing-faq-icon::before{
-content:"\2304";
-font-size:28px;
-line-height:1;
-font-weight:500;
-transform-origin:center;
-}
-
-.best-ai-page .best-ai-faq-section .marketing-faq-item[open] .marketing-faq-icon::before{
-transform:rotate(180deg);
-display:block;
-}
-
-.best-ai-page .best-ai-faq-section .marketing-faq-answer{
-margin:0;
-padding:0 2px 16px;
-font-size:clamp(14px,1.05vw,17px);
-line-height:1.35;
-color:#5a6660;
-}
 
 @media (max-width:1280px){
 .best-ai-page .best-ai-simplicity-section{
@@ -1106,8 +1032,7 @@ margin-bottom:6px;
 padding:34px 20px 22px;
 }
 .best-ai-page .best-ai-compare-section h2,
-.best-ai-page .best-ai-who-section h2,
-.best-ai-page .best-ai-faq-section h2{
+.best-ai-page .best-ai-who-section h2{
 font-size:34px;
 }
 .best-ai-page .best-ai-compare-section th{
@@ -1126,14 +1051,6 @@ font-size:16px;
 .best-ai-page .best-ai-who-section li strong{
 font-size:21px;
 }
-.best-ai-page .best-ai-faq-section .marketing-faq-question{
-font-size:19px;
-padding:14px 2px;
-}
-.best-ai-page .best-ai-faq-section .marketing-faq-answer{
-font-size:15px;
-padding-bottom:14px;
-}
 }
 
 @media (max-width:640px){
@@ -1149,28 +1066,22 @@ border-radius:16px;
 .best-ai-page .best-ai-simplicity-section h2,
 .best-ai-page .best-ai-works-section h2,
 .best-ai-page .best-ai-compare-section h2,
-.best-ai-page .best-ai-who-section h2,
-.best-ai-page .best-ai-faq-section h2{
+.best-ai-page .best-ai-who-section h2{
 font-size:30px;
 }
 .best-ai-page .best-ai-simplicity-section p,
 .best-ai-page .best-ai-works-section li,
 .best-ai-page .best-ai-compare-section td,
-.best-ai-page .best-ai-who-section li,
-.best-ai-page .best-ai-faq-section .marketing-faq-answer{
+.best-ai-page .best-ai-who-section li{
 font-size:16px;
 }
 .best-ai-page .best-ai-works-section li strong,
 .best-ai-page .best-ai-compare-section th,
-.best-ai-page .best-ai-who-section li strong,
-.best-ai-page .best-ai-faq-section .marketing-faq-question{
+.best-ai-page .best-ai-who-section li strong{
 font-size:18px;
 }
 .best-ai-page .best-ai-who-section ul{
 grid-template-columns:1fr;
-}
-.best-ai-page .best-ai-faq-section .marketing-faq-icon::before{
-font-size:24px;
 }
 }
 

@@ -171,8 +171,9 @@
         </section>
 
         <section class="bg-card border border-border-soft rounded-xl p-8 md:p-10 best-ai-faq-section" id="faq-ai-budgeting-app">
-            <h2 class="text-3xl font-serif text-text-heading mb-6">Frequently Asked</h2>
-            <div class="marketing-faq-list">
+            <h2 class="marketing-faq-heading mb-3">Frequently Asked Questions</h2>
+            <p class="marketing-faq-subheading mb-8">Everything you need to know about Penny and our calm, practical approach to budgeting.</p>
+            <div class="marketing-faq-list marketing-faq-list--centered">
                 <details class="marketing-faq-item" open>
                     <summary class="marketing-faq-question">How does Penny differ from other AI budgeting apps?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
                     <p class="marketing-faq-answer">Penny keeps budgeting calm and practical, with less dashboard noise and clearer review structure.</p>
