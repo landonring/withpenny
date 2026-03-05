@@ -375,8 +375,7 @@
 <section class="w-full py-24 px-6 border-t border-border-soft/50" id="faq">
 <div class="max-w-5xl mx-auto">
 <div class="space-y-6">
-<p class="marketing-faq-eyebrow">Support</p>
-<h2 class="marketing-faq-heading">Frequently Asked Questions</h2>
+            <h2 class="marketing-faq-heading">Frequently Asked Questions</h2>
 <p class="marketing-faq-subheading">Everything you need to know about Penny and our calm, practical approach to budgeting.</p>
 <div class="marketing-faq-list marketing-faq-list--centered">
 <details class="marketing-faq-item" open>
