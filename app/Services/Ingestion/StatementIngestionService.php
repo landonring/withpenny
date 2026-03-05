@@ -158,12 +158,15 @@ class StatementIngestionService
      */
     private function processPdf(string $path, string $name): array
     {
+        $tooling = $this->toolingAvailability();
         $rawText = $this->extractPdfText($path);
         $rawTextTrimmed = trim($rawText);
         $rawTextLength = mb_strlen($rawTextTrimmed);
         Log::info('statement_pdf_text_extraction', [
             'file' => $name,
             'text_length' => $rawTextLength,
+            'tooling' => $tooling,
+            'ai_enabled' => $this->aiExtractor->isEnabled(),
         ]);
 
         if ($rawTextLength < 180) {
@@ -232,6 +235,11 @@ class StatementIngestionService
                     $aiError = "AI extraction returned no transaction rows for {$name}.";
                 }
             } catch (\Throwable $error) {
+                Log::warning('statement_pdf_ai_extraction_failed', [
+                    'file' => $name,
+                    'message' => $error->getMessage(),
+                    'ai_enabled' => $this->aiExtractor->isEnabled(),
+                ]);
                 $aiError = "AI extraction failed for {$name}. Review required.";
             }
         } else {
@@ -346,7 +354,7 @@ class StatementIngestionService
             'raw_text' => $rawText,
             'invalid_rows' => 1,
             'statement_range' => $statementRange,
-            'error' => $aiError ?: 'We could not extract transactions from this file.',
+            'error' => $this->buildPdfFailureMessage($name, $aiError, $tooling),
         ];
     }
 
@@ -509,6 +517,11 @@ class StatementIngestionService
             if ($plainText !== '') {
                 return $plainText;
             }
+        }
+
+        $streamText = $this->extractPdfTextFromStreams($path);
+        if ($streamText !== '') {
+            return $streamText;
         }
 
         $strings = trim((string) shell_exec('command -v strings'));
@@ -780,5 +793,209 @@ class StatementIngestionService
         }
 
         return mb_substr($trimmed, 0, 250000);
+    }
+
+    /**
+     * Extracts likely text from PDF content streams without external binaries.
+     */
+    private function extractPdfTextFromStreams(string $path): string
+    {
+        $content = @file_get_contents($path);
+        if (! is_string($content) || $content === '') {
+            return '';
+        }
+
+        preg_match_all('/stream\r?\n(.*?)\r?\nendstream/s', $content, $matches);
+        $streams = $matches[1] ?? [];
+        if (empty($streams)) {
+            return '';
+        }
+
+        $chunks = [];
+        foreach ($streams as $rawStream) {
+            $decoded = $this->decodePdfStreamData((string) $rawStream);
+            if ($decoded === '') {
+                continue;
+            }
+
+            $text = $this->extractPdfTextOperators($decoded);
+            if ($text !== '') {
+                $chunks[] = $text;
+            }
+        }
+
+        $combined = trim(implode("\n", $chunks));
+        if ($combined === '') {
+            return '';
+        }
+
+        $combined = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', ' ', $combined) ?? $combined;
+        $combined = preg_replace('/\n{3,}/', "\n\n", $combined) ?? $combined;
+
+        return trim($combined);
+    }
+
+    private function decodePdfStreamData(string $stream): string
+    {
+        $stream = trim($stream, "\r\n");
+        if ($stream === '') {
+            return '';
+        }
+
+        $candidates = [$stream];
+        $inflateCandidates = [$stream, substr($stream, 2)];
+
+        foreach ($inflateCandidates as $candidate) {
+            if (! is_string($candidate) || $candidate === '') {
+                continue;
+            }
+            $uncompressed = @gzuncompress($candidate);
+            if (is_string($uncompressed) && $uncompressed !== '') {
+                $candidates[] = $uncompressed;
+            }
+            $inflated = @gzinflate($candidate);
+            if (is_string($inflated) && $inflated !== '') {
+                $candidates[] = $inflated;
+            }
+        }
+
+        foreach ($candidates as $candidate) {
+            if (
+                str_contains($candidate, 'BT')
+                && str_contains($candidate, 'ET')
+                && (str_contains($candidate, 'Tj') || str_contains($candidate, 'TJ'))
+            ) {
+                return $candidate;
+            }
+        }
+
+        return '';
+    }
+
+    private function extractPdfTextOperators(string $stream): string
+    {
+        preg_match_all('/BT(.*?)ET/s', $stream, $blocks);
+        $textBlocks = $blocks[1] ?? [];
+        if (empty($textBlocks)) {
+            return '';
+        }
+
+        $lines = [];
+        foreach ($textBlocks as $block) {
+            $parts = [];
+
+            if (preg_match_all('/\((?:\\\\.|[^\\\\)])*\)/s', $block, $literalMatches)) {
+                foreach ($literalMatches[0] as $literal) {
+                    $decoded = $this->decodePdfLiteralString($literal);
+                    if ($decoded !== '') {
+                        $parts[] = $decoded;
+                    }
+                }
+            }
+
+            if (preg_match_all('/<([0-9A-Fa-f\s]+)>/s', $block, $hexMatches)) {
+                foreach ($hexMatches[1] as $hex) {
+                    $decoded = $this->decodePdfHexString((string) $hex);
+                    if ($decoded !== '') {
+                        $parts[] = $decoded;
+                    }
+                }
+            }
+
+            $line = trim(implode(' ', $parts));
+            if ($line !== '') {
+                $lines[] = $line;
+            }
+        }
+
+        return trim(implode("\n", $lines));
+    }
+
+    private function decodePdfLiteralString(string $token): string
+    {
+        $value = substr($token, 1, -1);
+        if ($value === false || $value === '') {
+            return '';
+        }
+
+        $value = preg_replace("/\\\\\r?\n/", '', $value) ?? $value;
+        $value = preg_replace_callback('/\\\\([0-7]{1,3})/', function ($matches) {
+            return chr(octdec((string) $matches[1]) & 0xFF);
+        }, $value) ?? $value;
+
+        $value = str_replace(
+            ['\\n', '\\r', '\\t', '\\b', '\\f', '\\(', '\\)', '\\\\'],
+            ["\n", "\r", "\t", "\x08", "\x0C", '(', ')', '\\'],
+            $value
+        );
+
+        $value = preg_replace('/\s+/u', ' ', trim($value)) ?? $value;
+        if ($value === '' || ! preg_match('/[A-Za-z0-9]/', $value)) {
+            return '';
+        }
+
+        return $value;
+    }
+
+    private function decodePdfHexString(string $hex): string
+    {
+        $hex = preg_replace('/\s+/', '', $hex) ?? $hex;
+        if ($hex === '') {
+            return '';
+        }
+
+        if (strlen($hex) % 2 === 1) {
+            $hex = substr($hex, 0, -1);
+        }
+
+        $binary = @hex2bin($hex);
+        if (! is_string($binary) || $binary === '') {
+            return '';
+        }
+
+        if (str_starts_with($binary, "\xFE\xFF")) {
+            $binary = mb_convert_encoding(substr($binary, 2), 'UTF-8', 'UTF-16BE');
+        } elseif (str_contains($binary, "\x00")) {
+            $binary = mb_convert_encoding($binary, 'UTF-8', 'UTF-16BE');
+        }
+
+        $binary = preg_replace('/\s+/u', ' ', trim($binary)) ?? $binary;
+        if ($binary === '' || ! preg_match('/[A-Za-z0-9]/', $binary)) {
+            return '';
+        }
+
+        return $binary;
+    }
+
+    /**
+     * @return array{pdftotext:bool,pdftoppm:bool,tesseract:bool}
+     */
+    private function toolingAvailability(): array
+    {
+        return [
+            'pdftotext' => trim((string) shell_exec('command -v pdftotext')) !== '',
+            'pdftoppm' => trim((string) shell_exec('command -v pdftoppm')) !== '',
+            'tesseract' => trim((string) shell_exec('command -v tesseract')) !== '',
+        ];
+    }
+
+    /**
+     * @param array{pdftotext:bool,pdftoppm:bool,tesseract:bool} $tooling
+     */
+    private function buildPdfFailureMessage(string $name, ?string $aiError, array $tooling): string
+    {
+        if ($aiError !== null && $aiError !== '') {
+            return $aiError;
+        }
+
+        if (! $this->aiExtractor->isEnabled()) {
+            return 'AI parsing is not configured for this environment and the statement could not be parsed automatically.';
+        }
+
+        if (! $tooling['pdftotext'] && (! $tooling['pdftoppm'] || ! $tooling['tesseract'])) {
+            return "Unable to parse {$name}. PDF text tooling is unavailable on this server.";
+        }
+
+        return 'We could not extract transactions from this file.';
     }
 }
