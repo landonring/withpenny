@@ -25,18 +25,7 @@ class StatementIngestionServiceTest extends TestCase
             'ET',
         ]);
 
-        $compressed = gzcompress($payload);
-        $pdf = "%PDF-1.4\n"
-            ."1 0 obj\n"
-            ."<< /Length ".strlen($compressed)." /Filter /FlateDecode >>\n"
-            ."stream\n"
-            .$compressed."\n"
-            ."endstream\n"
-            ."endobj\n"
-            ."%%EOF\n";
-
-        $path = tempnam(sys_get_temp_dir(), 'stmt-pdf-');
-        file_put_contents($path, $pdf);
+        $path = $this->writeTempPdf($payload);
 
         $service = $this->makeService();
         $result = $service->processFiles([
@@ -54,6 +43,50 @@ class StatementIngestionServiceTest extends TestCase
         $this->assertNull($result['processing_error'] ?? null);
     }
 
+    public function test_process_files_recovers_fragmented_posted_date_rows_without_ai_or_pdf_tooling(): void
+    {
+        $payload = implode("\n", [
+            'BT',
+            '/F1 12 Tf',
+            '72 720 Td',
+            '(Posted 01/13/2026) Tj',
+            'T*',
+            '(PAYROLL DEPOSIT) Tj',
+            'T*',
+            '(Credit) Tj',
+            'T*',
+            '(+$1,200.00) Tj',
+            'T*',
+            '(Posted 01/14/2026) Tj',
+            'T*',
+            '(COFFEE SHOP) Tj',
+            'T*',
+            '(Debit) Tj',
+            'T*',
+            '(-$4.50) Tj',
+            'ET',
+        ]);
+
+        $path = $this->writeTempPdf($payload);
+
+        $service = $this->makeService();
+        $result = $service->processFiles([
+            [
+                'name' => 'fragmented.pdf',
+                'path' => $path,
+                'mime' => 'application/pdf',
+            ],
+        ]);
+
+        @unlink($path);
+
+        $transactions = $result['transactions'] ?? [];
+        $this->assertCount(2, $transactions);
+        $this->assertSame('income', $transactions[0]['type']);
+        $this->assertSame('spending', $transactions[1]['type']);
+        $this->assertNull($result['processing_error'] ?? null);
+    }
+
     private function makeService(): StatementIngestionService
     {
         $ai = new AiStructuredExtractionService();
@@ -67,5 +100,23 @@ class StatementIngestionServiceTest extends TestCase
             $normalizer,
             new PdfStatementParser(),
         );
+    }
+
+    private function writeTempPdf(string $payload): string
+    {
+        $compressed = gzcompress($payload);
+        $pdf = "%PDF-1.4\n"
+            ."1 0 obj\n"
+            ."<< /Length ".strlen($compressed)." /Filter /FlateDecode >>\n"
+            ."stream\n"
+            .$compressed."\n"
+            ."endstream\n"
+            ."endobj\n"
+            ."%%EOF\n";
+
+        $path = tempnam(sys_get_temp_dir(), 'stmt-pdf-');
+        file_put_contents($path, $pdf);
+
+        return $path;
     }
 }

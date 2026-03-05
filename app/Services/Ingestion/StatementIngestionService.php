@@ -261,24 +261,14 @@ class StatementIngestionService
 
         if ($rawTextTrimmed !== '') {
             $rawTextRows = $this->parseWithRawTextFallbackParser($rawTextTrimmed);
-            if (! empty($rawTextRows)) {
-                $fallbackRange = $this->rangeFromRows($rawTextRows);
-                $statementRange = $this->mergeRange($statementRange, $fallbackRange);
-                return [
-                    'rows' => $rawTextRows,
-                    'raw_text' => $rawText,
-                    'invalid_rows' => 0,
-                    'statement_range' => $statementRange,
-                    'error' => null,
-                ];
-            }
-
             $permissiveRows = $this->parseWithPermissiveLineFallback($rawTextTrimmed);
-            if (! empty($permissiveRows)) {
-                $fallbackRange = $this->rangeFromRows($permissiveRows);
+            $bestTextRows = count($permissiveRows) > count($rawTextRows) ? $permissiveRows : $rawTextRows;
+
+            if (! empty($bestTextRows)) {
+                $fallbackRange = $this->rangeFromRows($bestTextRows);
                 $statementRange = $this->mergeRange($statementRange, $fallbackRange);
                 return [
-                    'rows' => $permissiveRows,
+                    'rows' => $bestTextRows,
                     'raw_text' => $rawText,
                     'invalid_rows' => 0,
                     'statement_range' => $statementRange,
@@ -327,20 +317,12 @@ class StatementIngestionService
             }
 
             $ocrTextRows = $this->parseWithRawTextFallbackParser($ocrTrimmed);
-            if (! empty($ocrTextRows)) {
-                return [
-                    'rows' => $ocrTextRows,
-                    'raw_text' => $combinedRaw,
-                    'invalid_rows' => 0,
-                    'statement_range' => $combinedRange,
-                    'error' => null,
-                ];
-            }
-
             $ocrPermissiveRows = $this->parseWithPermissiveLineFallback($ocrTrimmed);
-            if (! empty($ocrPermissiveRows)) {
+            $bestOcrRows = count($ocrPermissiveRows) > count($ocrTextRows) ? $ocrPermissiveRows : $ocrTextRows;
+
+            if (! empty($bestOcrRows)) {
                 return [
-                    'rows' => $ocrPermissiveRows,
+                    'rows' => $bestOcrRows,
                     'raw_text' => $combinedRaw,
                     'invalid_rows' => 0,
                     'statement_range' => $combinedRange,
@@ -480,6 +462,136 @@ class StatementIngestionService
 
             $type = $this->normalizeStatementType(
                 StatementParser::determineType($signedAmount, $description, $amountRaw, $line)
+            );
+
+            $key = strtolower($date.'|'.number_format($amount, 2, '.', '').'|'.$type.'|'.$description);
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+
+            $rows[] = [
+                'date' => $date,
+                'description' => $description,
+                'amount' => $amount,
+                'type' => $type,
+                'include' => true,
+                'duplicate' => false,
+                'flagged' => false,
+            ];
+        }
+
+        $chunkedRows = $this->parseWithChunkedPermissiveFallback($lines, $year, $monthPattern);
+        if (count($chunkedRows) > count($rows)) {
+            return $chunkedRows;
+        }
+
+        if (empty($rows) && ! empty($chunkedRows)) {
+            return $chunkedRows;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Recover transactions from heavily fragmented PDF text where transaction fields are spread across lines.
+     *
+     * @param array<int, string> $rawLines
+     * @return array<int, array<string,mixed>>
+     */
+    private function parseWithChunkedPermissiveFallback(array $rawLines, int $year, string $monthPattern): array
+    {
+        $lines = [];
+        $splitPattern = '/(.)(?=(?:'.$monthPattern.'\s*\d{1,2}|\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?|(?:19|20)\d{2}[01]\d[0-3]\d)\b)/i';
+        foreach ($rawLines as $line) {
+            $line = preg_replace('/\s+/u', ' ', trim((string) $line)) ?? '';
+            if ($line === '') {
+                continue;
+            }
+
+            $expanded = preg_replace($splitPattern, "$1\n", $line) ?? $line;
+            $parts = preg_split('/\n+/', $expanded) ?: [];
+            foreach ($parts as $part) {
+                $part = preg_replace('/\s+/u', ' ', trim((string) $part)) ?? '';
+                if ($part !== '') {
+                    $lines[] = $part;
+                }
+            }
+        }
+
+        if (empty($lines)) {
+            return [];
+        }
+
+        $dateIndexes = [];
+        foreach ($lines as $index => $line) {
+            if ($this->extractDateTokenPermissive($line, $monthPattern) !== null) {
+                $dateIndexes[] = $index;
+            }
+        }
+
+        if (empty($dateIndexes)) {
+            return [];
+        }
+
+        $rows = [];
+        $seen = [];
+        foreach ($dateIndexes as $pointer => $startIndex) {
+            $nextDateIndex = $dateIndexes[$pointer + 1] ?? count($lines);
+            $endIndex = min($nextDateIndex - 1, $startIndex + 10);
+            if ($endIndex < $startIndex) {
+                $endIndex = $startIndex;
+            }
+
+            $chunkParts = array_slice($lines, $startIndex, ($endIndex - $startIndex) + 1);
+            if (empty($chunkParts)) {
+                continue;
+            }
+
+            $chunk = trim(implode(' ', $chunkParts));
+            if ($chunk === '') {
+                continue;
+            }
+
+            $dateToken = $this->extractDateTokenPermissive($chunkParts[0], $monthPattern)
+                ?? $this->extractDateTokenPermissive($chunk, $monthPattern);
+            if (! $dateToken) {
+                continue;
+            }
+
+            $date = StatementParser::parseDate($dateToken, $year);
+            if ($date === null) {
+                $date = $this->parseCompactDateToken($dateToken);
+            }
+            if ($date === null) {
+                continue;
+            }
+
+            $amounts = StatementParser::extractAmounts($chunk);
+            if (empty($amounts)) {
+                continue;
+            }
+
+            $amountRaw = StatementParser::pickLikelyAmountFromLine($chunk, $amounts)
+                ?? StatementParser::pickLikelyAmount($amounts);
+            if (! $amountRaw) {
+                continue;
+            }
+
+            $signedAmount = StatementParser::parseAmount($amountRaw);
+            $amount = abs($signedAmount);
+            if ($amount <= 0) {
+                continue;
+            }
+
+            $description = StatementParser::extractDescription($chunk, $dateToken, $amounts);
+            $description = StatementParser::sanitizeDescription($this->cleanChunkDescription($description));
+            if ($description === '' || $this->isSummaryRow($description)) {
+                continue;
+            }
+
+            $type = $this->normalizeStatementType(
+                StatementParser::determineType($signedAmount, $description, $amountRaw, $chunk)
             );
 
             $key = strtolower($date.'|'.number_format($amount, 2, '.', '').'|'.$type.'|'.$description);
@@ -984,12 +1096,12 @@ class StatementIngestionService
      */
     private function buildPdfFailureMessage(string $name, ?string $aiError, array $tooling): string
     {
-        if ($aiError !== null && $aiError !== '') {
-            return $aiError;
-        }
-
         if (! $this->aiExtractor->isEnabled()) {
             return 'AI parsing is not configured for this environment and the statement could not be parsed automatically.';
+        }
+
+        if ($aiError !== null && $aiError !== '') {
+            return $aiError;
         }
 
         if (! $tooling['pdftotext'] && (! $tooling['pdftoppm'] || ! $tooling['tesseract'])) {
@@ -997,5 +1109,43 @@ class StatementIngestionService
         }
 
         return 'We could not extract transactions from this file.';
+    }
+
+    private function extractDateTokenPermissive(string $text, string $monthPattern): ?string
+    {
+        $token = StatementParser::extractDateToken($text, $monthPattern);
+        if ($token !== null) {
+            return $token;
+        }
+
+        if (preg_match('/\b((?:19|20)\d{2}[01]\d[0-3]\d)\b/', $text, $matches)) {
+            return (string) $matches[1];
+        }
+
+        return null;
+    }
+
+    private function parseCompactDateToken(string $token): ?string
+    {
+        $token = trim($token);
+        if (! preg_match('/^\d{8}$/', $token)) {
+            return null;
+        }
+
+        if (preg_match('/^(19|20)\d{6}$/', $token) === 1) {
+            $date = \DateTime::createFromFormat('Ymd', $token);
+            return $date?->format('Y-m-d');
+        }
+
+        return null;
+    }
+
+    private function cleanChunkDescription(string $description): string
+    {
+        $description = preg_replace('/\b(posted|posting\s+date|transaction\s+date)\b[:\s-]*/i', '', $description) ?? $description;
+        $description = preg_replace('/\b(debit|credit|dr|cr)\b/i', '', $description) ?? $description;
+        $description = preg_replace('/\s+/u', ' ', trim($description)) ?? trim($description);
+
+        return $description;
     }
 }
