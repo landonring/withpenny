@@ -13,6 +13,10 @@ class AiStructuredExtractionService
     {
         $prompt = <<<PROMPT
 Extract bank transactions from the provided statement text.
+The input may come from PDF text extraction or OCR and can contain noisy lines.
+Transaction fields may span multiple lines.
+Statements may use separate Debit and Credit columns.
+
 Return valid JSON only with this exact shape:
 {
   "transactions": [
@@ -26,14 +30,19 @@ Return valid JSON only with this exact shape:
 }
 Rules:
 - Ignore headers and table labels.
-- Ignore beginning/ending balance rows and summary rows.
+- Merge wrapped/multi-line rows into a single transaction.
+- For separate debit/credit columns: choose the non-empty column and set type accordingly.
+- Ignore beginning/ending balance rows, running balances, and summary rows.
 - Ignore totals and non-transaction lines.
-- Date must be ISO 8601 format YYYY-MM-DD.
-- Amount must be numeric only.
+- Date must be normalized to YYYY-MM-DD.
+- Amount must be numeric only (no currency symbols, commas, or text).
+- Use positive amount values; direction belongs in type.
+- Skip uncertain rows instead of inventing values.
+- If no transactions exist, return an empty array.
 - Do not add markdown fences.
 PROMPT;
 
-        $result = $this->callJsonPrompt($prompt, $rawText, 1200, 2);
+        $result = $this->callJsonPrompt($prompt, $rawText, 1800, 2);
 
         $transactions = $result['transactions'] ?? null;
         if (! is_array($transactions)) {

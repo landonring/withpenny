@@ -120,6 +120,8 @@ class StatementIngestionService
                 'total_rows' => (int) $validated['total_rows'],
                 'invalid_rows' => $invalidRows,
                 'flagged_rows' => (int) $validated['flagged_rows'],
+                'duplicate_rows' => (int) ($validated['duplicate_rows'] ?? 0),
+                'rejected_reason_counts' => $validated['rejected_reason_counts'] ?? [],
                 'errors' => $errors,
             ],
             'review' => [
@@ -298,6 +300,7 @@ class StatementIngestionService
     {
         try {
             $firstPass = $this->runAiExtractionPass($text, $statementRange);
+            $this->logAiPassResult($name, $context, 'primary', $firstPass);
             if ($firstPass['status'] === 'success') {
                 return [
                     'rows' => $firstPass['rows'],
@@ -307,7 +310,7 @@ class StatementIngestionService
             }
 
             $aiError = $firstPass['status'] === 'invalid'
-                ? "AI extraction returned malformed rows for {$name}."
+                ? "AI extraction rows failed validation for {$name}."
                 : "AI extraction returned no transaction rows for {$name}.";
         } catch (\Throwable $error) {
             Log::warning('statement_pdf_ai_extraction_failed', [
@@ -342,6 +345,7 @@ class StatementIngestionService
 
         try {
             $focusedPass = $this->runAiExtractionPass($focusedText, $statementRange);
+            $this->logAiPassResult($name, $context, 'focused_retry', $focusedPass);
             if ($focusedPass['status'] === 'success') {
                 Log::info('statement_pdf_ai_focus_retry_success', [
                     'file' => $name,
@@ -360,7 +364,7 @@ class StatementIngestionService
                 'rows' => [],
                 'invalid_rows' => 0,
                 'error' => $focusedPass['status'] === 'invalid'
-                    ? "AI extraction returned malformed rows for {$name}."
+                    ? "AI extraction rows failed validation for {$name}."
                     : $aiError,
             ];
         } catch (\Throwable $error) {
@@ -382,17 +386,33 @@ class StatementIngestionService
 
     /**
      * @param array{min:?string,max:?string} $statementRange
-     * @return array{status:'success'|'empty'|'invalid', rows:array<int,array<string,mixed>>, invalid_rows:int}
+     * @return array{
+     *   status:'success'|'empty'|'invalid',
+     *   rows:array<int,array<string,mixed>>,
+     *   invalid_rows:int,
+     *   mapped_rows:int,
+     *   raw_rows:int,
+     *   duplicate_rows:int,
+     *   rejected_reason_counts:array<string,int>,
+     *   rejected_samples:array<int,array<string,mixed>>
+     * }
      */
     private function runAiExtractionPass(string $text, array $statementRange): array
     {
         $aiResult = $this->aiExtractor->extractStatementTransactions($text);
-        $rows = $this->mapAiTransactionsToRows((array) ($aiResult['transactions'] ?? []));
+        $transactions = $aiResult['transactions'] ?? [];
+        $transactions = is_array($transactions) ? $transactions : [];
+        $rows = $this->mapAiTransactionsToRows($transactions);
         if (empty($rows)) {
             return [
                 'status' => 'empty',
                 'rows' => [],
                 'invalid_rows' => 0,
+                'mapped_rows' => 0,
+                'raw_rows' => count($transactions),
+                'duplicate_rows' => 0,
+                'rejected_reason_counts' => [],
+                'rejected_samples' => [],
             ];
         }
 
@@ -402,6 +422,11 @@ class StatementIngestionService
                 'status' => 'invalid',
                 'rows' => [],
                 'invalid_rows' => (int) ($validated['invalid_rows'] ?? 0),
+                'mapped_rows' => count($rows),
+                'raw_rows' => count($transactions),
+                'duplicate_rows' => (int) ($validated['duplicate_rows'] ?? 0),
+                'rejected_reason_counts' => $validated['rejected_reason_counts'] ?? [],
+                'rejected_samples' => $validated['rejected_samples'] ?? [],
             ];
         }
 
@@ -409,6 +434,11 @@ class StatementIngestionService
             'status' => 'success',
             'rows' => $validated['rows'],
             'invalid_rows' => (int) ($validated['invalid_rows'] ?? 0),
+            'mapped_rows' => count($rows),
+            'raw_rows' => count($transactions),
+            'duplicate_rows' => (int) ($validated['duplicate_rows'] ?? 0),
+            'rejected_reason_counts' => $validated['rejected_reason_counts'] ?? [],
+            'rejected_samples' => $validated['rejected_samples'] ?? [],
         ];
     }
 
@@ -448,6 +478,8 @@ class StatementIngestionService
 
         $monthPattern = StatementParser::monthPattern();
         $candidateIndexes = [];
+        $dateIndexes = [];
+
         foreach ($lines as $index => $rawLine) {
             $line = preg_replace('/\s+/u', ' ', trim((string) $rawLine)) ?? '';
             if ($line === '') {
@@ -457,14 +489,26 @@ class StatementIngestionService
             $hasDate = $this->extractDateTokenPermissive($line, $monthPattern) !== null
                 || preg_match('/\b\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?\b/', $line) === 1;
             $hasAmount = ! empty(StatementParser::extractAmounts($line));
-            $hasTxnKeyword = preg_match('/\b(debit|credit|purchase|payment|deposit|withdrawal|pos|ach|atm|transfer|check)\b/i', $line) === 1;
+            $hasTxnKeyword = preg_match('/\b(debit|credit|purchase|payment|deposit|withdrawal|pos|ach|atm|transfer|check|card|posted)\b/i', $line) === 1;
 
-            if (($hasDate && $hasAmount) || (($hasDate || $hasAmount) && $hasTxnKeyword)) {
+            if ($hasDate) {
+                $dateIndexes[] = $index;
+            }
+
+            if (($hasDate && $hasAmount) || ($hasAmount && $hasTxnKeyword)) {
                 $candidateIndexes[$index] = true;
-                if ($index > 0) {
-                    $candidateIndexes[$index - 1] = true;
+                for ($offset = 1; $offset <= 2; $offset++) {
+                    $candidateIndexes[$index - $offset] = true;
+                    $candidateIndexes[$index + $offset] = true;
                 }
-                $candidateIndexes[$index + 1] = true;
+            }
+        }
+
+        foreach ($dateIndexes as $position => $startIndex) {
+            $next = $dateIndexes[$position + 1] ?? count($lines);
+            $end = min($next - 1, $startIndex + 6);
+            for ($idx = max(0, $startIndex - 1); $idx <= $end; $idx++) {
+                $candidateIndexes[$idx] = true;
             }
         }
 
@@ -491,6 +535,50 @@ class StatementIngestionService
         }
 
         return implode("\n", array_slice($focusedLines, 0, 260));
+    }
+
+    /**
+     * @param array{
+     *   status:string,
+     *   mapped_rows?:int,
+     *   raw_rows?:int,
+     *   invalid_rows?:int,
+     *   duplicate_rows?:int,
+     *   rejected_reason_counts?:array<string,int>,
+     *   rejected_samples?:array<int,array<string,mixed>>
+     * } $pass
+     */
+    private function logAiPassResult(string $name, string $context, string $stage, array $pass): void
+    {
+        $payload = [
+            'file' => $name,
+            'context' => $context,
+            'stage' => $stage,
+            'status' => $pass['status'] ?? 'unknown',
+            'raw_rows' => (int) ($pass['raw_rows'] ?? 0),
+            'mapped_rows' => (int) ($pass['mapped_rows'] ?? 0),
+            'valid_rows' => count($pass['rows'] ?? []),
+            'invalid_rows' => (int) ($pass['invalid_rows'] ?? 0),
+            'duplicate_rows' => (int) ($pass['duplicate_rows'] ?? 0),
+        ];
+
+        if (($pass['status'] ?? null) === 'empty') {
+            Log::warning('statement_pdf_ai_empty_result', $payload);
+            return;
+        }
+
+        if (($pass['status'] ?? null) === 'invalid') {
+            $payload['rejected_reason_counts'] = $pass['rejected_reason_counts'] ?? [];
+            $payload['rejected_samples'] = $pass['rejected_samples'] ?? [];
+            Log::warning('statement_pdf_ai_validation_rejected', $payload);
+            return;
+        }
+
+        if ((int) ($pass['invalid_rows'] ?? 0) > 0) {
+            $payload['rejected_reason_counts'] = $pass['rejected_reason_counts'] ?? [];
+        }
+
+        Log::info('statement_pdf_ai_pass_success', $payload);
     }
 
     /**
@@ -852,34 +940,69 @@ class StatementIngestionService
     /**
      * @param array<int, array<string,mixed>> $rows
      * @param array{min:?string,max:?string} $statementRange
-     * @return array{rows:array<int,array<string,mixed>>, invalid_rows:int, flagged_rows:int, total_rows:int}
+     * @return array{
+     *   rows:array<int,array<string,mixed>>,
+     *   invalid_rows:int,
+     *   flagged_rows:int,
+     *   total_rows:int,
+     *   duplicate_rows:int,
+     *   rejected_reason_counts:array<string,int>,
+     *   rejected_samples:array<int,array<string,mixed>>
+     * }
      */
     private function validateRows(array $rows, array $statementRange): array
     {
         $cleanRows = [];
         $invalidRows = 0;
         $flaggedRows = 0;
+        $duplicateRows = 0;
         $seen = [];
+        $rejectedReasonCounts = [];
+        $rejectedSamples = [];
 
         foreach ($rows as $row) {
-            $date = StatementParser::parseDate((string) ($row['date'] ?? ''));
             $description = StatementParser::sanitizeDescription((string) ($row['description'] ?? ''));
-            $amount = $row['amount'] ?? null;
-            $amount = is_numeric($amount) ? abs((float) $amount) : null;
-            $type = $this->normalizeStatementType((string) ($row['type'] ?? 'spending'));
-
-            if ($date === null || $description === '' || $amount === null || $amount <= 0) {
+            if ($description === '') {
                 $invalidRows += 1;
+                $this->trackRejectedRow($rejectedReasonCounts, $rejectedSamples, 'missing_description', $row);
                 continue;
             }
 
             if ($this->isSummaryRow($description)) {
                 $invalidRows += 1;
+                $this->trackRejectedRow($rejectedReasonCounts, $rejectedSamples, 'summary_row', $row);
                 continue;
             }
 
+            $dateInput = trim((string) ($row['date'] ?? ''));
+            $date = StatementParser::parseDate($dateInput);
+            if ($date === null) {
+                $invalidRows += 1;
+                $this->trackRejectedRow($rejectedReasonCounts, $rejectedSamples, 'invalid_date', $row);
+                continue;
+            }
+
+            $amountInfo = $this->normalizeAmountValue($row['amount'] ?? null);
+            if ($amountInfo === null || $amountInfo['absolute'] <= 0) {
+                $invalidRows += 1;
+                $this->trackRejectedRow($rejectedReasonCounts, $rejectedSamples, 'invalid_amount', $row);
+                continue;
+            }
+
+            $amount = $amountInfo['absolute'];
+            $signedAmount = $amountInfo['signed'];
+            $rawAmount = $amountInfo['raw'];
+            $type = $this->resolveRowType(
+                $row['type'] ?? null,
+                $signedAmount,
+                $description,
+                $rawAmount
+            );
+
             $key = strtolower($date.'|'.number_format($amount, 2, '.', '').'|'.$type.'|'.$description);
             if (isset($seen[$key])) {
+                $duplicateRows += 1;
+                $this->trackRejectedRow($rejectedReasonCounts, $rejectedSamples, 'duplicate', $row);
                 continue;
             }
             $seen[$key] = true;
@@ -918,6 +1041,9 @@ class StatementIngestionService
             'invalid_rows' => $invalidRows,
             'flagged_rows' => $flaggedRows,
             'total_rows' => count($cleanRows),
+            'duplicate_rows' => $duplicateRows,
+            'rejected_reason_counts' => $rejectedReasonCounts,
+            'rejected_samples' => $rejectedSamples,
         ];
     }
 
@@ -993,22 +1119,123 @@ class StatementIngestionService
     {
         $lower = strtolower(trim($type));
 
-        if (in_array($lower, ['credit', 'income', 'cr'], true)) {
+        if (in_array($lower, ['credit', 'income', 'cr', 'deposit', 'inflow'], true)) {
             return 'income';
         }
 
         return 'spending';
     }
 
+    /**
+     * @return array{absolute:float,signed:float,raw:?string}|null
+     */
+    private function normalizeAmountValue(mixed $value): ?array
+    {
+        if (is_int($value) || is_float($value)) {
+            $signed = (float) $value;
+            if (! is_finite($signed) || abs($signed) <= 0) {
+                return null;
+            }
+
+            return [
+                'absolute' => abs($signed),
+                'signed' => $signed,
+                'raw' => (string) $value,
+            ];
+        }
+
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $raw = trim($value);
+        if ($raw === '') {
+            return null;
+        }
+
+        $signed = StatementParser::parseAmount($raw);
+        if (! is_finite($signed) || abs($signed) <= 0) {
+            return null;
+        }
+
+        return [
+            'absolute' => abs($signed),
+            'signed' => $signed,
+            'raw' => $raw,
+        ];
+    }
+
+    private function resolveRowType(mixed $typeValue, float $signedAmount, string $description, ?string $rawAmount): string
+    {
+        $type = strtolower(trim((string) $typeValue));
+        if ($type !== '') {
+            if (in_array($type, ['credit', 'income', 'cr', 'deposit'], true)) {
+                return 'income';
+            }
+            if (in_array($type, ['debit', 'spending', 'expense', 'dr', 'withdrawal'], true)) {
+                return 'spending';
+            }
+        }
+
+        $derived = StatementParser::determineType($signedAmount, $description, $rawAmount, $description);
+
+        return $this->normalizeStatementType($derived);
+    }
+
     private function isSummaryRow(string $description): bool
     {
-        $text = strtolower($description);
+        $text = strtolower(preg_replace('/\s+/', ' ', $description) ?? $description);
 
-        return str_contains($text, 'beginning balance')
-            || str_contains($text, 'ending balance')
-            || str_contains($text, 'opening balance')
-            || str_contains($text, 'closing balance')
-            || preg_match('/\btotal\b/', $text) === 1;
+        foreach ([
+            'beginning balance',
+            'ending balance',
+            'opening balance',
+            'closing balance',
+            'available balance',
+            'previous balance',
+            'new balance',
+            'statement balance',
+            'balance forward',
+            'daily balance',
+        ] as $phrase) {
+            if (str_contains($text, $phrase)) {
+                return true;
+            }
+        }
+
+        if (preg_match('/^grand total\b/', $text) === 1) {
+            return true;
+        }
+        if (preg_match('/^(?:total|subtotal)\s+(?:debits?|credits?|withdrawals?|deposits?|fees?|charges?|payments?|transactions?|amount|balance)\b/', $text) === 1) {
+            return true;
+        }
+        if (preg_match('/\b(?:credits?|debits?)\s+total\b/', $text) === 1) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<string,int> $counts
+     * @param array<int,array<string,mixed>> $samples
+     * @param array<string,mixed> $row
+     */
+    private function trackRejectedRow(array &$counts, array &$samples, string $reason, array $row): void
+    {
+        $counts[$reason] = (int) ($counts[$reason] ?? 0) + 1;
+
+        if (count($samples) >= 6) {
+            return;
+        }
+
+        $samples[] = [
+            'reason' => $reason,
+            'date' => $row['date'] ?? null,
+            'description' => mb_substr((string) ($row['description'] ?? ''), 0, 140),
+            'amount' => is_scalar($row['amount'] ?? null) ? (string) $row['amount'] : null,
+            'type' => is_scalar($row['type'] ?? null) ? (string) $row['type'] : null,
+        ];
     }
 
     private function scoreConfidence(int $totalRows, int $invalidRows, int $flaggedRows): float

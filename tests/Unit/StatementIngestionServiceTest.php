@@ -75,6 +75,69 @@ class StatementIngestionServiceTest extends TestCase
         $this->assertNull($result['processing_error'] ?? null);
     }
 
+    public function test_process_files_keeps_partial_ai_results_and_normalizes_string_amounts(): void
+    {
+        $payload = implode("\n", [
+            'BT',
+            '/F1 12 Tf',
+            '72 720 Td',
+            '(01/13/2026 PAYROLL DEPOSIT +1200.00) Tj',
+            'T*',
+            '(01/14/2026 COFFEE SHOP -4.50) Tj',
+            'ET',
+        ]);
+        $path = $this->writeTempPdf($payload);
+
+        $ai = new class extends AiStructuredExtractionService {
+            public int $calls = 0;
+
+            public function isEnabled(): bool
+            {
+                return true;
+            }
+
+            public function extractStatementTransactions(string $rawText): array
+            {
+                $this->calls++;
+
+                return [
+                    'transactions' => [
+                        [
+                            'date' => '01/13/2026',
+                            'description' => 'PAYROLL DEPOSIT',
+                            'amount' => '$1,200.00',
+                            'type' => 'credit',
+                        ],
+                        [
+                            'date' => 'bad-date',
+                            'description' => 'BROKEN ROW',
+                            'amount' => '$14.20',
+                            'type' => 'debit',
+                        ],
+                    ],
+                    'attempts' => 1,
+                ];
+            }
+        };
+
+        $service = $this->makeService($ai);
+        $result = $service->processFiles([
+            [
+                'name' => 'sample.pdf',
+                'path' => $path,
+                'mime' => 'application/pdf',
+            ],
+        ]);
+
+        @unlink($path);
+
+        $this->assertSame(1, $ai->calls);
+        $this->assertSame(1, (int) ($result['total_rows'] ?? 0));
+        $this->assertNull($result['processing_error'] ?? null);
+        $this->assertSame(1200.00, (float) ($result['transactions'][0]['amount'] ?? 0));
+        $this->assertSame('income', $result['transactions'][0]['type'] ?? null);
+    }
+
     public function test_process_files_uses_stream_fallback_when_pdf_text_tools_are_unavailable(): void
     {
         $payload = implode("\n", [
