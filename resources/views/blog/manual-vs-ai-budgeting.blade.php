@@ -29,7 +29,6 @@
 </head>
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
 @include('partials.marketing-nav')
-@include('partials.article-toc')
 
 <header class="article-header px-6">
     <div class="max-w-3xl mx-auto text-center">
@@ -41,8 +40,10 @@
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
+<section class="px-6">
+    <div class="article-layout">
+        @include('partials.article-toc')
+        <div class="article-content-column">
         <article class="article-content">
             <p>Manual budgeting and AI budgeting are often presented as opposites, but most people need a mix of both. Manual systems build awareness because every entry is intentional. AI systems reduce analysis time by identifying patterns quickly. The better question is not manual or AI. The better question is which parts of budgeting should stay manual and which parts should be assisted.</p>
             <p>That distinction matters because budgeting habits fail when workflows are either too heavy or too passive. Pure manual tracking can become tiring. Pure automation can create noise and reduce engagement. The most resilient approach is usually hybrid: structured manual capture with AI-generated interpretation.</p>
@@ -122,6 +123,7 @@
                 </div>
             </div>
         </article>
+        </div>
     </div>
 </section>
 

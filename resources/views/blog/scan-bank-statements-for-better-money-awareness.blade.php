@@ -29,7 +29,6 @@
 </head>
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
 @include('partials.marketing-nav')
-@include('partials.article-toc')
 
 <header class="article-header px-6">
     <div class="max-w-3xl mx-auto text-center">
@@ -41,8 +40,10 @@
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
+<section class="px-6">
+    <div class="article-layout">
+        @include('partials.article-toc')
+        <div class="article-content-column">
         <article class="article-content">
             <p>Scanning bank statements is one of the fastest ways to build month-level awareness without tracking every purchase in real time. For busy users, this approach is practical: upload a statement, review extracted entries, confirm what is accurate, and generate insight from the completed dataset.</p>
             <p>The key is not the scan itself. The key is the review flow that follows. A strong review process converts raw extraction into trusted budgeting data, and trusted data drives better decisions.</p>
@@ -119,6 +120,7 @@
                 </div>
             </div>
         </article>
+        </div>
     </div>
 </section>
 

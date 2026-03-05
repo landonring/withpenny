@@ -38,7 +38,6 @@
 </head>
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
 @include('partials.marketing-nav')
-@include('partials.article-toc')
 
 <header class="article-header px-6">
     <div class="max-w-3xl mx-auto text-center">
@@ -50,8 +49,10 @@
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
+<section class="px-6">
+    <div class="article-layout">
+        @include('partials.article-toc')
+        <div class="article-content-column">
         <article class="article-content">
             <p>A PWA budgeting app blends the ease of a website with the feel of an app. Progressive web app finance is about lightness, privacy, and flexibility. It also lets you install a budgeting app without app store steps or heavy downloads.</p>
             <p>If you are curious about why Penny is a PWA, this guide explains the core benefits, the tradeoffs, and how to install a PWA on your phone or desktop.</p>
@@ -233,6 +234,7 @@
                 </div>
             </div>
         </article>
+        </div>
     </div>
 </section>
 

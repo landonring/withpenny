@@ -1,3 +1,13 @@
+@if (($showPrefooterCta ?? true) === true)
+    <section class="marketing-prefooter-cta">
+        <div class="marketing-prefooter-cta-inner">
+            <p class="marketing-prefooter-cta-title">Build a calmer budgeting rhythm.</p>
+            <p class="marketing-prefooter-cta-copy">Turn money decisions into steady weekly clarity. No pressure. No noise. Just practical momentum.</p>
+            <a class="marketing-prefooter-cta-button" href="/register">Try Penny Free</a>
+        </div>
+    </section>
+@endif
+
 <footer class="bg-canvas pt-16 pb-8">
     <div class="max-w-7xl mx-auto px-6">
         <div class="marketing-footer-grid mb-16">

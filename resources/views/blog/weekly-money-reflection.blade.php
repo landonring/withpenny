@@ -38,7 +38,6 @@
 </head>
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
 @include('partials.marketing-nav')
-@include('partials.article-toc')
 
 <header class="article-header px-6">
     <div class="max-w-3xl mx-auto text-center">
@@ -50,8 +49,10 @@
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
+<section class="px-6">
+    <div class="article-layout">
+        @include('partials.article-toc')
+        <div class="article-content-column">
         <article class="article-content">
             <p>A weekly budget review is often the smallest habit that keeps you connected to your money. Paired with a monthly budget reflection, it creates mindful money habits that feel steady rather than intense. This rhythm works because it is frequent enough to notice changes and gentle enough to repeat.</p>
             <p>This guide shows how to set up a calm review process, what to look for, and how Penny supports the habit with optional reflections.</p>
@@ -239,6 +240,7 @@
                 </div>
             </div>
         </article>
+        </div>
     </div>
 </section>
 

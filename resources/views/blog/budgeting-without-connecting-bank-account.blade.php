@@ -29,7 +29,6 @@
 </head>
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
 @include('partials.marketing-nav')
-@include('partials.article-toc')
 
 <header class="article-header px-6">
     <div class="max-w-3xl mx-auto text-center">
@@ -41,8 +40,10 @@
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
+<section class="px-6">
+    <div class="article-layout">
+        @include('partials.article-toc')
+        <div class="article-content-column">
         <article class="article-content">
             <p>Many people assume modern budgeting requires direct bank connection. It does not. Budgeting without connecting your bank account is a valid, practical strategy for people who care about privacy, control, and lower complexity. In many cases, it can create better habits because it keeps users actively engaged with their own spending decisions.</p>
             <p>Bank-free budgeting is not anti-technology. It is intentional technology. You still use digital tools, AI summaries, and trend analysis. You just avoid mandatory account-level access and decide what data enters your budgeting workflow.</p>
@@ -126,6 +127,7 @@
                 </div>
             </div>
         </article>
+        </div>
     </div>
 </section>
 

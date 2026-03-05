@@ -38,7 +38,6 @@
 </head>
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
 @include('partials.marketing-nav')
-@include('partials.article-toc')
 
 <header class="article-header px-6">
     <div class="max-w-3xl mx-auto text-center">
@@ -50,8 +49,10 @@
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
+<section class="px-6">
+    <div class="article-layout">
+        @include('partials.article-toc')
+        <div class="article-content-column">
         <article class="article-content">
             <p>AI budgeting tools can be helpful when they act like a thoughtful assistant, not a manager. Personal finance AI works best when it respects your pace, and a weekly money reflection is often the right size for that support. The goal is not to automate your entire budget. The goal is to make sense of what already happened and choose a small, realistic next step.</p>
             <p>Penny is built around that idea. It is manual-first, and its AI reflections are optional. You are still the one making decisions, but you do not have to do all the summarizing on your own.</p>
@@ -217,6 +218,7 @@
                 </div>
             </div>
         </article>
+        </div>
     </div>
 </section>
 

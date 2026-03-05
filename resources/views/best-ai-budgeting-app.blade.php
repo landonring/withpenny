@@ -79,101 +79,125 @@
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell best-ai-page">
 @include('partials.marketing-nav')
 
-<header class="article-header px-6">
-    <div class="max-w-4xl mx-auto text-center">
-        <p class="article-eyebrow">AI Budgeting Guide</p>
-        <h1 class="article-title text-4xl md:text-5xl">Best AI Budgeting App</h1>
-        <p class="text-lg text-text-body mt-6 max-w-2xl mx-auto">Clear insights. Practical structure. No financial noise.</p>
-        <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-            <a class="px-6 py-3 rounded-full bg-accent-sage/60 text-text-heading text-sm font-medium" href="/register">Try Penny Free</a>
-            <a class="px-6 py-3 rounded-full border border-border-soft text-text-heading text-sm font-medium" href="/how-it-works">See How It Works</a>
+<header class="best-ai-hero">
+    <div class="best-ai-shell best-ai-hero-inner">
+        <p class="best-ai-kicker">AI Budgeting Guide</p>
+        <h1 class="best-ai-hero-title">Best AI Budgeting App for Calm, Confident Money Decisions</h1>
+        <p class="best-ai-hero-subtitle">Penny gives you useful AI insight without dashboard overload, financial noise, or forced bank linking.</p>
+        <div class="best-ai-hero-actions">
+            <a class="best-ai-btn best-ai-btn-primary" href="/register">Try Penny Free</a>
+            <a class="best-ai-btn best-ai-btn-secondary" href="/how-it-works">See How It Works</a>
         </div>
     </div>
+    <div class="best-ai-hero-divider" aria-hidden="true"></div>
 </header>
 
-<section class="px-6 pb-24 best-ai-main">
-    <div class="max-w-6xl mx-auto space-y-8 best-ai-stack">
-        <section class="bg-card border border-border-soft rounded-xl p-8 md:p-10 best-ai-simplicity-section">
-            <h2 class="text-3xl font-serif text-text-heading mb-5">Why Simplicity Wins</h2>
-            <p class="text-text-body leading-relaxed">Most budgeting apps overwhelm users with dashboards, alerts, and financial jargon. Penny takes a different approach. It focuses on clarity over complexity.</p>
-            <p class="text-text-body leading-relaxed mt-4">Instead of tracking everything at once, Penny helps you notice patterns, review trends calmly, and make one practical adjustment at a time.</p>
-            <p class="text-text-body leading-relaxed mt-4">Budgeting should feel steady, not stressful. Penny is designed to support consistent awareness without adding pressure.</p>
-        </section>
+<main class="best-ai-main">
+    <section class="best-ai-simplicity-section">
+        <div class="best-ai-shell best-ai-editorial-grid">
+            <div class="best-ai-editorial-copy">
+                <h2 class="best-ai-section-title">Why Simplicity Wins</h2>
+                <p>Most budgeting apps overwhelm users with dashboards, alerts, and financial jargon. Penny takes a different approach. It focuses on clarity over complexity.</p>
+                <p>Instead of tracking everything at once, Penny helps you notice patterns, review trends calmly, and make one practical adjustment at a time.</p>
+                <p>Budgeting should feel steady, not stressful. Penny is designed to support consistent awareness without adding pressure.</p>
+            </div>
+            <div class="best-ai-editorial-space" aria-hidden="true"></div>
+        </div>
+    </section>
 
-        <section class="bg-card border border-border-soft rounded-xl p-8 md:p-10 best-ai-works-section">
-            <h2 class="text-3xl font-serif text-text-heading mb-4">How Penny Works</h2>
-            <ul class="space-y-5 text-text-body leading-relaxed">
-                <li>
-                    <strong class="text-text-heading">AI-Powered Insights</strong><br>
-                    Penny highlights patterns in spending so you can see what changed and why.
-                </li>
-                <li>
-                    <strong class="text-text-heading">Predictive Balance Awareness</strong><br>
-                    See how your habits affect the month ahead without complex forecasting tools.
-                </li>
-                <li>
-                    <strong class="text-text-heading">Privacy-First Design</strong><br>
-                    No mandatory bank connection. You decide what gets added and reviewed.
-                </li>
-            </ul>
-        </section>
+    <section class="best-ai-works-section">
+        <div class="best-ai-shell best-ai-works-grid">
+            <h2 class="best-ai-section-title">How Penny Works</h2>
+            <div class="best-ai-feature-stack">
+                <article class="best-ai-feature">
+                    <h3><span class="best-ai-dot" aria-hidden="true"></span>AI-Powered Insights</h3>
+                    <p>Penny highlights spending patterns so you can see what changed, what matters, and where to adjust.</p>
+                </article>
+                <article class="best-ai-feature">
+                    <h3><span class="best-ai-dot" aria-hidden="true"></span>Predictive Balance Awareness</h3>
+                    <p>Understand how today’s choices affect the month ahead without needing heavy forecasting tools.</p>
+                </article>
+                <article class="best-ai-feature">
+                    <h3><span class="best-ai-dot" aria-hidden="true"></span>Privacy-First Design</h3>
+                    <p>No mandatory bank connection. You decide what gets added, reviewed, and saved.</p>
+                </article>
+            </div>
+        </div>
+    </section>
 
-        <section class="bg-card border border-border-soft rounded-xl p-8 md:p-10 best-ai-compare-section">
-            <h2 class="text-3xl font-serif text-text-heading mb-4">How Penny Compares</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-sm md:text-base">
+    <section class="best-ai-compare-section">
+        <div class="best-ai-shell">
+            <h2 class="best-ai-section-title">How Penny Compares</h2>
+            <div class="best-ai-compare-table-wrap">
+                <table class="best-ai-compare-table">
                     <thead>
-                    <tr class="border-b border-border-soft">
-                        <th class="py-3 pr-4 font-semibold text-text-heading">Feature</th>
-                        <th class="py-3 px-4 font-semibold text-text-heading">Penny</th>
-                        <th class="py-3 pl-4 font-semibold text-text-heading">Traditional Budgeting Apps</th>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Penny</th>
+                        <th>Traditional Budgeting Apps</th>
                     </tr>
                     </thead>
-                    <tbody class="text-text-body">
-                    <tr class="border-b border-border-soft/70">
-                        <td class="py-3 pr-4">AI Insights</td>
-                        <td class="py-3 px-4">Pattern-based reflections</td>
-                        <td class="py-3 pl-4">Basic category summaries</td>
-                    </tr>
-                    <tr class="border-b border-border-soft/70">
-                        <td class="py-3 pr-4">Manual Tracking</td>
-                        <td class="py-3 px-4">Fully supported</td>
-                        <td class="py-3 pl-4">Often hidden</td>
-                    </tr>
-                    <tr class="border-b border-border-soft/70">
-                        <td class="py-3 pr-4">Bank Required</td>
-                        <td class="py-3 px-4">No</td>
-                        <td class="py-3 pl-4">Usually yes</td>
-                    </tr>
-                    <tr class="border-b border-border-soft/70">
-                        <td class="py-3 pr-4">Interface Style</td>
-                        <td class="py-3 px-4">Minimal and calm</td>
-                        <td class="py-3 pl-4">Dashboard-heavy</td>
+                    <tbody>
+                    <tr>
+                        <td>AI Insights</td>
+                        <td>Pattern-based reflections</td>
+                        <td>Basic category summaries</td>
                     </tr>
                     <tr>
-                        <td class="py-3 pr-4">Alerts</td>
-                        <td class="py-3 px-4">Limited and intentional</td>
-                        <td class="py-3 pl-4">Frequent notifications</td>
+                        <td>Manual Tracking</td>
+                        <td>Fully supported</td>
+                        <td>Often hidden</td>
+                    </tr>
+                    <tr>
+                        <td>Bank Required</td>
+                        <td>No</td>
+                        <td>Usually yes</td>
+                    </tr>
+                    <tr>
+                        <td>Interface Style</td>
+                        <td>Minimal and calm</td>
+                        <td>Dashboard-heavy</td>
+                    </tr>
+                    <tr>
+                        <td>Alerts</td>
+                        <td>Limited and intentional</td>
+                        <td>Frequent notifications</td>
                     </tr>
                     </tbody>
                 </table>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <section class="bg-card border border-border-soft rounded-xl p-8 md:p-10 best-ai-who-section">
-            <h2 class="text-3xl font-serif text-text-heading mb-5">Who Penny Is For</h2>
-            <ul class="space-y-4 text-text-body leading-relaxed">
-                <li><strong class="text-text-heading">The Busy Professional</strong><br>A calm system for tracking spending without constant attention.</li>
-                <li><strong class="text-text-heading">The Minimalist</strong><br>Clear structure without unnecessary financial tools.</li>
-                <li><strong class="text-text-heading">The Planner</strong><br>Monthly visibility with simple review loops.</li>
-                <li><strong class="text-text-heading">The Privacy-Conscious</strong><br>Budget without mandatory bank linking.</li>
-            </ul>
-        </section>
+    <section class="best-ai-who-section">
+        <div class="best-ai-shell">
+            <h2 class="best-ai-section-title">Who Penny Is For</h2>
+            <div class="best-ai-persona-grid">
+                <article class="best-ai-persona-card">
+                    <h3>The Busy Professional</h3>
+                    <p>A calm system for tracking spending without constant attention.</p>
+                </article>
+                <article class="best-ai-persona-card">
+                    <h3>The Minimalist</h3>
+                    <p>Clear structure without unnecessary financial tools.</p>
+                </article>
+                <article class="best-ai-persona-card">
+                    <h3>The Planner</h3>
+                    <p>Monthly visibility with simple review loops.</p>
+                </article>
+                <article class="best-ai-persona-card">
+                    <h3>The Privacy-Conscious</h3>
+                    <p>Budget without mandatory bank linking.</p>
+                </article>
+            </div>
+        </div>
+    </section>
 
-        <section class="bg-card border border-border-soft rounded-xl p-8 md:p-10 best-ai-faq-section" id="faq-ai-budgeting-app">
-            <h2 class="marketing-faq-heading mb-3">Frequently Asked Questions</h2>
-            <p class="marketing-faq-subheading mb-8">Everything you need to know about Penny and our calm, practical approach to budgeting.</p>
-            <div class="marketing-faq-list marketing-faq-list--centered">
+    <section class="best-ai-faq-section" id="faq-ai-budgeting-app">
+        <div class="best-ai-shell">
+            <h2 class="best-ai-section-title">Frequently Asked Questions</h2>
+            <p class="best-ai-faq-subtitle">Everything you need to know about Penny and our calm, practical approach to budgeting.</p>
+            <div class="marketing-faq-list best-ai-faq-list">
                 <details class="marketing-faq-item" open>
                     <summary class="marketing-faq-question">How does Penny differ from other AI budgeting apps?<span class="marketing-faq-icon" aria-hidden="true">+</span></summary>
                     <p class="marketing-faq-answer">Penny keeps budgeting calm and practical, with less dashboard noise and clearer review structure.</p>
@@ -195,17 +219,10 @@
                     <p class="marketing-faq-answer">Penny is privacy-first with user-controlled tracking and no mandatory bank connection.</p>
                 </details>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <section class="bg-card border border-border-soft rounded-xl p-8 md:p-10 text-center">
-            <h2 class="text-3xl font-serif text-text-heading mb-3">Build a calmer budgeting rhythm.</h2>
-            <p class="text-text-body max-w-2xl mx-auto leading-relaxed">Join people choosing clarity over financial noise.</p>
-            <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                <a class="px-6 py-3 rounded-full bg-accent-sage/60 text-text-heading text-sm font-medium" href="/register">Try Penny Free</a>
-            </div>
-        </section>
-    </div>
-</section>
+</main>
 
 @include('partials.marketing-footer')
 @include('partials.marketing-scripts')

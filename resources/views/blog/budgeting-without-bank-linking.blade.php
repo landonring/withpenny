@@ -29,7 +29,6 @@
 </head>
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
 @include('partials.marketing-nav')
-@include('partials.article-toc')
 
 <header class="article-header px-6">
     <div class="max-w-3xl mx-auto text-center">
@@ -41,8 +40,10 @@
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
+<section class="px-6">
+    <div class="article-layout">
+        @include('partials.article-toc')
+        <div class="article-content-column">
         <article class="article-content">
             <p>Budgeting without linking your bank is not a limitation. For many people, it is the most practical way to stay consistent. The model is simple: track intentional data, review it in predictable cycles, and keep control over what is uploaded or shared. This is especially useful for users who want privacy-first finance habits and less dashboard noise.</p>
             <p>Many budgeting apps assume full account integration from day one. That can feel convenient, but it can also feel invasive or overwhelming. A growing number of users prefer a private budgeting app that supports manual workflows first, with optional uploads when needed. Penny is designed for that approach.</p>
@@ -113,6 +114,7 @@
                 </div>
             </div>
         </article>
+        </div>
     </div>
 </section>
 

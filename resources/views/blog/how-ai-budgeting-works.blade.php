@@ -29,7 +29,6 @@
 </head>
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
 @include('partials.marketing-nav')
-@include('partials.article-toc')
 
 <header class="article-header px-6">
     <div class="max-w-3xl mx-auto text-center">
@@ -41,8 +40,10 @@
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
+<section class="px-6">
+    <div class="article-layout">
+        @include('partials.article-toc')
+        <div class="article-content-column">
         <article class="article-content">
             <p>AI budgeting is becoming a standard part of modern personal finance tools, but many people still ask what it actually does. A good AI budgeting app does not replace human judgment. It reduces repetitive analysis, surfaces patterns faster, and gives users practical context so they can decide what to change. That is the core model behind Penny and other serious tools in this category.</p>
             <p>At a technical level, AI budgeting systems are pattern engines wrapped in calm product design. They take transaction inputs, standardize categories, detect shifts over time, and generate short observations. At a user level, that means fewer hours in spreadsheets and more clarity on what happened this week or month. The goal is not financial perfection. The goal is consistent awareness.</p>
@@ -110,6 +111,7 @@
                 </div>
             </div>
         </article>
+        </div>
     </div>
 </section>
 

@@ -38,7 +38,6 @@
 </head>
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
 @include('partials.marketing-nav')
-@include('partials.article-toc')
 
 <header class="article-header px-6">
     <div class="max-w-3xl mx-auto text-center">
@@ -50,8 +49,10 @@
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
+<section class="px-6">
+    <div class="article-layout">
+        @include('partials.article-toc')
+        <div class="article-content-column">
         <article class="article-content">
             <p>If you are looking for a privacy budgeting app, you might also be searching for a budgeting app without bank linking and a manual budgeting app that lets you move at your own pace. That combination is not about hiding. It is about choosing a calm, intentional way to understand your money without handing over more access than you want to share.</p>
             <p>Privacy-first budgeting is not a trend. It is a response to how overwhelming money tools can feel when they assume constant syncing, constant alerts, and constant data collection. Penny was built to do the opposite: keep the focus on your habits, your reflection, and your sense of control.</p>
@@ -224,6 +225,7 @@
                 </div>
             </div>
         </article>
+        </div>
     </div>
 </section>
 

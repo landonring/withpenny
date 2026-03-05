@@ -23,57 +23,134 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/penny-192.png"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
-<link href="/marketing.css?v={{ filemtime(public_path('marketing.css')) }}" rel="stylesheet"/>
-<link href="/marketing-articles.css?v={{ filemtime(public_path('marketing-articles.css')) }}" rel="stylesheet"/>
-<link href="/marketing-overrides.css?v={{ filemtime(public_path('marketing-overrides.css')) }}" rel="stylesheet"/>
+    <link href="/marketing.css?v={{ filemtime(public_path('marketing.css')) }}" rel="stylesheet"/>
+    <link href="/marketing-articles.css?v={{ filemtime(public_path('marketing-articles.css')) }}" rel="stylesheet"/>
+    <link href="/marketing-overrides.css?v={{ filemtime(public_path('marketing-overrides.css')) }}" rel="stylesheet"/>
 </head>
-<body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
+<body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell seo-page seo-ynab-philosophy">
 @include('partials.marketing-nav')
 
-<header class="article-header px-6">
-    <div class="max-w-3xl mx-auto text-center">
-        <p class="article-eyebrow">Comparisons</p>
-        <h1 class="article-title text-4xl md:text-5xl">Penny vs YNAB</h1>
-        <p class="text-lg text-text-body mt-6">Comparing a calm, manual‑first approach to a structured, proactive budgeting method.</p>
-        <p class="article-meta">Updated February 2026</p>
+<header class="seo-hero">
+    <div class="seo-shell seo-hero-inner">
+        <p class="seo-kicker">Methodology Comparison</p>
+        <h1 class="seo-hero-title">Penny vs YNAB</h1>
+        <p class="seo-hero-subtitle">A philosophy-first comparison of two intentional budgeting models: reflection-led awareness vs every-dollar planning.</p>
+        <div class="seo-hero-actions">
+            <a class="seo-btn seo-btn-primary" href="/register">Try Penny Free</a>
+            <a class="seo-btn seo-btn-secondary" href="/budgeting-app-guide">Read full guide</a>
+        </div>
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
-        <article class="article-content">
-            <p>Penny and YNAB are both intentional tools, but they serve different needs. Penny emphasizes calm manual tracking, while YNAB is known for structured, proactive budgeting and assigning every dollar a job.</p>
-
-            <h2>Quick comparison</h2>
-            <ul>
-                <li><strong>Penny</strong>: Manual‑first, minimal categories, calm reflections, privacy‑first.</li>
-                <li><strong>YNAB</strong>: Structured planning, detailed categories, proactive budgeting framework.</li>
-            </ul>
-
-            <h2>Who Penny is for</h2>
-            <p>If you want a lighter, calmer approach that focuses on awareness and habit‑building, Penny is a strong fit.</p>
-
-            <h2>Who YNAB is for</h2>
-            <p>If you like structure, detailed planning, and a clear rule‑based method, YNAB can be powerful.</p>
-
-            <h2>How to choose</h2>
-            <p>Choose Penny if you want calm and simplicity. Choose a structured system if you prefer detailed planning. Pricing and features can change, so check the latest info before deciding.</p>
-
-            <div class="article-divider"></div>
-
-            <div class="article-cta">
-                <h3>Explore Penny</h3>
-                <p>Start with the full guide to compare methods calmly.</p>
-                <div class="flex flex-col sm:flex-row gap-4 mt-4">
-                    <a class="px-6 py-3 rounded-full bg-accent-sage/60 text-text-heading text-sm font-medium text-center" href="/budgeting-app-guide">Budgeting app guide</a>
-                    <a class="px-6 py-3 rounded-full border border-border-soft text-text-heading text-sm font-medium text-center" href="/">Back to homepage</a>
-                </div>
+<main class="seo-main">
+    <section class="seo-section ynab-tone-a">
+        <div class="seo-shell">
+            <h2>Budgeting Philosophy Comparison</h2>
+            <div class="seo-philosophy-contrast">
+                <article>
+                    <h3>Penny: Reflection model</h3>
+                    <p>Penny emphasizes sustainable awareness. The system is designed to reduce friction so users can maintain weekly money rhythm without heavy setup overhead.</p>
+                </article>
+                <article>
+                    <h3>YNAB: Method model</h3>
+                    <p>YNAB emphasizes proactive allocation. Users assign every dollar and continuously manage category intent with higher methodological precision.</p>
+                </article>
             </div>
-        </article>
-    </div>
-</section>
+        </div>
+    </section>
 
-@include('partials.marketing-footer')
+    <section class="seo-section ynab-tone-b">
+        <div class="seo-shell seo-two-col-copy">
+            <div>
+                <h2>Where YNAB Excels</h2>
+            </div>
+            <div>
+                <ul>
+                    <li>Strong discipline for users who enjoy structured planning.</li>
+                    <li>Clear cash-allocation methodology for intentional budgeting.</li>
+                    <li>Detailed category governance for high-control users.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="seo-section ynab-tone-a">
+        <div class="seo-shell seo-two-col-copy">
+            <div>
+                <h2>Where Penny Differs</h2>
+            </div>
+            <div>
+                <ul>
+                    <li>Lower setup overhead for users with limited weekly bandwidth.</li>
+                    <li>Review-first import design to improve trust in transaction records.</li>
+                    <li>Calmer interface and language for sustained routine adherence.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="seo-section ynab-tone-b">
+        <div class="seo-shell">
+            <h2>Feature Breakdown</h2>
+            <div class="seo-feature-lines">
+                <article>
+                    <h3>Category depth</h3>
+                    <p>YNAB generally favors deeper category architecture, while Penny favors simpler structures that are easier to maintain long-term.</p>
+                </article>
+                <article>
+                    <h3>Workflow flexibility</h3>
+                    <p>Penny supports hybrid manual/upload workflows with confidence-aware review. YNAB favors consistent planning cadence.</p>
+                </article>
+                <article>
+                    <h3>Insight style</h3>
+                    <p>Penny leans into reflection and interpretation; YNAB leans into explicit budget assignment and controls.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="seo-section ynab-tone-a">
+        <div class="seo-shell">
+            <h2>Mental Load Comparison</h2>
+            <div class="seo-mental-load-grid">
+                <article>
+                    <h3>Lower active load</h3>
+                    <p>Penny is optimized for users who want clarity with less constant decision pressure.</p>
+                </article>
+                <article>
+                    <h3>Higher active load</h3>
+                    <p>YNAB is optimized for users comfortable with frequent category-level decisions and proactive adjustments.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="seo-section ynab-tone-b">
+        <div class="seo-shell">
+            <h2>Who Should Choose Which</h2>
+            <div class="seo-choice-pairs">
+                <article>
+                    <h3>Choose Penny</h3>
+                    <p>If you prioritize a sustainable routine, privacy-first posture, and reflection-driven awareness.</p>
+                </article>
+                <article>
+                    <h3>Choose YNAB</h3>
+                    <p>If you enjoy assigning every dollar and actively managing budget categories with high precision.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="seo-final-cta">
+        <div class="seo-shell seo-final-cta-inner">
+            <h2>Pick the model you can sustain.</h2>
+            <p>The right budgeting method is the one you keep when life gets busy.</p>
+            <a class="seo-btn seo-btn-light" href="/register">Start with Penny</a>
+        </div>
+    </section>
+</main>
+
+@include('partials.marketing-footer', ['showPrefooterCta' => false])
 @include('partials.marketing-scripts')
 </body>
 </html>

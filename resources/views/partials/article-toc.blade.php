@@ -1,14 +1,11 @@
-<div class="article-toc" data-article-toc>
-    <button class="article-toc-toggle" type="button" aria-expanded="false" aria-controls="article-toc-panel">
-        <span class="sr-only">Open contents</span>
-        <span class="article-toc-line"></span>
-        <span class="article-toc-line"></span>
-        <span class="article-toc-line"></span>
-        <span class="article-toc-line"></span>
-        <span class="article-toc-line"></span>
-    </button>
-    <div class="article-toc-panel" id="article-toc-panel" aria-hidden="true">
-        <div class="article-toc-title">Contents</div>
-        <div class="article-toc-list" data-article-toc-list></div>
+<aside class="article-toc" data-article-toc aria-label="Table of contents">
+    <div class="article-toc-desktop" aria-label="Contents">
+        <p class="article-toc-title">Contents</p>
+        <nav class="article-toc-list" data-article-toc-list></nav>
     </div>
-</div>
+
+    <details class="article-toc-mobile" data-article-toc-mobile>
+        <summary class="article-toc-mobile-summary">Jump to section</summary>
+        <nav class="article-toc-list article-toc-list-mobile" data-article-toc-list-mobile></nav>
+    </details>
+</aside>

@@ -29,7 +29,6 @@
 </head>
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
 @include('partials.marketing-nav')
-@include('partials.article-toc')
 
 <header class="article-header px-6">
     <div class="max-w-3xl mx-auto text-center">
@@ -41,8 +40,10 @@
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
+<section class="px-6">
+    <div class="article-layout">
+        @include('partials.article-toc')
+        <div class="article-content-column">
         <article class="article-content">
             <p>Personal budgeting used to be either manual spreadsheets or heavy automation that pulled every transaction and expected users to keep up. AI introduces a third path. It can summarize, categorize, and explain spending patterns in plain language, while still letting people decide what to do next. This shift matters because most people do not need more charts. They need clearer interpretation.</p>
             <p>The strongest AI budgeting systems behave like assistants. They reduce repetitive work, highlight trends, and ask useful questions. They do not shame people or force one “perfect” plan. This is where AI financial assistants can improve outcomes: less effort to understand what happened, more confidence in choosing what happens next.</p>
@@ -117,6 +118,7 @@
                 </div>
             </div>
         </article>
+        </div>
     </div>
 </section>
 

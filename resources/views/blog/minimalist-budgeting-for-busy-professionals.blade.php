@@ -29,7 +29,6 @@
 </head>
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
 @include('partials.marketing-nav')
-@include('partials.article-toc')
 
 <header class="article-header px-6">
     <div class="max-w-3xl mx-auto text-center">
@@ -41,8 +40,10 @@
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
+<section class="px-6">
+    <div class="article-layout">
+        @include('partials.article-toc')
+        <div class="article-content-column">
         <article class="article-content">
             <p>Busy professionals do not fail at budgeting because they do not care. They fail because most budgeting systems demand too much time, too much detail, and too many ongoing decisions. Minimalist budgeting solves that by reducing the process to what actually drives results: visibility, consistency, and small corrections.</p>
             <p>If you have a demanding schedule, the right budget system should feel like a short operating review, not a second job. It should help you make decisions quickly and move on.</p>
@@ -130,6 +131,7 @@
                 </div>
             </div>
         </article>
+        </div>
     </div>
 </section>
 

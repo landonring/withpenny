@@ -38,7 +38,6 @@
 </head>
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
 @include('partials.marketing-nav')
-@include('partials.article-toc')
 
 <header class="article-header px-6">
     <div class="max-w-3xl mx-auto text-center">
@@ -50,8 +49,10 @@
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
+<section class="px-6">
+    <div class="article-layout">
+        @include('partials.article-toc')
+        <div class="article-content-column">
         <article class="article-content">
             <p>If you are wondering how to start a budget, you are not alone. A beginner budgeting guide should feel calm, not complicated. The simplest path is a simple budgeting method that keeps the focus on awareness rather than perfection.</p>
             <p>This article walks you through a beginner-friendly approach using a Needs, Wants, and Future model, with practical steps and examples you can follow immediately.</p>
@@ -263,6 +264,7 @@
                 </div>
             </div>
         </article>
+        </div>
     </div>
 </section>
 

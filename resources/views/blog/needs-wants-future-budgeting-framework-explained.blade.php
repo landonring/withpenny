@@ -29,7 +29,6 @@
 </head>
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
 @include('partials.marketing-nav')
-@include('partials.article-toc')
 
 <header class="article-header px-6">
     <div class="max-w-3xl mx-auto text-center">
@@ -41,8 +40,10 @@
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
+<section class="px-6">
+    <div class="article-layout">
+        @include('partials.article-toc')
+        <div class="article-content-column">
         <article class="article-content">
             <p>The Needs, Wants, Future framework is one of the most practical ways to budget without complexity. Instead of tracking dozens of categories, you focus on three strategic buckets that reflect real life: what must be covered, what can be flexible, and what supports your future goals. This structure makes weekly and monthly reviews much easier.</p>
             <p>People often abandon budgets because systems become too detailed. Needs, Wants, Future avoids that trap. It preserves enough granularity for decision-making while keeping the model simple enough to maintain over time.</p>
@@ -130,6 +131,7 @@
                 </div>
             </div>
         </article>
+        </div>
     </div>
 </section>
 

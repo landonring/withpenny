@@ -23,57 +23,142 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/penny-192.png"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
-<link href="/marketing.css?v={{ filemtime(public_path('marketing.css')) }}" rel="stylesheet"/>
-<link href="/marketing-articles.css?v={{ filemtime(public_path('marketing-articles.css')) }}" rel="stylesheet"/>
-<link href="/marketing-overrides.css?v={{ filemtime(public_path('marketing-overrides.css')) }}" rel="stylesheet"/>
+    <link href="/marketing.css?v={{ filemtime(public_path('marketing.css')) }}" rel="stylesheet"/>
+    <link href="/marketing-articles.css?v={{ filemtime(public_path('marketing-articles.css')) }}" rel="stylesheet"/>
+    <link href="/marketing-overrides.css?v={{ filemtime(public_path('marketing-overrides.css')) }}" rel="stylesheet"/>
 </head>
-<body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
+<body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell seo-page seo-rocket-experience">
 @include('partials.marketing-nav')
 
-<header class="article-header px-6">
-    <div class="max-w-3xl mx-auto text-center">
-        <p class="article-eyebrow">Comparisons</p>
-        <h1 class="article-title text-4xl md:text-5xl">Penny vs Rocket Money</h1>
-        <p class="text-lg text-text-body mt-6">Comparing a calm, manual‑first budgeting app with a more automated subscription‑focused approach.</p>
-        <p class="article-meta">Updated February 2026</p>
+<header class="seo-hero">
+    <div class="seo-shell seo-hero-inner">
+        <p class="seo-kicker">Experience & Control</p>
+        <h1 class="seo-hero-title">Penny vs Rocket Money</h1>
+        <p class="seo-hero-subtitle">For users deciding between automation-heavy subscription tooling and intentional, review-first budgeting clarity.</p>
+        <div class="seo-hero-actions">
+            <a class="seo-btn seo-btn-primary" href="/register">Try Penny Free</a>
+            <a class="seo-btn seo-btn-secondary" href="/budgeting-app-guide">Read full guide</a>
+        </div>
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
-        <article class="article-content">
-            <p>Penny is built for manual tracking and privacy‑first habits. Rocket Money is known for automation, visibility into subscriptions, and account aggregation. Both can be useful — it depends on what you want to optimize.</p>
-
-            <h2>Quick comparison</h2>
-            <ul>
-                <li><strong>Penny</strong>: Manual‑first, calm design, optional AI reflections, no bank linking required.</li>
-                <li><strong>Rocket Money</strong>: Automation and subscription visibility, bank connections for aggregation.</li>
-            </ul>
-
-            <h2>Who Penny is for</h2>
-            <p>If you want mindful tracking and control over your data, Penny is a strong fit. It’s great for people who want a calmer experience.</p>
-
-            <h2>Who Rocket Money is for</h2>
-            <p>If you want automatic aggregation and subscription oversight, a more automated tool may feel better.</p>
-
-            <h2>How to choose</h2>
-            <p>Choose the tool that matches your energy and privacy preferences. Always review current features and pricing before deciding.</p>
-
-            <div class="article-divider"></div>
-
-            <div class="article-cta">
-                <h3>Keep exploring</h3>
-                <p>Start with the guide if you want a broader view of budgeting options.</p>
-                <div class="flex flex-col sm:flex-row gap-4 mt-4">
-                    <a class="px-6 py-3 rounded-full bg-accent-sage/60 text-text-heading text-sm font-medium text-center" href="/budgeting-app-guide">Budgeting app guide</a>
-                    <a class="px-6 py-3 rounded-full border border-border-soft text-text-heading text-sm font-medium text-center" href="/">Back to homepage</a>
-                </div>
+<main class="seo-main">
+    <section class="seo-section rocket-quick-scan">
+        <div class="seo-shell">
+            <h2>Automation vs Awareness</h2>
+            <div class="rocket-scan-grid">
+                <article>
+                    <h3>Penny</h3>
+                    <ul>
+                        <li>Manual-first, review-first transaction workflow</li>
+                        <li>Intentional weekly reflection cadence</li>
+                        <li>Optional AI assistance with user confirmation</li>
+                    </ul>
+                </article>
+                <article>
+                    <h3>Rocket Money-Style</h3>
+                    <ul>
+                        <li>Automation-first account-linked feed model</li>
+                        <li>Subscription-monitoring-centric experience</li>
+                        <li>High convenience, lower per-row review depth</li>
+                    </ul>
+                </article>
             </div>
-        </article>
-    </div>
-</section>
+        </div>
+    </section>
 
-@include('partials.marketing-footer')
+    <section class="seo-section rocket-divider-section">
+        <div class="seo-shell">
+            <h2>Notification Culture Comparison</h2>
+            <div class="rocket-notification-lines">
+                <article>
+                    <h3>High-frequency alerting</h3>
+                    <p>Automation-centric tools often rely on continual nudges and event-driven prompts to sustain engagement.</p>
+                </article>
+                <article>
+                    <h3>Calm-checkin model</h3>
+                    <p>Penny favors deliberate check-ins and structured review moments to reduce alert fatigue and cognitive churn.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="seo-section rocket-divider-section">
+        <div class="seo-shell">
+            <h2>Subscription Tracking Comparison</h2>
+            <div class="rocket-subscription-comparison">
+                <article>
+                    <h3>Rocket Money-Style strength</h3>
+                    <p>Strong visibility into recurring charges and subscription patterns with minimal manual intervention.</p>
+                </article>
+                <article>
+                    <h3>Penny strength</h3>
+                    <p>Broader budgeting awareness with user-led control over what enters the system and how it is categorized.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="seo-section rocket-late-table">
+        <div class="seo-shell">
+            <h2>Feature Comparison</h2>
+            <div class="seo-table-wrap">
+                <table class="seo-table">
+                    <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Penny</th>
+                        <th>Rocket Money-Style</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>Transaction ingestion</td>
+                        <td>Manual-first with upload review flow</td>
+                        <td>Automated linked-feed import</td>
+                    </tr>
+                    <tr>
+                        <td>Subscription awareness</td>
+                        <td>General recurring expense clarity</td>
+                        <td>Subscription-focused visibility</td>
+                    </tr>
+                    <tr>
+                        <td>Control posture</td>
+                        <td>Confirm before save</td>
+                        <td>Sync-first workflow</td>
+                    </tr>
+                    <tr>
+                        <td>Ideal user</td>
+                        <td>Intentional budget builders</td>
+                        <td>Automation-seeking monitors</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="seo-section rocket-fit-list">
+        <div class="seo-shell">
+            <h2>Who It’s For</h2>
+            <ul>
+                <li><strong>Choose Penny</strong> if you value review-first confidence and calmer budgeting routine design.</li>
+                <li><strong>Choose Rocket Money-style tools</strong> if subscription automation and linked-account convenience are your top priorities.</li>
+                <li><strong>Choose Penny</strong> if you want AI insights that remain editable and user-confirmed.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="seo-final-cta">
+        <div class="seo-shell seo-final-cta-inner">
+            <h2>Automate less. Understand more.</h2>
+            <p>Build sustainable awareness with a workflow designed for trust, review, and long-term consistency.</p>
+            <a class="seo-btn seo-btn-light" href="/register">Start with Penny</a>
+        </div>
+    </section>
+</main>
+
+@include('partials.marketing-footer', ['showPrefooterCta' => false])
 @include('partials.marketing-scripts')
 </body>
 </html>

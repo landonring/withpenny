@@ -38,7 +38,6 @@
 </head>
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
 @include('partials.marketing-nav')
-@include('partials.article-toc')
 
 <header class="article-header px-6">
     <div class="max-w-3xl mx-auto text-center">
@@ -50,8 +49,10 @@
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
+<section class="px-6">
+    <div class="article-layout">
+        @include('partials.article-toc')
+        <div class="article-content-column">
         <article class="article-content">
             <p>Budgeting without bank account access is a deliberate choice for many people. Manual budget tracking offers control, clarity, and a stronger sense of privacy. A privacy budgeting app supports that choice by letting you build a budget on your terms.</p>
             <p>This guide covers why people choose to avoid bank linking, how manual tracking can still be efficient, and what to expect from a calm, manual-first workflow.</p>
@@ -252,6 +253,7 @@
                 </div>
             </div>
         </article>
+        </div>
     </div>
 </section>
 

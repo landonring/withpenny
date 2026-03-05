@@ -38,7 +38,6 @@
 </head>
 <body class="bg-canvas text-text-body font-sans antialiased selection:bg-accent-sage selection:text-text-heading article-shell">
 @include('partials.marketing-nav')
-@include('partials.article-toc')
 
 <header class="article-header px-6">
     <div class="max-w-3xl mx-auto text-center">
@@ -50,8 +49,10 @@
     </div>
 </header>
 
-<section class="px-6 pb-20">
-    <div class="max-w-3xl mx-auto">
+<section class="px-6">
+    <div class="article-layout">
+        @include('partials.article-toc')
+        <div class="article-content-column">
         <article class="article-content">
             <p>A receipt scanning app can save time, but it works best when you understand what it can and cannot read. An OCR budgeting app uses optical character recognition to extract text, and when you upload receipts for budget tracking, you still benefit from a quick human review.</p>
             <p>This guide explains how OCR works, the common mistakes, and how Penny uses receipt uploads to reduce friction without forcing full automation.</p>
@@ -268,6 +269,7 @@
                 </div>
             </div>
         </article>
+        </div>
     </div>
 </section>
 

@@ -285,15 +285,19 @@
 
     const tocRoot = document.querySelector('[data-article-toc]');
     if (tocRoot) {
-        const toggle = tocRoot.querySelector('.article-toc-toggle');
-        const panel = tocRoot.querySelector('.article-toc-panel');
-        const list = tocRoot.querySelector('[data-article-toc-list]');
-        const headings = Array.from(document.querySelectorAll('.article-content h2, .article-content h3'));
+        const desktopList = tocRoot.querySelector('[data-article-toc-list]');
+        const mobileList = tocRoot.querySelector('[data-article-toc-list-mobile]');
+        const mobileDetails = tocRoot.querySelector('[data-article-toc-mobile]');
+        const headings = Array.from(document.querySelectorAll('.article-content h2'));
 
-        if (!headings.length || !toggle || !panel || !list) {
+        if (!headings.length || !desktopList || !mobileList) {
             tocRoot.remove();
         } else {
-            const used = new Set();
+            const used = new Set(
+                Array.from(document.querySelectorAll('[id]'))
+                    .map((el) => el.id)
+                    .filter(Boolean)
+            );
             const slugify = (text) =>
                 text
                     .toLowerCase()
@@ -305,7 +309,10 @@
                 const base = slugify(heading.textContent || '') || 'section';
                 let id = heading.id || base;
                 let index = 2;
-                while (used.has(id) || document.getElementById(id)) {
+                while (
+                    used.has(id) &&
+                    document.getElementById(id) !== heading
+                ) {
                     id = `${base}-${index++}`;
                 }
                 used.add(id);
@@ -313,73 +320,98 @@
                 return id;
             };
 
-            let currentSublist = null;
+            const allLinks = [];
 
-            const createLink = (heading, className) => {
+            const addLink = (container, heading, index) => {
                 const text = (heading.textContent || '').trim();
-                if (!text) return null;
+                if (!text) return;
                 const id = ensureId(heading);
                 const link = document.createElement('a');
+                const number = String(index + 1).padStart(2, '0');
                 link.href = `#${id}`;
-                link.className = className;
-                link.textContent = text;
+                link.className = 'article-toc-link';
+                link.dataset.target = id;
+                const numberNode = document.createElement('span');
+                numberNode.className = 'article-toc-number';
+                numberNode.textContent = number;
+                const labelNode = document.createElement('span');
+                labelNode.className = 'article-toc-label';
+                labelNode.textContent = text;
+                link.append(numberNode, labelNode);
                 link.addEventListener('click', (event) => {
                     event.preventDefault();
                     history.replaceState(null, '', `#${id}`);
-                    const target = document.getElementById(id);
-                    if (target) {
-                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    document.getElementById(id)?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start',
+                    });
+                    if (mobileDetails && mobileDetails.open) {
+                        mobileDetails.open = false;
                     }
-                    setOpen(false);
                 });
-                return link;
+                container.appendChild(link);
+                allLinks.push(link);
             };
 
-            const startSection = (heading) => {
-                const section = document.createElement('div');
-                section.className = 'article-toc-section';
-                const titleLink = createLink(heading, 'article-toc-link article-toc-heading');
-                if (!titleLink) return;
-                const sublist = document.createElement('div');
-                sublist.className = 'article-toc-sublist';
-                section.append(titleLink, sublist);
-                list.appendChild(section);
-                currentSublist = sublist;
+            headings.forEach((heading, index) => {
+                addLink(desktopList, heading, index);
+                addLink(mobileList, heading, index);
+            });
+
+            const setActive = (activeId) => {
+                allLinks.forEach((link) => {
+                    link.classList.toggle('is-active', link.dataset.target === activeId);
+                });
             };
 
-            headings.forEach((heading) => {
-                if (heading.tagName === 'H2' || !currentSublist) {
-                    startSection(heading);
-                    return;
+            const pickActiveFromScroll = () => {
+                let current = headings[0];
+                headings.forEach((heading) => {
+                    if (heading.getBoundingClientRect().top <= 170) {
+                        current = heading;
+                    }
+                });
+                if (current?.id) {
+                    setActive(current.id);
                 }
-                const subLink = createLink(heading, 'article-toc-link is-sub');
-                if (subLink) {
-                    currentSublist.appendChild(subLink);
-                }
-            });
-
-            const setOpen = (open) => {
-                tocRoot.classList.toggle('is-open', open);
-                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-                panel.setAttribute('aria-hidden', open ? 'false' : 'true');
             };
 
-            toggle.addEventListener('click', () => {
-                const open = !tocRoot.classList.contains('is-open');
-                setOpen(open);
-            });
+            if ('IntersectionObserver' in window) {
+                const ratios = new Map();
+                const observer = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach((entry) => {
+                            if (entry.isIntersecting) {
+                                ratios.set(entry.target.id, entry.intersectionRatio);
+                            } else {
+                                ratios.delete(entry.target.id);
+                            }
+                        });
 
-            document.addEventListener('click', (event) => {
-                if (!tocRoot.classList.contains('is-open')) return;
-                if (tocRoot.contains(event.target)) return;
-                setOpen(false);
-            });
+                        if (ratios.size) {
+                            const [id] = [...ratios.entries()].sort((a, b) => b[1] - a[1])[0];
+                            setActive(id);
+                            return;
+                        }
 
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape') {
-                    setOpen(false);
-                }
-            });
+                        pickActiveFromScroll();
+                    },
+                    {
+                        rootMargin: '-28% 0px -56% 0px',
+                        threshold: [0, 0.25, 0.5, 0.75, 1],
+                    }
+                );
+
+                headings.forEach((heading) => observer.observe(heading));
+            }
+
+            const hashTarget = window.location.hash?.replace('#', '');
+            if (hashTarget && headings.some((heading) => heading.id === hashTarget)) {
+                setActive(hashTarget);
+            } else {
+                setActive(headings[0].id);
+            }
+            window.addEventListener('scroll', pickActiveFromScroll, { passive: true });
         }
     }
 
