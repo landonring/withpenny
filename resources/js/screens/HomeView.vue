@@ -456,7 +456,10 @@ const handleStatementUpload = async (event) => {
 
         const importData = await scanStatementImages(files);
         await ensureUsageStatus(true);
-        router.push({ name: 'statements-review', params: { id: importData.id } });
+        const nextRoute = ['queued', 'processing'].includes(String(importData?.processing_status))
+            ? 'statements-processing'
+            : 'statements-review';
+        router.push({ name: nextRoute, params: { id: importData.id } });
     } catch (err) {
         const status = err?.response?.status;
         const data = err?.response?.data || {};

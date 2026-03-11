@@ -91,7 +91,11 @@ export function routeAllowedDuringOnboarding(path) {
             || clean === '/savings';
     }
     if (onboardingState.step === 1) return clean === '/statements/scan';
-    if (onboardingState.step === 2) return /^\/statements\/\d+\/review$/.test(clean) || clean === '/statements/scan';
+    if (onboardingState.step === 2) {
+        return /^\/statements\/\d+\/review$/.test(clean)
+            || /^\/statements\/\d+\/processing$/.test(clean)
+            || clean === '/statements/scan';
+    }
     if (onboardingState.step === 3) return clean === '/insights';
     if (onboardingState.step === 4) return clean === '/chat' || clean === '/savings';
 

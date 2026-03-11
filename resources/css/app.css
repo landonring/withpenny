@@ -3691,6 +3691,41 @@ a:hover {
     margin-bottom: 8px;
 }
 
+.statement-processing {
+    min-height: 46vh;
+}
+
+.statement-processing-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.statement-processing-spinner {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 2px solid rgba(0, 0, 0, 0.12);
+    border-top-color: rgba(0, 0, 0, 0.55);
+    animation: statement-spin 0.9s linear infinite;
+}
+
+.statement-processing-copy {
+    display: grid;
+    gap: 4px;
+}
+
+.statement-processing-copy .card-sub {
+    margin-bottom: 2px;
+}
+
+@keyframes statement-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .data-summary {
     display: grid;
     gap: 6px;
@@ -4002,6 +4037,10 @@ a:hover {
 @media (max-width: 600px) {
     .line-item-remove {
         justify-self: start;
+    }
+
+    .statement-processing-card {
+        align-items: flex-start;
     }
 
     .statement-card {
