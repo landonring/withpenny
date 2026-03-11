@@ -633,7 +633,13 @@ async function deleteTransaction(id) {
     }
 
     await ensureCsrf(true);
-    await axios.delete(`/api/transactions/${id}`);
+    try {
+        await axios.delete(`/api/transactions/${id}`);
+    } catch (error) {
+        if (error?.response?.status !== 404) {
+            throw error;
+        }
+    }
     removeTransactionFromMonth(monthKey, id);
 }
 
@@ -673,7 +679,13 @@ async function syncQueue() {
             }
 
             if (item.action === 'delete') {
-                await axios.delete(`/api/transactions/${item.id}`);
+                try {
+                    await axios.delete(`/api/transactions/${item.id}`);
+                } catch (error) {
+                    if (error?.response?.status !== 404) {
+                        throw error;
+                    }
+                }
                 removeTransactionFromMonth(item.monthKey || state.monthKey, item.id);
             }
         } catch (error) {

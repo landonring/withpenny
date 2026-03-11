@@ -11,7 +11,7 @@ class SendDeployUpdatePushCommand extends Command
         {--deploy-version= : Override deploy version in push payload}
         {--dry-run : Show recipient counts without sending notifications}';
 
-    protected $description = 'Send a Penny deploy update push notification to subscribed users.';
+    protected $description = 'Send Penny deploy update notifications (in-app + push where available).';
 
     public function handle(DeployUpdatePushService $service): int
     {
@@ -25,22 +25,20 @@ class SendDeployUpdatePushCommand extends Command
         $stats = $service->dispatch($version, $dryRun);
 
         $this->line('Deploy version: '.$version);
-        $this->line('Subscriptions: '.$stats['subscriptions']);
+        $this->line('Users checked: '.$stats['users']);
+        $this->line('Eligible: '.$stats['eligible']);
+        $this->line('Skipped (already on version): '.$stats['skipped_version']);
+        $this->line('Skipped (24h cooldown): '.$stats['skipped_rate']);
 
         if ($dryRun) {
-            $this->info('Dry run complete. No push notifications were sent.');
+            $this->info('Dry run complete. No notifications were sent.');
             return self::SUCCESS;
         }
 
-        if ($stats['skipped']) {
-            $this->warn('Push dispatch skipped: '.($stats['reason'] ?? 'Unknown reason.'));
-            return self::SUCCESS;
-        }
-
-        $this->line('Sent: '.$stats['sent']);
-        $this->line('Failed: '.$stats['failed']);
-        $this->line('Expired removed: '.$stats['expired']);
-        $this->info('Deploy update push dispatch completed.');
+        $this->line('Notifications stored: '.$stats['sent']);
+        $this->line('Push sent: '.$stats['push_sent']);
+        $this->line('Push failed: '.$stats['push_failed']);
+        $this->info('Deploy update notification dispatch completed.');
 
         return self::SUCCESS;
     }

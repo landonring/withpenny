@@ -163,6 +163,32 @@
         </div>
 
         <div class="card">
+            <div class="card-title">Notifications</div>
+            <p class="card-sub">Stay updated with reflections, insights, and important updates.</p>
+            <div class="notification-center-card">
+                <div class="notification-status-row">
+                    <span class="muted">Status</span>
+                    <span :class="['notification-status-pill', `is-${notificationStatusKey}`]">
+                        {{ notificationStatusLabel }}
+                    </span>
+                </div>
+                <p v-if="notificationStatusDetail" class="muted">{{ notificationStatusDetail }}</p>
+                <div v-if="showNotificationAction" class="journey-actions">
+                    <button
+                        class="primary-button"
+                        type="button"
+                        :disabled="notificationBusy"
+                        @click="handleEnableNotifications"
+                    >
+                        {{ notificationBusy ? 'Updating…' : notificationActionLabel }}
+                    </button>
+                </div>
+                <p v-else class="muted">Notifications are enabled.</p>
+                <p v-if="notificationMessage" class="muted">{{ notificationMessage }}</p>
+            </div>
+        </div>
+
+        <div class="card">
             <div class="card-title">Plan</div>
             <p class="card-sub">Adjust your plan anytime.</p>
             <div class="data-summary">
@@ -321,6 +347,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import axios from 'axios';
 import { authState, deleteAccount, deleteAllTransactions, deleteImportedTransactions, fetchDataSummary, logout, updateLifePhase, updateProfile } from '../stores/auth';
 import { checkBiometricSupport, disableBiometrics, enableBiometrics, refreshBiometricStatus } from '../stores/biometrics';
 import { applyBillingStatus, cancelSubscription, fetchBillingStatus, openBillingPortal, resumeSubscription, startCheckout } from '../stores/billing';
@@ -362,6 +389,11 @@ const lifePhaseSaving = ref(false);
 const lifePhaseError = ref('');
 const lifePhaseSuccess = ref('');
 const replayingOnboarding = ref(false);
+const notificationBusy = ref(false);
+const notificationMessage = ref('');
+const notificationPermission = ref('default');
+const notificationEnabled = ref(false);
+const notificationVapidPublicKey = ref('');
 
 const planLabels = {
     starter: 'Starter',
@@ -412,6 +444,41 @@ const displayBillingMessage = computed(() => {
     return billing;
 });
 const lifePhaseChanged = computed(() => (lifePhaseSelection.value || '') !== (authState.user?.life_phase || ''));
+const notificationsSupported = computed(() =>
+    typeof window !== 'undefined'
+    && 'Notification' in window
+    && 'serviceWorker' in navigator
+    && 'PushManager' in window
+);
+const notificationStatusKey = computed(() => {
+    if (!notificationsSupported.value) return 'disabled';
+    if (notificationPermission.value === 'denied') return 'blocked';
+    if (notificationPermission.value === 'granted' && notificationEnabled.value) return 'enabled';
+    return 'disabled';
+});
+const notificationStatusLabel = computed(() => {
+    if (notificationStatusKey.value === 'enabled') return 'Enabled';
+    if (notificationStatusKey.value === 'blocked') return 'Blocked by browser';
+    return 'Disabled';
+});
+const notificationStatusDetail = computed(() => {
+    if (!notificationsSupported.value) {
+        return 'Push notifications are not supported on this browser/device.';
+    }
+    if (notificationPermission.value === 'denied') {
+        return 'Notifications are blocked in your browser settings for this site.';
+    }
+    if (notificationPermission.value === 'granted' && !notificationEnabled.value) {
+        return 'Permission is granted, but notifications are not fully connected yet.';
+    }
+    return '';
+});
+const showNotificationAction = computed(() => notificationStatusKey.value !== 'enabled');
+const notificationActionLabel = computed(() => (
+    notificationPermission.value === 'denied'
+        ? 'Notifications Blocked (Open Settings)'
+        : 'Enable Notifications'
+));
 
 const biometricsSupported = ref(false);
 const biometricsEnabled = ref(false);
@@ -601,6 +668,136 @@ const handleDisableBiometrics = async () => {
     }
 };
 
+const readPermissionState = () => {
+    if (!notificationsSupported.value) {
+        notificationPermission.value = 'default';
+        return;
+    }
+
+    notificationPermission.value = String(Notification.permission || 'default');
+};
+
+const loadNotificationSettings = async () => {
+    readPermissionState();
+
+    try {
+        const { data } = await axios.get('/api/notifications/settings');
+        notificationEnabled.value = !!data?.enabled;
+        notificationVapidPublicKey.value = String(data?.vapid_public_key || '').trim();
+    } catch (error) {
+        notificationEnabled.value = false;
+        notificationVapidPublicKey.value = '';
+        console.error('Unable to load notification settings.', error);
+    }
+};
+
+const urlBase64ToUint8Array = (value) => {
+    const padded = `${value}${'='.repeat((4 - (value.length % 4)) % 4)}`;
+    const normalized = padded.replace(/-/g, '+').replace(/_/g, '/');
+    const raw = window.atob(normalized);
+    const output = new Uint8Array(raw.length);
+    for (let index = 0; index < raw.length; index += 1) {
+        output[index] = raw.charCodeAt(index);
+    }
+    return output;
+};
+
+const ensureNotificationRegistration = async () => {
+    if (!notificationsSupported.value) {
+        throw new Error('Push notifications are not supported on this browser/device.');
+    }
+
+    let registration = await navigator.serviceWorker.getRegistration('/sw.js');
+    if (!registration) {
+        registration = await navigator.serviceWorker.getRegistration();
+    }
+    if (!registration) {
+        registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+    }
+
+    try {
+        await navigator.serviceWorker.ready;
+    } catch {
+        // Keep using registration fallback below.
+    }
+
+    return registration;
+};
+
+const connectNotifications = async () => {
+    const timezone = Intl?.DateTimeFormat?.().resolvedOptions?.().timeZone || null;
+    await axios.post('/api/notifications/enable', {
+        show_financial_data_in_notifications: false,
+        timezone,
+    });
+
+    let vapidPublicKey = notificationVapidPublicKey.value;
+    if (!vapidPublicKey) {
+        const { data } = await axios.get('/api/notifications/settings');
+        vapidPublicKey = String(data?.vapid_public_key || '').trim();
+        notificationVapidPublicKey.value = vapidPublicKey;
+    }
+
+    if (!vapidPublicKey) {
+        throw new Error('Notification setup is unavailable right now.');
+    }
+
+    const registration = await ensureNotificationRegistration();
+    if (!registration?.pushManager) {
+        throw new Error('Push notifications are not supported on this browser/device.');
+    }
+
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        });
+    }
+
+    await axios.post('/api/notifications/subscribe', subscription.toJSON());
+};
+
+const handleEnableNotifications = async () => {
+    notificationBusy.value = true;
+    notificationMessage.value = '';
+    readPermissionState();
+
+    try {
+        if (!notificationsSupported.value) {
+            notificationMessage.value = 'Push notifications are not supported on this browser/device.';
+            return;
+        }
+
+        if (notificationPermission.value === 'denied') {
+            notificationMessage.value = 'Notifications are blocked in your browser settings. Open site settings for withpenny.app to enable them.';
+            return;
+        }
+
+        if (notificationPermission.value === 'default') {
+            const permission = await Notification.requestPermission();
+            notificationPermission.value = permission;
+
+            if (permission !== 'granted') {
+                notificationMessage.value = permission === 'denied'
+                    ? 'Notifications not enabled. Browser settings are currently blocking notifications.'
+                    : 'Notifications not enabled.';
+                return;
+            }
+        }
+
+        await connectNotifications();
+        notificationEnabled.value = true;
+        notificationMessage.value = 'Notifications enabled.';
+    } catch (error) {
+        console.error('Notification setup failed.', error);
+        notificationMessage.value = error?.response?.data?.message || error?.message || 'Unable to enable notifications right now.';
+    } finally {
+        notificationBusy.value = false;
+        await loadNotificationSettings();
+    }
+};
+
 const loadBilling = async () => {
     try {
         billingStatus.value = await fetchBillingStatus();
@@ -715,6 +912,7 @@ const handleManageBilling = async () => {
 const handleVisibilityRefresh = () => {
     if (document.visibilityState === 'visible') {
         loadBilling();
+        loadNotificationSettings();
     }
 };
 
@@ -732,8 +930,10 @@ onMounted(() => {
     loadDataSummary();
     loadBiometrics();
     loadBilling();
+    loadNotificationSettings();
     if (typeof window !== 'undefined') {
         window.addEventListener('focus', loadBilling);
+        window.addEventListener('focus', loadNotificationSettings);
         document.addEventListener('visibilitychange', handleVisibilityRefresh);
     }
     if (route.query.billing) {
@@ -744,6 +944,7 @@ onMounted(() => {
 onUnmounted(() => {
     if (typeof window !== 'undefined') {
         window.removeEventListener('focus', loadBilling);
+        window.removeEventListener('focus', loadNotificationSettings);
         document.removeEventListener('visibilitychange', handleVisibilityRefresh);
     }
 });

@@ -108,6 +108,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import axios from 'axios';
 import { generateDailyOverview, generateMonthlyReflection, generateWeeklyCheckIn, generateYearlyReflection } from '../stores/ai';
 import { generateSpreadsheet } from '../stores/spreadsheets';
 import { transactionsState } from '../stores/transactions';
@@ -177,6 +178,7 @@ const openSpreadsheetUpgrade = () => {
 
 onMounted(() => {
     ensureUsageStatus();
+    axios.post('/api/usage/activity', { activity: 'insight_viewed' }).catch(() => {});
 });
 
 const insightErrorMessage = (err) => {

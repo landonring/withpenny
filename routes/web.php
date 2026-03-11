@@ -62,6 +62,7 @@ Route::prefix('api')->group(function () {
         Route::post('/webauthn/register/verify', [WebauthnController::class, 'registerVerify'])->middleware('onboarding.readonly');
         Route::delete('/webauthn', [WebauthnController::class, 'disable'])->middleware('onboarding.readonly');
         Route::get('/usage', [UsageController::class, 'show']);
+        Route::post('/usage/activity', [UsageController::class, 'trackActivity']);
         Route::post('/spreadsheets/generate', [SpreadsheetController::class, 'generate']);
         Route::get('/notifications/settings', [NotificationController::class, 'settings']);
         Route::post('/notifications/enable', [NotificationController::class, 'enable'])->middleware('onboarding.readonly');

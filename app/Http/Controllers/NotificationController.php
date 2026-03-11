@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\SendWelcomeNotificationJob;
 use App\Models\InAppNotification;
 use App\Models\PushSubscription;
 use App\Services\AnalyticsService;
@@ -46,7 +45,6 @@ class NotificationController extends Controller
         );
 
         $this->analytics->track('notification_permission_granted', [], $user);
-        SendWelcomeNotificationJob::dispatch($user->id)->delay(now()->addSeconds(60));
 
         return response()->json([
             'enabled' => (bool) $user->notifications_enabled,
@@ -81,6 +79,7 @@ class NotificationController extends Controller
                 'endpoint' => $validated['endpoint'],
                 'p256dh_key' => $validated['keys']['p256dh'],
                 'auth_key' => $validated['keys']['auth'],
+                'active' => true,
                 'last_used_at' => now(),
             ]
         );
@@ -98,7 +97,7 @@ class NotificationController extends Controller
         if (! empty($validated['endpoint'])) {
             $query->where('endpoint_hash', hash('sha256', $validated['endpoint']));
         }
-        $query->delete();
+        $query->update(['active' => false]);
 
         return response()->json(['ok' => true]);
     }
@@ -165,8 +164,13 @@ class NotificationController extends Controller
         return [
             'id' => $notification->id,
             'type' => $notification->type,
+            'subtype' => $notification->subtype,
             'title' => $notification->title,
             'body' => $notification->body,
+            'deep_link' => $notification->deep_link,
+            'version' => $notification->version,
+            'priority' => (int) ($notification->priority ?? 0),
+            'push_status' => $notification->push_status,
             'data' => $notification->data_json ?? [],
             'sent_at' => optional($notification->sent_at)->toIso8601String(),
             'read_at' => optional($notification->read_at)->toIso8601String(),

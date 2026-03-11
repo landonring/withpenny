@@ -1,44 +1,58 @@
 <?php
 
 return [
-    'daily_limit' => 3,
+    'behavioral' => [
+        'daily_limit' => 3,
+        'skip_inactive_after_days' => 14,
+        'active_recent_days' => 7,
+        'min_meaningful_transactions' => 3,
+        'meaningful_lookback_days' => 30,
 
-    'windows' => [
-        'morning' => ['start' => '07:00', 'end' => '11:00'],
-        'midday' => ['start' => '11:00', 'end' => '14:00'],
-        'afternoon' => ['start' => '14:00', 'end' => '19:00'],
+        'windows' => [
+            'morning' => ['start' => '07:00', 'end' => '10:00'],
+            'noon' => ['start' => '11:00', 'end' => '14:00'],
+            'afternoon' => ['start' => '16:00', 'end' => '19:00'],
+        ],
+
+        'thresholds' => [
+            'week_over_week_percent' => 8,
+            'high_single_expense_floor' => 150,
+            'high_single_expense_multiplier' => 2.4,
+            'drift_min_percent' => 8,
+        ],
+
+        'priorities' => [
+            'weekly_checkin' => 95,
+            'spending_insight' => 90,
+            'drift_detection' => 85,
+            'reflection_prompt' => 80,
+            'tip' => 65,
+        ],
+
+        'tips' => [
+            'Review your subscriptions this week.',
+            'Try one five-minute spending check-in today.',
+            'Pick one category to keep steady this week.',
+            'A quick weekly review can reduce monthly surprises.',
+            'One intentional adjustment can shift the whole month.',
+        ],
     ],
 
-    'priorities' => [
-        'welcome' => 100,
-        'monthly_snapshot' => 90,
-        'spending_shift' => 80,
-        'weekly_reflection' => 70,
-        'celebration' => 60,
-        'micro_tip' => 50,
-    ],
+    'system' => [
+        'inactive_days' => 5,
+        'inactive_cooldown_days' => 7,
+        'update_cooldown_hours' => 24,
 
-    'micro_tips' => [
-        'Small weekly reviews reduce long-term stress.',
-        'Consistency matters more than perfection.',
-        'A short check-in now can prevent a bigger correction later.',
-        'Calm money habits are built through repetition.',
-        'Noticing patterns early creates more options later.',
-        'A five-minute review is enough to stay grounded.',
-        'Progress often looks like fewer surprises, not big wins.',
-        'Short reflections can make spending decisions feel lighter.',
-        'You do not need perfect data to make better choices.',
-        'A little structure now can save decision fatigue later.',
-        'The goal is awareness, not constant optimization.',
-        'Simple routines usually outperform complex plans.',
-        'One intentional adjustment can change the whole month.',
-        'A clear overview often reduces money anxiety.',
-        'A steady rhythm is more useful than dramatic changes.',
-        'Reviewing spending weekly keeps monthly decisions calmer.',
-        'Gentle tracking can still produce strong results.',
-        'The strongest budgeting habit is simply showing up.',
-        'A small pause before spending can improve clarity.',
-        'Financial clarity grows through small repeated actions.',
+        'lifecycle_intervals' => [
+            'new_user_24h' => 24,
+            'new_user_3d' => 72,
+            'new_user_7d' => 168,
+        ],
+
+        'priorities' => [
+            'lifecycle' => 92,
+            'inactivity_nudge' => 88,
+            'update' => 98,
+        ],
     ],
 ];
-

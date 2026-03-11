@@ -137,7 +137,7 @@ class TransactionController extends Controller
         ]);
     }
 
-    public function destroy(Request $request, Transaction $transaction)
+    public function destroy(Request $request, $transaction)
     {
         if ($request->user()->onboarding_mode) {
             return response()->json([
@@ -145,9 +145,15 @@ class TransactionController extends Controller
             ], 409);
         }
 
-        $this->authorizeTransaction($request, $transaction);
+        $model = Transaction::query()
+            ->where('user_id', $request->user()->id)
+            ->find($transaction);
 
-        $transaction->delete();
+        if (! $model) {
+            return response()->json(['status' => 'already_deleted']);
+        }
+
+        $model->delete();
 
         return response()->json(['status' => 'deleted']);
     }

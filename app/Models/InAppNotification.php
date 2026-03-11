@@ -15,8 +15,16 @@ class InAppNotification extends Model
     protected $fillable = [
         'user_id',
         'type',
+        'subtype',
         'title',
         'body',
+        'deep_link',
+        'version',
+        'priority',
+        'push_status',
+        'push_sent_at',
+        'push_failed_at',
+        'push_error',
         'data_json',
         'sent_at',
         'read_at',
@@ -24,8 +32,11 @@ class InAppNotification extends Model
 
     protected $casts = [
         'data_json' => 'array',
+        'priority' => 'integer',
         'sent_at' => 'datetime',
         'read_at' => 'datetime',
+        'push_sent_at' => 'datetime',
+        'push_failed_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -35,4 +46,3 @@ class InAppNotification extends Model
         return $this->belongsTo(User::class);
     }
 }
-

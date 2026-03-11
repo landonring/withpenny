@@ -28,6 +28,14 @@ class AnalyticsService
         'shift_notification_sent',
         'celebration_notification_sent',
         'notification_clicked',
+        'insight_viewed',
+        'notification_sent',
+        'behavioral_notification_sent',
+        'lifecycle_notification_sent',
+        'inactivity_notification_sent',
+        'update_notification_sent',
+        'tip_notification_sent',
+        'notification_push_failed',
     ];
 
     private const BLOCKED_KEYS = [

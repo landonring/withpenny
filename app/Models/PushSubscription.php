@@ -16,10 +16,12 @@ class PushSubscription extends Model
         'endpoint_hash',
         'p256dh_key',
         'auth_key',
+        'active',
         'last_used_at',
     ];
 
     protected $casts = [
+        'active' => 'boolean',
         'last_used_at' => 'datetime',
     ];
 

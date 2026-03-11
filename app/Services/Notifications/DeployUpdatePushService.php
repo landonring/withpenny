@@ -2,142 +2,88 @@
 
 namespace App\Services\Notifications;
 
-use App\Models\PushSubscription;
-use Illuminate\Support\Facades\Log;
-use Minishlink\WebPush\Subscription;
-use Minishlink\WebPush\WebPush;
+use App\Models\InAppNotification;
+use App\Models\User;
 
 class DeployUpdatePushService
 {
+    public function __construct(private readonly NotificationDeliveryService $delivery)
+    {
+    }
+
     /**
-     * @return array{subscriptions:int,sent:int,failed:int,expired:int,skipped:bool,reason:?string}
+     * @return array{users:int,eligible:int,sent:int,push_sent:int,push_failed:int,skipped_version:int,skipped_rate:int}
      */
     public function dispatch(string $version, bool $dryRun = false): array
     {
         $stats = [
-            'subscriptions' => 0,
+            'users' => 0,
+            'eligible' => 0,
             'sent' => 0,
-            'failed' => 0,
-            'expired' => 0,
-            'skipped' => false,
-            'reason' => null,
+            'push_sent' => 0,
+            'push_failed' => 0,
+            'skipped_version' => 0,
+            'skipped_rate' => 0,
         ];
 
-        try {
-            $subscriptions = PushSubscription::query()
-                ->whereHas('user', fn ($query) => $query->where('notifications_enabled', true))
-                ->select(['id', 'endpoint', 'p256dh_key', 'auth_key'])
-                ->get();
-        } catch (\Throwable $error) {
-            Log::warning('deploy_update_push_query_failed', [
-                'message' => $error->getMessage(),
-            ]);
-            $stats['skipped'] = true;
-            $stats['reason'] = 'Unable to query push subscriptions.';
-            return $stats;
-        }
+        User::query()
+            ->where('notifications_enabled', true)
+            ->chunkById(200, function ($users) use (&$stats, $version, $dryRun): void {
+                foreach ($users as $user) {
+                    $stats['users']++;
 
-        $stats['subscriptions'] = $subscriptions->count();
+                    $alreadyVersion = InAppNotification::query()
+                        ->where('user_id', $user->id)
+                        ->where('type', 'system')
+                        ->where('subtype', 'update')
+                        ->where('version', $version)
+                        ->exists();
 
-        if ($dryRun || $subscriptions->isEmpty()) {
-            return $stats;
-        }
+                    if ($alreadyVersion) {
+                        $stats['skipped_version']++;
+                        continue;
+                    }
 
-        if (! class_exists(WebPush::class) || ! class_exists(Subscription::class)) {
-            $stats['skipped'] = true;
-            $stats['reason'] = 'Web push package is not installed.';
-            return $stats;
-        }
+                    $recentUpdate = InAppNotification::query()
+                        ->where('user_id', $user->id)
+                        ->where('type', 'system')
+                        ->where('subtype', 'update')
+                        ->where('sent_at', '>=', now()->subHours((int) config('notifications.system.update_cooldown_hours', 24)))
+                        ->exists();
 
-        $publicKey = (string) config('services.webpush.public_key');
-        $privateKey = (string) config('services.webpush.private_key');
-        $subject = (string) config('services.webpush.subject');
+                    if ($recentUpdate) {
+                        $stats['skipped_rate']++;
+                        continue;
+                    }
 
-        if ($publicKey === '' || $privateKey === '' || $subject === '') {
-            $stats['skipped'] = true;
-            $stats['reason'] = 'VAPID credentials are missing.';
-            return $stats;
-        }
+                    $stats['eligible']++;
 
-        try {
-            $webPush = new WebPush([
-                'VAPID' => [
-                    'subject' => $subject,
-                    'publicKey' => $publicKey,
-                    'privateKey' => $privateKey,
-                ],
-            ]);
-        } catch (\Throwable $error) {
-            $stats['skipped'] = true;
-            $stats['reason'] = 'Unable to initialize WebPush: '.$error->getMessage();
-            return $stats;
-        }
+                    if ($dryRun) {
+                        continue;
+                    }
 
-        $payload = json_encode([
-            'type' => 'deploy_update',
-            'title' => 'Penny Updated',
-            'body' => 'New improvements are available.',
-            'icon' => url('/icons/penny-192.png'),
-            'badge' => url('/icons/penny-192.png'),
-            'tag' => 'penny-deploy-update-'.$version,
-            'renotify' => false,
-            'click_url' => rtrim((string) config('app.url'), '/').'/app',
-            'data' => [
-                'version' => $version,
-            ],
-        ]);
-
-        $endpointIndex = [];
-        /** @var PushSubscription $subscription */
-        foreach ($subscriptions as $subscription) {
-            try {
-                $webPush->queueNotification(
-                    Subscription::create([
-                        'endpoint' => $subscription->endpoint,
-                        'keys' => [
-                            'p256dh' => $subscription->p256dh_key,
-                            'auth' => $subscription->auth_key,
+                    $notification = $this->delivery->deliver($user, [
+                        'type' => 'system',
+                        'subtype' => 'update',
+                        'title' => 'Penny Updated',
+                        'body' => 'New improvements are available.',
+                        'deep_link' => '/app',
+                        'version' => $version,
+                        'priority' => (int) config('notifications.system.priorities.update', 98),
+                        'data' => [
+                            'version' => $version,
                         ],
-                    ]),
-                    $payload
-                );
-                $endpointIndex[(string) $subscription->endpoint] = $subscription;
-            } catch (\Throwable $error) {
-                $stats['failed']++;
-                Log::warning('deploy_update_push_queue_failed', [
-                    'subscription_id' => $subscription->id,
-                    'message' => $error->getMessage(),
-                ]);
-            }
-        }
+                    ]);
 
-        foreach ($webPush->flush() as $report) {
-            $endpoint = (string) $report->getRequest()->getUri();
-            /** @var PushSubscription|null $subscription */
-            $subscription = $endpointIndex[$endpoint] ?? null;
-            if (! $subscription) {
-                continue;
-            }
-
-            if ($report->isSuccess()) {
-                $subscription->forceFill(['last_used_at' => now()])->save();
-                $stats['sent']++;
-                continue;
-            }
-
-            if ($report->isSubscriptionExpired()) {
-                $subscription->delete();
-                $stats['expired']++;
-                continue;
-            }
-
-            $stats['failed']++;
-            Log::warning('deploy_update_push_send_failed', [
-                'subscription_id' => $subscription->id,
-                'endpoint' => $endpoint,
-                'reason' => $report->getReason(),
-            ]);
-        }
+                    $stats['sent']++;
+                    if ($notification->push_status === 'sent') {
+                        $stats['push_sent']++;
+                    }
+                    if ($notification->push_status === 'failed') {
+                        $stats['push_failed']++;
+                    }
+                }
+            });
 
         return $stats;
     }

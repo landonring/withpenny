@@ -3558,6 +3558,45 @@ a:hover {
     flex-wrap: wrap;
 }
 
+.notification-center-card {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(0, 0, 0, 0.025);
+}
+
+.notification-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.notification-status-pill {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    padding: 5px 10px;
+    border-radius: 999px;
+}
+
+.notification-status-pill.is-enabled {
+    background: rgba(85, 122, 101, 0.16);
+    color: #3d5f4b;
+}
+
+.notification-status-pill.is-disabled {
+    background: rgba(0, 0, 0, 0.06);
+    color: #66615b;
+}
+
+.notification-status-pill.is-blocked {
+    background: rgba(145, 98, 98, 0.14);
+    color: #7b5959;
+}
+
 .savings-nudge {
     display: flex;
     align-items: center;
@@ -3624,7 +3663,7 @@ a:hover {
 .statement-list {
     display: grid;
     gap: 16px;
-    padding-bottom: 140px;
+    padding-bottom: 20px;
 }
 
 .statement-item {
@@ -3757,9 +3796,9 @@ a:hover {
     justify-content: space-between;
     position: static;
     background: transparent;
-    padding: 12px 0 4px;
-    margin-top: 16px;
-    margin-bottom: 8px;
+    padding: 8px 0 0;
+    margin-top: 8px;
+    margin-bottom: 0;
 }
 
 .statement-processing {

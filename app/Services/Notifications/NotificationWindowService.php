@@ -37,21 +37,21 @@ class NotificationWindowService
 
     public function currentWindow(CarbonInterface $localNow): ?string
     {
-        $hour = (int) $localNow->format('G');
+        $time = $localNow->format('H:i');
+        $windows = (array) config('notifications.behavioral.windows', []);
 
-        if ($hour >= 7 && $hour < 11) {
-            return 'morning';
-        }
+        foreach ($windows as $key => $range) {
+            $start = (string) ($range['start'] ?? '');
+            $end = (string) ($range['end'] ?? '');
+            if ($start === '' || $end === '') {
+                continue;
+            }
 
-        if ($hour >= 11 && $hour < 14) {
-            return 'midday';
-        }
-
-        if ($hour >= 14 && $hour < 19) {
-            return 'afternoon';
+            if ($time >= $start && $time < $end) {
+                return (string) $key;
+            }
         }
 
         return null;
     }
 }
-
