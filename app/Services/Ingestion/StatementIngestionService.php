@@ -161,15 +161,45 @@ class StatementIngestionService
     private function processPdf(string $path, string $name): array
     {
         $tooling = $this->toolingAvailability();
-        $rawText = $this->extractPdfText($path);
+        $debugEnabled = $this->statementDebugEnabled();
+        $textExtraction = $this->extractPdfText($path, $tooling);
+        $rawText = $textExtraction['text'];
         $rawTextTrimmed = trim($rawText);
         $rawTextLength = mb_strlen($rawTextTrimmed);
         Log::info('statement_pdf_text_extraction', [
             'file' => $name,
             'text_length' => $rawTextLength,
             'tooling' => $tooling,
+            'method' => $textExtraction['method'],
+            'native_tool_used' => $textExtraction['native_tool_used'],
+            'fallback_used' => $textExtraction['fallback_used'],
             'ai_enabled' => $this->aiExtractor->isEnabled(),
         ]);
+
+        if ($debugEnabled) {
+            Log::info('statement_pdf_text_preview', [
+                'file' => $name,
+                'method' => $textExtraction['method'],
+                'preview' => mb_substr($rawTextTrimmed, 0, 500),
+            ]);
+        }
+
+        if (! $this->hasRequiredPdfTooling($tooling) && ! $textExtraction['native_tool_used']) {
+            Log::warning('statement_pdf_native_tooling_required', [
+                'file' => $name,
+                'tooling' => $tooling,
+                'method' => $textExtraction['method'],
+                'text_length' => $rawTextLength,
+            ]);
+
+            return [
+                'rows' => [],
+                'raw_text' => $rawText,
+                'invalid_rows' => 1,
+                'statement_range' => ['min' => null, 'max' => null],
+                'error' => "Unable to parse {$name} in this environment. Install native PDF tooling (pdftotext or pdftoppm+tesseract).",
+            ];
+        }
 
         if ($rawTextLength < 180) {
             $ocrText = $this->extractPdfTextViaOcr($path);
@@ -179,6 +209,13 @@ class StatementIngestionService
                 'file' => $name,
                 'ocr_length' => $ocrLength,
             ]);
+
+            if ($debugEnabled) {
+                Log::info('statement_pdf_ocr_preview', [
+                    'file' => $name,
+                    'preview' => mb_substr($ocrTrimmed, 0, 500),
+                ]);
+            }
 
             if ($ocrLength > 0) {
                 $rawText = trim($rawTextTrimmed === '' ? $ocrTrimmed : ($rawTextTrimmed."\n\n".$ocrTrimmed));
@@ -855,35 +892,64 @@ class StatementIngestionService
         return $rows;
     }
 
-    private function extractPdfText(string $path): string
+    /**
+     * @param array{pdftotext:bool,pdftoppm:bool,tesseract:bool} $tooling
+     * @return array{text:string,method:string,native_tool_used:bool,fallback_used:bool}
+     */
+    private function extractPdfText(string $path, array $tooling): array
     {
-        $pdftotext = trim((string) shell_exec('command -v pdftotext'));
-        if ($pdftotext !== '') {
+        if ($tooling['pdftotext']) {
+            $pdftotext = trim((string) shell_exec('command -v pdftotext'));
             $layout = escapeshellcmd($pdftotext).' -layout '.escapeshellarg($path).' - 2>/dev/null';
             $layoutText = trim((string) shell_exec($layout));
             if ($layoutText !== '') {
-                return $layoutText;
+                return [
+                    'text' => $layoutText,
+                    'method' => 'pdftotext_layout',
+                    'native_tool_used' => true,
+                    'fallback_used' => false,
+                ];
             }
 
             $plain = escapeshellcmd($pdftotext).' '.escapeshellarg($path).' - 2>/dev/null';
             $plainText = trim((string) shell_exec($plain));
             if ($plainText !== '') {
-                return $plainText;
+                return [
+                    'text' => $plainText,
+                    'method' => 'pdftotext_plain',
+                    'native_tool_used' => true,
+                    'fallback_used' => false,
+                ];
             }
         }
 
         $streamText = $this->extractPdfTextFromStreams($path);
         if ($streamText !== '') {
-            return $streamText;
+            return [
+                'text' => $streamText,
+                'method' => 'stream_operator_fallback',
+                'native_tool_used' => false,
+                'fallback_used' => true,
+            ];
         }
 
         $strings = trim((string) shell_exec('command -v strings'));
         if ($strings !== '') {
             $command = escapeshellcmd($strings).' -n 6 '.escapeshellarg($path).' 2>/dev/null';
-            return trim((string) shell_exec($command));
+            return [
+                'text' => trim((string) shell_exec($command)),
+                'method' => 'strings_fallback',
+                'native_tool_used' => false,
+                'fallback_used' => true,
+            ];
         }
 
-        return '';
+        return [
+            'text' => '',
+            'method' => 'none',
+            'native_tool_used' => false,
+            'fallback_used' => false,
+        ];
     }
 
     private function extractPdfTextViaOcr(string $path): string
@@ -1474,6 +1540,23 @@ class StatementIngestionService
     /**
      * @param array{pdftotext:bool,pdftoppm:bool,tesseract:bool} $tooling
      */
+    private function hasRequiredPdfTooling(array $tooling): bool
+    {
+        return $tooling['pdftotext'] || ($tooling['pdftoppm'] && $tooling['tesseract']);
+    }
+
+    private function statementDebugEnabled(): bool
+    {
+        if ((bool) config('app.debug', false)) {
+            return true;
+        }
+
+        return (bool) env('STATEMENT_INGESTION_DEBUG', false);
+    }
+
+    /**
+     * @param array{pdftotext:bool,pdftoppm:bool,tesseract:bool} $tooling
+     */
     private function buildPdfFailureMessage(string $name, ?string $aiError, array $tooling): string
     {
         if (! $this->aiExtractor->isEnabled()) {
@@ -1485,7 +1568,7 @@ class StatementIngestionService
         }
 
         if (! $tooling['pdftotext'] && (! $tooling['pdftoppm'] || ! $tooling['tesseract'])) {
-            return "Unable to parse {$name}. PDF text tooling is unavailable on this server.";
+            return "Unable to parse {$name}. Native PDF tooling is unavailable on this server. Install pdftotext or pdftoppm+tesseract.";
         }
 
         return 'We could not extract transactions from this file.';

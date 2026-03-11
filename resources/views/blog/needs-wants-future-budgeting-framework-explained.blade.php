@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>The Needs, Wants, Future Budgeting Framework Explained | Penny</title>
+    <title>The Needs, Wants, Future Budgeting Framework Explained</title>
     <meta name="description" content="A full guide to the Needs, Wants, Future budgeting framework, including setup, category mapping, and practical monthly reviews."/>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
     <link rel="canonical" href="{{ url('/blog/needs-wants-future-budgeting-framework-explained') }}"/>

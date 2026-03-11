@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Budgeting Without Connecting Your Bank Account | Penny</title>
+    <title>Budgeting Without Connecting Your Bank Account</title>
     <meta name="description" content="A practical guide to budgeting without connecting your bank account, including privacy benefits, workflow tips, and AI-supported tracking."/>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
     <link rel="canonical" href="{{ url('/blog/budgeting-without-connecting-bank-account') }}"/>

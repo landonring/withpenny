@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>How AI Is Changing Personal Budgeting | Penny</title>
+    <title>How AI Is Changing Personal Budgeting</title>
     <meta name="description" content="Learn how AI is changing personal budgeting with calmer insights, smarter spending analysis, and privacy-first workflows that keep people in control."/>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
     <link rel="canonical" href="{{ url('/blog/ai-changing-personal-budgeting') }}"/>

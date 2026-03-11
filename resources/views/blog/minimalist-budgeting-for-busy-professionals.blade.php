@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Minimalist Budgeting for Busy Professionals | Penny</title>
+    <title>Minimalist Budgeting for Busy Professionals</title>
     <meta name="description" content="A minimalist budgeting guide for busy professionals who need clear financial awareness without complex systems or constant maintenance."/>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
     <link rel="canonical" href="{{ url('/blog/minimalist-budgeting-for-busy-professionals') }}"/>

@@ -10,7 +10,7 @@
             :class="[
                 'main-content',
                 {
-                    'lock-scroll': route.meta.lockScroll || lifePhaseOpen || onboardingChoiceOpen,
+                    'lock-scroll': route.meta.lockScroll || lifePhaseOpen || onboardingChoiceOpen || updateModalOpen,
                     'marketing-content': route.meta.marketing,
                     'full-bleed': route.meta.fullBleed,
                 },
@@ -21,6 +21,20 @@
 
         <BottomNav v-if="!route.meta.hideNav" />
         <GuidedTourOverlay v-if="showGuidedOverlay" />
+
+        <div v-if="updateModalOpen" class="update-backdrop" role="dialog" aria-modal="true" aria-labelledby="app-update-title">
+            <div class="update-modal">
+                <h2 id="app-update-title" class="update-title">Penny has been updated</h2>
+                <p class="update-copy">We’ve made improvements and enhancements.</p>
+                <p v-if="appUpdateState.error" class="form-error">{{ appUpdateState.error }}</p>
+                <div class="update-actions">
+                    <button class="primary-button" type="button" :disabled="appUpdateState.applying" @click="handleApplyUpdate">
+                        {{ appUpdateState.applying ? 'Updating…' : 'Update now' }}
+                    </button>
+                    <a class="update-link" href="/blog">What changed?</a>
+                </div>
+            </div>
+        </div>
 
         <div v-if="onboardingChoiceOpen" class="upgrade-backdrop" role="dialog" aria-modal="true">
             <div class="upgrade-modal">
@@ -110,6 +124,7 @@ import { billingState, completeCheckout, ensureBillingStatus, startCheckout } fr
 import { hideUpgrade, upgradePrompt } from '../stores/upgrade';
 import { lifePhases } from '../data/lifePhases';
 import { ensureOnboardingStatus, onboardingState, routeAllowedDuringOnboarding, skipOnboarding } from '../stores/onboarding';
+import { appUpdateState, applyAppUpdate } from '../stores/appUpdate';
 
 const route = useRoute();
 const router = useRouter();
@@ -130,6 +145,11 @@ const onboardingChoiceOpen = computed(() =>
     && !route.path.startsWith('/admin')
     && route.meta.requiresAuth
     && !onboardingDecisionMade.value
+);
+const updateModalOpen = computed(() =>
+    appUpdateState.available
+    && !route.meta.marketing
+    && !route.path.startsWith('/admin')
 );
 const showGuidedOverlay = computed(() =>
     !!authState.user
@@ -262,6 +282,10 @@ const handleSkipGuidedTour = async () => {
     } finally {
         onboardingChoiceBusy.value = false;
     }
+};
+
+const handleApplyUpdate = () => {
+    applyAppUpdate();
 };
 
 const syncBillingIfNeeded = async () => {

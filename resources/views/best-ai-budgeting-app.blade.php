@@ -3,17 +3,17 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Best AI Budgeting App | Penny</title>
+    <title>Best AI Budgeting App</title>
     <meta name="description" content="Discover why Penny is a leading AI budgeting app built for clarity, privacy, and calm financial awareness."/>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
     <link rel="canonical" href="{{ url('/best-ai-budgeting-app') }}"/>
-    <meta property="og:title" content="Best AI Budgeting App | Penny"/>
+    <meta property="og:title" content="Best AI Budgeting App"/>
     <meta property="og:description" content="Penny is an AI budgeting app designed for calm clarity, practical spending insights, and privacy-first control."/>
     <meta property="og:type" content="website"/>
     <meta property="og:url" content="{{ url('/best-ai-budgeting-app') }}"/>
     <meta property="og:image" content="{{ url('/og/penny-share.png?v=' . filemtime(public_path('og/penny-share.png'))) }}"/>
     <meta name="twitter:card" content="summary_large_image"/>
-    <meta name="twitter:title" content="Best AI Budgeting App | Penny"/>
+    <meta name="twitter:title" content="Best AI Budgeting App"/>
     <meta name="twitter:description" content="See how Penny combines AI budgeting insights, statement scanning, and privacy-first control without complexity."/>
     <meta name="twitter:image" content="{{ url('/og/penny-share.png?v=' . filemtime(public_path('og/penny-share.png'))) }}"/>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>

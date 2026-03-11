@@ -254,6 +254,19 @@ Route::get('/', function () {
 });
 
 Route::view('/app', 'app');
+Route::get('/pwa-version.js', function () {
+    $version = (string) config('pwa.app_version');
+    $payload = "(function initPennyVersion(globalScope) {\n"
+        ."    const APP_VERSION = '".addslashes($version)."';\n"
+        ."    globalScope.__PENNY_APP_VERSION__ = APP_VERSION;\n"
+        ."})(typeof self !== 'undefined' ? self : window);\n";
+
+    return response($payload, 200, [
+        'Content-Type' => 'application/javascript; charset=UTF-8',
+        'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma' => 'no-cache',
+    ]);
+});
 
 Route::view('/privacy', 'legal');
 Route::view('/terms', 'legal');

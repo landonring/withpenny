@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>How to Scan Bank Statements for Better Money Awareness | Penny</title>
+    <title>How to Scan Bank Statements for Better Money Awareness</title>
     <meta name="description" content="Learn how to scan bank statements for budgeting, review extracted transactions, and turn monthly data into practical money awareness."/>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
     <link rel="canonical" href="{{ url('/blog/scan-bank-statements-for-better-money-awareness') }}"/>

@@ -3,17 +3,17 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Private Budgeting App | Penny</title>
+    <title>Private Budgeting App</title>
     <meta name="description" content="A private budgeting app that doesn’t require bank linking. Stay in control with Penny."/>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
     <link rel="canonical" href="{{ url('/private-budgeting-app') }}"/>
-    <meta property="og:title" content="Private Budgeting App | Penny"/>
+    <meta property="og:title" content="Private Budgeting App"/>
     <meta property="og:description" content="Penny is a private budgeting app with manual control, optional uploads, and calm AI support."/>
     <meta property="og:type" content="website"/>
     <meta property="og:url" content="{{ url('/private-budgeting-app') }}"/>
     <meta property="og:image" content="{{ url('/og/penny-share.png?v=' . filemtime(public_path('og/penny-share.png'))) }}"/>
     <meta name="twitter:card" content="summary_large_image"/>
-    <meta name="twitter:title" content="Private Budgeting App | Penny"/>
+    <meta name="twitter:title" content="Private Budgeting App"/>
     <meta name="twitter:description" content="Budget with privacy and control. Penny works without forced bank linking and supports calm financial awareness."/>
     <meta name="twitter:image" content="{{ url('/og/penny-share.png?v=' . filemtime(public_path('og/penny-share.png'))) }}"/>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>

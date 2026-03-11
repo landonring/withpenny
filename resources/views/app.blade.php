@@ -16,11 +16,13 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/penny-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/icons/penny-512.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/penny-192.png" />
+    <meta name="penny-app-version" content="{{ config('pwa.app_version') }}" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
 <link href="/marketing.css?v={{ filemtime(public_path('marketing.css')) }}" rel="stylesheet"/>
 <link href="/marketing-overrides.css?v={{ filemtime(public_path('marketing-overrides.css')) }}" rel="stylesheet"/>
+    <script src="/pwa-version.js?v={{ config('pwa.app_version') }}"></script>
 
     @php
         $ua = strtolower(request()->userAgent() ?? '');
@@ -32,6 +34,7 @@
     @endphp
     <script>
         window.__PENNY_DESKTOP__ = {{ $isDesktop ? 'true' : 'false' }};
+        window.__PENNY_APP_VERSION__ = "{{ config('pwa.app_version') }}";
     </script>
 </head>
 <body>

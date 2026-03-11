@@ -2,6 +2,7 @@ import './bootstrap';
 import { createApp } from 'vue';
 import App from './components/App.vue';
 import router from './router';
+import { initAppUpdateManager } from './stores/appUpdate';
 
 const showBootError = (message) => {
     if (!message) return;
@@ -68,20 +69,6 @@ router.isReady().then(() => {
     document.body.classList.add('app-ready');
 });
 
-if ('serviceWorker' in navigator) {
-    const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-    window.addEventListener('load', () => {
-        if (isLocalhost) {
-            navigator.serviceWorker.getRegistrations().then((registrations) => {
-                registrations.forEach((registration) => registration.unregister());
-            });
-            if ('caches' in window) {
-                caches.keys().then((keys) => {
-                    keys.forEach((key) => caches.delete(key));
-                });
-            }
-            return;
-        }
-        navigator.serviceWorker.register('/sw.js');
-    });
-}
+window.addEventListener('load', () => {
+    initAppUpdateManager();
+});
