@@ -742,15 +742,30 @@ const showNotificationsEnabledConfirmation = async () => {
     }
 
     const title = 'Notifications turned on';
+    const tag = `penny-notifications-enabled-${Date.now()}`;
     const options = {
         body: 'You will now receive Penny notifications here.',
         icon: '/icons/penny-192.png',
         badge: '/icons/penny-192.png',
-        tag: 'penny-notifications-enabled',
+        tag,
+        renotify: true,
         data: {
             click_url: '/app/profile',
         },
     };
+
+    if (typeof Notification === 'function') {
+        try {
+            const notification = new Notification(title, options);
+            notification.onclick = () => {
+                window.focus();
+                window.location.href = '/app/profile';
+            };
+            return;
+        } catch (error) {
+            console.warn('Unable to show confirmation notification directly.', error);
+        }
+    }
 
     try {
         const registration = await ensureNotificationRegistration();
@@ -762,23 +777,12 @@ const showNotificationsEnabledConfirmation = async () => {
         console.warn('Unable to show confirmation notification with service worker.', error);
     }
 
-    if (typeof Notification === 'function') {
-        const notification = new Notification(title, options);
-        notification.onclick = () => {
-            window.focus();
-            window.location.href = '/app/profile';
-        };
-    }
+    console.warn('Confirmation notification could not be displayed.');
 };
 
-const connectNotifications = async () => {
-    const timezone = Intl?.DateTimeFormat?.().resolvedOptions?.().timeZone || null;
-    await axios.post('/api/notifications/enable', {
-        show_financial_data_in_notifications: false,
-        timezone,
-    });
+const getNotificationVapidPublicKey = async () => {
+    let vapidPublicKey = String(notificationVapidPublicKey.value || '').trim();
 
-    let vapidPublicKey = notificationVapidPublicKey.value;
     if (!vapidPublicKey) {
         const { data } = await axios.get('/api/notifications/settings');
         vapidPublicKey = String(data?.vapid_public_key || '').trim();
@@ -786,23 +790,45 @@ const connectNotifications = async () => {
     }
 
     if (!vapidPublicKey) {
-        throw new Error('Notification setup is unavailable right now.');
+        throw new Error('Push notifications are temporarily unavailable right now.');
     }
 
-    const registration = await ensureNotificationRegistration();
-    if (!registration?.pushManager) {
-        throw new Error('Push notifications are not supported on this browser/device.');
-    }
+    return vapidPublicKey;
+};
 
-    let subscription = await registration.pushManager.getSubscription();
-    if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-        });
-    }
+const connectNotifications = async () => {
+    const timezone = Intl?.DateTimeFormat?.().resolvedOptions?.().timeZone || null;
+    const vapidPublicKey = await getNotificationVapidPublicKey();
 
-    await axios.post('/api/notifications/subscribe', subscription.toJSON());
+    await axios.post('/api/notifications/enable', {
+        show_financial_data_in_notifications: false,
+        timezone,
+    });
+
+    try {
+        const registration = await ensureNotificationRegistration();
+        if (!registration?.pushManager) {
+            throw new Error('Push notifications are not supported on this browser/device.');
+        }
+
+        let subscription = await registration.pushManager.getSubscription();
+        if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+            });
+        }
+
+        await axios.post('/api/notifications/subscribe', subscription.toJSON());
+    } catch (error) {
+        try {
+            await axios.post('/api/notifications/disable');
+        } catch (disableError) {
+            console.warn('Unable to roll back notification enable after setup failure.', disableError);
+        }
+
+        throw error;
+    }
 };
 
 const disconnectNotifications = async () => {
