@@ -724,6 +724,41 @@ const ensureNotificationRegistration = async () => {
     return registration;
 };
 
+const showNotificationsEnabledConfirmation = async () => {
+    if (!notificationsSupported.value || notificationPermission.value !== 'granted') {
+        return;
+    }
+
+    const title = 'Notifications turned on';
+    const options = {
+        body: 'You will now receive Penny notifications here.',
+        icon: '/icons/penny-192.png',
+        badge: '/icons/penny-192.png',
+        tag: 'penny-notifications-enabled',
+        data: {
+            click_url: '/app/profile',
+        },
+    };
+
+    try {
+        const registration = await ensureNotificationRegistration();
+        if (registration?.showNotification) {
+            await registration.showNotification(title, options);
+            return;
+        }
+    } catch (error) {
+        console.warn('Unable to show confirmation notification with service worker.', error);
+    }
+
+    if (typeof Notification === 'function') {
+        const notification = new Notification(title, options);
+        notification.onclick = () => {
+            window.focus();
+            window.location.href = '/app/profile';
+        };
+    }
+};
+
 const connectNotifications = async () => {
     const timezone = Intl?.DateTimeFormat?.().resolvedOptions?.().timeZone || null;
     await axios.post('/api/notifications/enable', {
@@ -789,6 +824,7 @@ const handleEnableNotifications = async () => {
         await connectNotifications();
         notificationEnabled.value = true;
         notificationMessage.value = 'Notifications enabled.';
+        await showNotificationsEnabledConfirmation();
     } catch (error) {
         console.error('Notification setup failed.', error);
         notificationMessage.value = error?.response?.data?.message || error?.message || 'Unable to enable notifications right now.';
