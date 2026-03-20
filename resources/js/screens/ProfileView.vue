@@ -351,6 +351,15 @@
             <p v-if="dataMessage" class="muted">{{ dataMessage }}</p>
         </div>
 
+        <teleport to="body">
+            <transition name="onboarding-fade">
+                <div v-if="showNotificationConfirmationToast" class="onboarding-complete-toast" role="status" aria-live="polite">
+                    <span class="onboarding-checkmark" aria-hidden="true">✓</span>
+                    <span>Notifications turned on.</span>
+                </div>
+            </transition>
+        </teleport>
+
     </section>
 </template>
 
@@ -404,6 +413,9 @@ const notificationMessage = ref('');
 const notificationPermission = ref('default');
 const notificationEnabled = ref(false);
 const notificationVapidPublicKey = ref('');
+const showNotificationConfirmationToast = ref(false);
+
+let notificationConfirmationTimer = null;
 
 const planLabels = {
     starter: 'Starter',
@@ -780,6 +792,19 @@ const showNotificationsEnabledConfirmation = async () => {
     console.warn('Confirmation notification could not be displayed.');
 };
 
+const triggerNotificationConfirmationToast = () => {
+    showNotificationConfirmationToast.value = true;
+
+    if (notificationConfirmationTimer) {
+        window.clearTimeout(notificationConfirmationTimer);
+    }
+
+    notificationConfirmationTimer = window.setTimeout(() => {
+        showNotificationConfirmationToast.value = false;
+        notificationConfirmationTimer = null;
+    }, 4200);
+};
+
 const getNotificationVapidPublicKey = async () => {
     let vapidPublicKey = String(notificationVapidPublicKey.value || '').trim();
 
@@ -882,6 +907,7 @@ const handleEnableNotifications = async () => {
         await connectNotifications();
         notificationEnabled.value = true;
         notificationMessage.value = 'Notifications enabled.';
+        triggerNotificationConfirmationToast();
         await showNotificationsEnabledConfirmation();
     } catch (error) {
         console.error('Notification setup failed.', error);
@@ -1053,6 +1079,10 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    if (notificationConfirmationTimer) {
+        window.clearTimeout(notificationConfirmationTimer);
+        notificationConfirmationTimer = null;
+    }
     if (typeof window !== 'undefined') {
         window.removeEventListener('focus', loadBilling);
         window.removeEventListener('focus', loadNotificationSettings);
