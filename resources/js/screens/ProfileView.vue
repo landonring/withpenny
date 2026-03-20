@@ -183,7 +183,17 @@
                         {{ notificationBusy ? 'Updating…' : notificationActionLabel }}
                     </button>
                 </div>
-                <p v-else class="muted">Notifications are enabled.</p>
+                <div v-else class="journey-actions">
+                    <p class="muted">Notifications are enabled.</p>
+                    <button
+                        class="ghost-button"
+                        type="button"
+                        :disabled="notificationBusy"
+                        @click="handleDisableNotifications"
+                    >
+                        {{ notificationBusy ? 'Updating…' : 'Turn off notifications' }}
+                    </button>
+                </div>
                 <p v-if="notificationMessage" class="muted">{{ notificationMessage }}</p>
             </div>
         </div>
@@ -702,7 +712,7 @@ const urlBase64ToUint8Array = (value) => {
     return output;
 };
 
-const ensureNotificationRegistration = async () => {
+const getNotificationRegistration = async ({ registerIfMissing = false } = {}) => {
     if (!notificationsSupported.value) {
         throw new Error('Push notifications are not supported on this browser/device.');
     }
@@ -711,7 +721,7 @@ const ensureNotificationRegistration = async () => {
     if (!registration) {
         registration = await navigator.serviceWorker.getRegistration();
     }
-    if (!registration) {
+    if (!registration && registerIfMissing) {
         registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
     }
 
@@ -723,6 +733,8 @@ const ensureNotificationRegistration = async () => {
 
     return registration;
 };
+
+const ensureNotificationRegistration = async () => getNotificationRegistration({ registerIfMissing: true });
 
 const showNotificationsEnabledConfirmation = async () => {
     if (!notificationsSupported.value || notificationPermission.value !== 'granted') {
@@ -793,6 +805,26 @@ const connectNotifications = async () => {
     await axios.post('/api/notifications/subscribe', subscription.toJSON());
 };
 
+const disconnectNotifications = async () => {
+    if (notificationsSupported.value) {
+        try {
+            const registration = await getNotificationRegistration();
+            const subscription = await registration?.pushManager?.getSubscription?.();
+
+            if (subscription) {
+                await axios.post('/api/notifications/unsubscribe', {
+                    endpoint: subscription.endpoint,
+                });
+                await subscription.unsubscribe();
+            }
+        } catch (error) {
+            console.warn('Unable to fully disconnect browser notifications.', error);
+        }
+    }
+
+    await axios.post('/api/notifications/disable');
+};
+
 const handleEnableNotifications = async () => {
     notificationBusy.value = true;
     notificationMessage.value = '';
@@ -828,6 +860,23 @@ const handleEnableNotifications = async () => {
     } catch (error) {
         console.error('Notification setup failed.', error);
         notificationMessage.value = error?.response?.data?.message || error?.message || 'Unable to enable notifications right now.';
+    } finally {
+        notificationBusy.value = false;
+        await loadNotificationSettings();
+    }
+};
+
+const handleDisableNotifications = async () => {
+    notificationBusy.value = true;
+    notificationMessage.value = '';
+
+    try {
+        await disconnectNotifications();
+        notificationEnabled.value = false;
+        notificationMessage.value = 'Notifications turned off.';
+    } catch (error) {
+        console.error('Notification disable failed.', error);
+        notificationMessage.value = error?.response?.data?.message || error?.message || 'Unable to turn off notifications right now.';
     } finally {
         notificationBusy.value = false;
         await loadNotificationSettings();
