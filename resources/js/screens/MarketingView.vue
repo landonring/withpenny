@@ -136,7 +136,7 @@
                     <ul class="pricing-list">
                         <li>All features visible</li>
                         <li>5 receipt scans / month</li>
-                        <li>Bank statements currently unavailable. Available next update.</li>
+                        <li>bank statmants unavailible will be availible in next update</li>
                         <li>2 weekly + 1 monthly insights / month</li>
                         <li>10 chat messages / month</li>
                     </ul>
@@ -150,7 +150,7 @@
                     <p class="section-copy">A little guidance goes a long way.</p>
                     <ul class="pricing-list">
                         <li>20 receipt scans / month</li>
-                        <li>Bank statements currently unavailable. Available next update.</li>
+                        <li>bank statmants unavailible will be availible in next update</li>
                         <li>10 daily, unlimited weekly, 4 monthly, 1 yearly insights</li>
                         <li>25 chat messages / month</li>
                     </ul>
@@ -169,7 +169,7 @@
                     <p class="section-copy">Full support, zero pressure.</p>
                     <ul class="pricing-list">
                         <li>Unlimited receipt scanning</li>
-                        <li>Bank statements currently unavailable. Available next update.</li>
+                        <li>bank statmants unavailible will be availible in next update</li>
                         <li>Unlimited insights</li>
                         <li>Unlimited AI chat</li>
                         <li>All Pro features</li>

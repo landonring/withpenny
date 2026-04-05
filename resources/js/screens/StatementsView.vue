@@ -3,13 +3,13 @@
         <div class="screen-header">
             <div>
                 <p class="eyebrow">Bank statements</p>
-                <h1 class="screen-title">Currently unavailable</h1>
+                <h1 class="screen-title">bank statmants unavailible</h1>
             </div>
-            <div class="accent-chip">Unavailable</div>
+            <div class="accent-chip">Next update</div>
         </div>
 
         <div class="card">
-            <p class="card-sub">Bank statements currently unavailable. Will be available next update.</p>
+            <p class="card-sub">bank statmants unavailible will be availible in next update</p>
             <router-link class="ghost-button" :to="{ name: 'home' }">
                 Back home
             </router-link>

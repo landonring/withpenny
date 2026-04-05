@@ -105,7 +105,7 @@
             <div class="card account-card statement-card">
                 <div>
                     <div class="card-title">Bank statements</div>
-                    <p class="card-sub">Bank statements currently unavailable. Will be available next update.</p>
+                    <p class="card-sub">bank statmants unavailible will be availible in next update</p>
                 </div>
             </div>
 
