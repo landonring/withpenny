@@ -151,7 +151,7 @@ const homeTourSteps = [
         target: 'home-bottom-nav',
         placement: 'center-above-nav',
         title: 'Explore Penny.',
-        body: 'Scan statements, generate insights, chat, or plan savings. Everything flows from here.',
+        body: 'Scan receipts, generate insights, chat, or plan savings. Everything flows from here.',
         allowInteraction: true,
     },
 ];
@@ -182,7 +182,7 @@ const currentStep = computed(() => {
             nextDisabled: false,
             canBack: homeStepIndex.value > 0,
             progressNumber: homeStepIndex.value + 1,
-            totalSteps: 12,
+            totalSteps: 8,
         };
     }
 
@@ -296,8 +296,8 @@ const currentStep = computed(() => {
                 actionLabel: 'Continue',
                 nextDisabled: false,
                 canBack: false,
-                progressNumber: 10,
-                totalSteps: 12,
+                progressNumber: 6,
+                totalSteps: 8,
                 allowInteraction: true,
             };
         }
@@ -312,8 +312,8 @@ const currentStep = computed(() => {
             actionLabel: 'Next',
             nextDisabled: true,
             canBack: false,
-            progressNumber: 10,
-            totalSteps: 12,
+            progressNumber: 6,
+            totalSteps: 8,
             allowInteraction: true,
         };
     }
@@ -329,8 +329,8 @@ const currentStep = computed(() => {
                 actionLabel: 'Done',
                 nextDisabled: false,
                 canBack: false,
-                progressNumber: 12,
-                totalSteps: 12,
+                progressNumber: 8,
+                totalSteps: 8,
                 allowInteraction: false,
             };
         }
@@ -346,8 +346,8 @@ const currentStep = computed(() => {
             actionLabel: 'Finish',
             nextDisabled: !savingsAdjusted.value,
             canBack: true,
-            progressNumber: 12,
-            totalSteps: 12,
+            progressNumber: 8,
+            totalSteps: 8,
             allowInteraction: false,
             showSavingsSlider: true,
         };
@@ -364,8 +364,8 @@ const currentStep = computed(() => {
                 actionLabel: 'Continue',
                 nextDisabled: false,
                 canBack: false,
-                progressNumber: 11,
-                totalSteps: 12,
+                progressNumber: 7,
+                totalSteps: 8,
                 allowInteraction: true,
             };
         }
@@ -380,8 +380,8 @@ const currentStep = computed(() => {
             actionLabel: 'Next',
             nextDisabled: true,
             canBack: false,
-            progressNumber: 11,
-            totalSteps: 12,
+            progressNumber: 7,
+            totalSteps: 8,
             allowInteraction: true,
         };
     }

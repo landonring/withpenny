@@ -65,7 +65,7 @@
                 <ul class="pricing-list">
                     <li>Access to every feature in Penny</li>
                     <li>Receipt scanning: 5 scans / month (basic extraction)</li>
-                    <li>Bank statements: 2 uploads / month, up to 30 days each</li>
+                    <li>Bank statements currently unavailable. Available next update.</li>
                     <li>Insights: 2 weekly + 1 monthly per month</li>
                     <li>Chat: 10 messages / month (basic context)</li>
                     <li>Manual tracking and offline support</li>
@@ -83,7 +83,7 @@
                 <ul class="pricing-list">
                     <li>Everything in Starter</li>
                     <li>Receipt scanning: 20 scans / month + editable categories</li>
-                    <li>Bank statements: 10 uploads / month, up to 6 months each</li>
+                    <li>Bank statements currently unavailable. Available next update.</li>
                     <li>Insights: 10 daily / month</li>
                     <li>Insights: unlimited weekly check-ins</li>
                     <li>Insights: 4 monthly overviews / month</li>
@@ -110,7 +110,7 @@
                 <ul class="pricing-list">
                     <li>Everything in Pro</li>
                     <li>Unlimited receipt scanning</li>
-                    <li>Unlimited bank statement uploads</li>
+                    <li>Bank statements currently unavailable. Available next update.</li>
                     <li>Unlimited daily / weekly / monthly / yearly insights</li>
                     <li>Unlimited AI chat</li>
                     <li>No counters, ceilings, or limit reminders</li>
@@ -157,9 +157,9 @@
                 </div>
                 <div class="compare-row">
                     <span>Bank statements</span>
-                    <span>2 / month, 30-day window</span>
-                    <span>10 / month, 6-month window</span>
-                    <span>Unlimited</span>
+                    <span>Unavailable</span>
+                    <span>Unavailable</span>
+                    <span>Unavailable</span>
                 </div>
                 <div class="compare-row">
                     <span>Insights (daily)</span>

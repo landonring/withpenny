@@ -9,9 +9,6 @@ import SavingsCreateView from '../screens/SavingsCreateView.vue';
 import SavingsAddView from '../screens/SavingsAddView.vue';
 import SavingsEditView from '../screens/SavingsEditView.vue';
 import StatementsView from '../screens/StatementsView.vue';
-import StatementScanView from '../screens/StatementScanView.vue';
-import StatementProcessingView from '../screens/StatementProcessingView.vue';
-import StatementReviewView from '../screens/StatementReviewView.vue';
 import TransactionsView from '../screens/TransactionsView.vue';
 import AddSpendingView from '../screens/AddSpendingView.vue';
 import EditTransactionView from '../screens/EditTransactionView.vue';
@@ -44,9 +41,9 @@ const routes = [
     { path: '/savings/:id/add', name: 'savings-add', component: SavingsAddView, meta: { requiresAuth: true, scrollable: true } },
     { path: '/savings/:id/edit', name: 'savings-edit', component: SavingsEditView, meta: { requiresAuth: true, scrollable: true } },
     { path: '/statements', name: 'statements', component: StatementsView, meta: { requiresAuth: true } },
-    { path: '/statements/scan', name: 'statements-scan', component: StatementScanView, meta: { requiresAuth: true } },
-    { path: '/statements/:id/processing', name: 'statements-processing', component: StatementProcessingView, meta: { requiresAuth: true, scrollable: true } },
-    { path: '/statements/:id/review', name: 'statements-review', component: StatementReviewView, meta: { requiresAuth: true, scrollable: true } },
+    { path: '/statements/scan', name: 'statements-scan', component: StatementsView, meta: { requiresAuth: true } },
+    { path: '/statements/:id/processing', name: 'statements-processing', component: StatementsView, meta: { requiresAuth: true } },
+    { path: '/statements/:id/review', name: 'statements-review', component: StatementsView, meta: { requiresAuth: true } },
     { path: '/transactions', name: 'transactions', component: TransactionsView, meta: { requiresAuth: true } },
     { path: '/transactions/new', name: 'transactions-new', component: AddSpendingView, meta: { requiresAuth: true } },
     { path: '/transactions/:id/edit', name: 'transactions-edit', component: EditTransactionView, meta: { requiresAuth: true } },

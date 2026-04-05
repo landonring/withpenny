@@ -69,6 +69,15 @@ class OnboardingService
             return $this->status($user, $request);
         }
 
+        if (in_array((int) $user->onboarding_step, [1, 2], true)) {
+            $user->onboarding_step = 3;
+            $user->onboarding_started_at = now();
+            $user->save();
+            $request->session()->put(self::SESSION_LAST_ACTIVE, now()->timestamp);
+
+            return $this->status($user, $request);
+        }
+
         if ((int) $user->onboarding_step === 1 && ! $this->importIdFromSession($request)) {
             return $this->status($user, $request);
         }
@@ -77,7 +86,10 @@ class OnboardingService
             return $this->status($user, $request);
         }
 
-        $nextStep = min(self::LAST_STEP, (int) $user->onboarding_step + 1);
+        $currentStep = (int) $user->onboarding_step;
+        $nextStep = $currentStep === 0
+            ? 3
+            : min(self::LAST_STEP, $currentStep + 1);
         if ($nextStep >= self::LAST_STEP) {
             $this->finish($user, $request);
             return $this->status($user, $request);
@@ -131,8 +143,8 @@ class OnboardingService
 
     public function status(User $user, Request $request): array
     {
-        if ($user->onboarding_mode && (int) $user->onboarding_step === 2 && ! $this->importIdFromSession($request)) {
-            $user->onboarding_step = 1;
+        if ($user->onboarding_mode && in_array((int) $user->onboarding_step, [1, 2], true)) {
+            $user->onboarding_step = 3;
             $user->onboarding_started_at = now();
             $user->save();
         }
@@ -154,8 +166,8 @@ class OnboardingService
     {
         return match ($step) {
             0 => '/app',
-            1 => '/statements/scan',
-            2 => $this->reviewPathFromSession($request) ?? '/statements/scan',
+            1 => '/insights',
+            2 => '/insights',
             3 => '/insights',
             4 => '/chat',
             default => '/app',

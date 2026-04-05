@@ -102,31 +102,10 @@
                 </router-link>
             </div>
 
-                <div class="card account-card statement-card">
-                    <div>
-                        <div class="card-title">Bank statements</div>
-                        <p class="card-sub">Upload a statement if you want to save time.</p>
-                    </div>
-                <button class="home-button" type="button" :disabled="statementUploading || statementLimitReached" @click="triggerStatementUpload">
-                    Upload
-                </button>
-                <input
-                    ref="statementInput"
-                    class="sr-only statement-input"
-                    type="file"
-                    accept=".pdf,.csv,.ofx,.qfx,application/pdf,text/csv"
-                    multiple
-                    :disabled="statementUploading"
-                    @change="handleStatementUpload"
-                />
-                <div v-if="hasStatementStatus" class="statement-status">
-                    <p v-if="statementUploading" class="muted">Preparing your statement…</p>
-                    <p v-if="statementRemainingText" class="muted">{{ statementRemainingText }}</p>
-                    <p v-if="statementLimitReached" class="form-error">You've reached your monthly limit.</p>
-                    <button v-if="statementLimitReached" class="ghost-button" type="button" @click="openStatementUpgrade">
-                        Upgrade
-                    </button>
-                    <p v-if="statementError" class="form-error">{{ statementError }}</p>
+            <div class="card account-card statement-card">
+                <div>
+                    <div class="card-title">Bank statements</div>
+                    <p class="card-sub">Bank statements currently unavailable. Will be available next update.</p>
                 </div>
             </div>
 
@@ -248,16 +227,12 @@ import {
     getMonthKey,
     deleteTransaction,
 } from '../stores/transactions';
-import { scanStatementImages } from '../stores/statements';
-import { ensureUsageStatus, usageState } from '../stores/usage';
-import { showUpgrade } from '../stores/upgrade';
 
 const router = useRouter();
 
 onMounted(() => {
     initTransactions();
     initBiometrics();
-    ensureUsageStatus();
 });
 
 const displayName = computed(() => {
@@ -306,23 +281,6 @@ const duplicateGroups = computed(() => {
 const biometricMessage = ref('');
 const biometricBusy = ref(false);
 const showBiometricPrompt = ref(false);
-const statementError = ref('');
-const statementUploading = ref(false);
-const statementInput = ref(null);
-const statementUsage = computed(() => usageState.data?.features?.statement_uploads || null);
-const statementLimitReached = computed(() => !!statementUsage.value?.exhausted);
-const statementRemainingText = computed(() => {
-    if (usageState.plan === 'premium') return '';
-    if (!statementUsage.value || statementUsage.value.limit === null) return '';
-    return `${statementUsage.value.remaining} of ${statementUsage.value.limit} uploads remaining this month`;
-});
-const hasStatementStatus = computed(() =>
-    statementUploading.value
-    || !!statementRemainingText.value
-    || statementLimitReached.value
-    || !!statementError.value
-);
-
 const initBiometrics = async () => {
     await checkBiometricSupport();
     if (!biometricsState.supported) {
@@ -433,57 +391,6 @@ const openTransaction = (id) => {
     router.push({ name: 'transactions-edit', params: { id } });
 };
 
-const handleStatementUpload = async (event) => {
-    const files = Array.from(event.target.files || []);
-    if (!files.length) return;
-    if (statementLimitReached.value) return;
-
-    statementError.value = '';
-    statementUploading.value = true;
-
-    try {
-        const allowedExtensions = ['pdf', 'csv', 'ofx', 'qfx'];
-        const allowedMimes = ['application/pdf', 'text/csv', 'application/csv', 'application/vnd.ms-excel'];
-        const allSupported = files.every((file) => {
-            const mime = String(file.type || '').toLowerCase();
-            const name = String(file.name || '').toLowerCase();
-            const extension = name.includes('.') ? name.split('.').pop() : '';
-            return allowedMimes.includes(mime) || allowedExtensions.includes(extension);
-        });
-        if (!allSupported) {
-            throw new Error('Upload PDF, CSV, OFX, or QFX statement files.');
-        }
-
-        const importData = await scanStatementImages(files);
-        await ensureUsageStatus(true);
-        const nextRoute = ['queued', 'processing'].includes(String(importData?.processing_status))
-            ? 'statements-processing'
-            : 'statements-review';
-        router.push({ name: nextRoute, params: { id: importData.id } });
-    } catch (err) {
-        const status = err?.response?.status;
-        const data = err?.response?.data || {};
-        const isDateRangeRejection = status === 422
-            && data?.feature === 'bank statement uploads'
-            && (data?.reason === 'statement_date_span_exceeded' || /date range/i.test(String(data?.message || '')));
-
-        if (isDateRangeRejection) {
-            statementError.value = String(data?.message || 'This statement exceeds the date range included in your current plan.');
-            return;
-        }
-
-        statementError.value = err?.response?.data?.message || err?.message || 'Unable to upload right now.';
-        if (status === 429) {
-            await ensureUsageStatus(true);
-        }
-    } finally {
-        statementUploading.value = false;
-        if (statementInput.value) {
-            statementInput.value.value = '';
-        }
-    }
-};
-
 const removeDuplicateGroup = async (group) => {
     const ids = group?.ids || [];
     if (ids.length < 2) return;
@@ -495,17 +402,6 @@ const removeDuplicateGroup = async (group) => {
     for (const id of ids.slice(1)) {
         await deleteTransaction(id);
     }
-};
-
-const triggerStatementUpload = async () => {
-    if (statementLimitReached.value) return;
-    if (statementInput.value) {
-        statementInput.value.click();
-    }
-};
-
-const openStatementUpgrade = () => {
-    showUpgrade(usageState.plan === 'starter' ? 'pro' : 'premium', 'bank statement uploads');
 };
 
 const formatCurrency = (value) => {

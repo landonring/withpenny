@@ -112,7 +112,7 @@ class OnboardingSandboxTest extends TestCase
         ]);
 
         $user->refresh();
-        $this->assertSame(2, (int) $user->onboarding_step);
+        $this->assertSame(3, (int) $user->onboarding_step);
     }
 
     public function test_onboarding_usage_is_unlimited_even_with_existing_events(): void

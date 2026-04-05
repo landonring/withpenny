@@ -85,18 +85,11 @@ export function routeAllowedDuringOnboarding(path) {
 
     if (onboardingState.step === 0) {
         return clean === '/app'
-            || clean === '/statements/scan'
             || clean === '/insights'
             || clean === '/chat'
             || clean === '/savings';
     }
-    if (onboardingState.step === 1) return clean === '/statements/scan';
-    if (onboardingState.step === 2) {
-        return /^\/statements\/\d+\/review$/.test(clean)
-            || /^\/statements\/\d+\/processing$/.test(clean)
-            || clean === '/statements/scan';
-    }
-    if (onboardingState.step === 3) return clean === '/insights';
+    if (onboardingState.step === 1 || onboardingState.step === 2 || onboardingState.step === 3) return clean === '/insights';
     if (onboardingState.step === 4) return clean === '/chat' || clean === '/savings';
 
     return clean === '/app';
