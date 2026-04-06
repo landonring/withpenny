@@ -104,6 +104,35 @@
 <div class="w-16 h-0.5 bg-accent-sage mx-auto rounded-full opacity-60"></div>
 </div>
 </section>
+<section class="w-full py-24 px-6 border-t border-border-soft/50" id="problem">
+<div class="max-w-5xl mx-auto">
+<div class="max-w-3xl">
+<h2 class="text-4xl md:text-5xl font-serif font-medium text-text-heading leading-tight text-balance mb-6">But what problem does Penny solve?</h2>
+<p class="text-base text-text-body leading-relaxed">Most people do not stick with budgeting apps because they feel overwhelming and time consuming. Tracking everything by hand is a lot to keep up with, and most people do not want that kind of daily work.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-0 mt-12 overflow-hidden rounded-xl border border-border-soft">
+<div class="bg-white p-8 md:border-r md:border-border-soft">
+<h3 class="text-xl font-serif text-text-heading mb-8">Other budgeting apps</h3>
+<div class="space-y-0">
+<p class="py-4 text-text-heading border-t border-border-soft/70">Manual setup</p>
+<p class="py-4 text-text-heading border-t border-border-soft/70">Time-consuming</p>
+<p class="py-4 text-text-heading border-t border-border-soft/70">Requires daily tracking</p>
+<p class="py-4 text-text-heading border-t border-border-soft/70">Feels overwhelming</p>
+<p class="py-4 text-text-heading border-t border-border-soft/70">Just shows numbers</p>
+</div>
+</div>
+<div class="bg-card p-8 shadow-sm">
+<h3 class="text-xl font-serif text-text-heading mb-8">Penny</h3>
+<div class="space-y-0">
+<p class="py-4 text-text-heading border-t border-accent-sage/40">Upload and done</p>
+<p class="py-4 text-text-heading border-t border-accent-sage/40">Takes seconds</p>
+<p class="py-4 text-text-heading border-t border-accent-sage/40">Works without consistency</p>
+<p class="py-4 text-text-heading border-t border-accent-sage/40">Feels simple and calm</p>
+<p class="py-4 text-text-heading border-t border-accent-sage/40">Shows real understanding</p>
+</div>
+</div>
+</div>
+</section>
 <section class="w-full py-24 px-6 border-t border-border-soft/50" id="resources">
 <div class="max-w-6xl mx-auto">
 <div class="text-center mb-16">

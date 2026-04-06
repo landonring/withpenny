@@ -4,7 +4,7 @@
             <div>
                 <p class="eyebrow">Bank statements</p>
         <h1 class="screen-title">Scan statements</h1>
-        <p class="card-sub">Capture pages across multiple months, then review everything before saving.</p>
+        <p class="card-sub">Upload a PDF bank statement. Penny will analyze it in the background and bring you into review when it's ready.</p>
                 <p v-if="statementRemainingText" class="muted">{{ statementRemainingText }}</p>
                 <p v-if="statementLimitReached" class="form-error">You've reached your monthly limit.</p>
                 <button v-if="statementLimitReached" class="ghost-button" type="button" @click="openUpgrade">
@@ -19,7 +19,7 @@
                 <input
                     ref="libraryInput"
                     type="file"
-                    accept=".pdf,.csv,.ofx,.qfx,application/pdf,text/csv"
+                    accept=".pdf,application/pdf"
                     :disabled="pages.length >= maxPages || statementLimitReached"
                     multiple
                     @change="handleLibrary"
@@ -90,8 +90,8 @@ onMounted(() => {
 });
 
 const handleLibrary = (event) => {
-    const allowedExtensions = ['pdf', 'csv', 'ofx', 'qfx'];
-    const allowedMimes = ['application/pdf', 'text/csv', 'application/csv', 'application/vnd.ms-excel'];
+    const allowedExtensions = ['pdf'];
+    const allowedMimes = ['application/pdf'];
     const files = Array.from(event.target.files || []).filter((file) => {
         const mime = String(file.type || '').toLowerCase();
         const name = String(file.name || '').toLowerCase();
@@ -99,7 +99,7 @@ const handleLibrary = (event) => {
         return allowedMimes.includes(mime) || allowedExtensions.includes(ext);
     });
     if (!files.length) {
-        error.value = 'Upload PDF, CSV, OFX, or QFX statement files.';
+        error.value = 'Upload a PDF bank statement.';
         event.target.value = '';
         return;
     }

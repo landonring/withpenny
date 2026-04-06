@@ -83,7 +83,7 @@ class OnboardingSandboxTest extends TestCase
             ->assertJsonPath('status', 'sandbox_confirmed')
             ->assertJsonPath('onboarding.step', 3);
 
-        $this->assertDatabaseMissing('bank_statement_imports', ['id' => $import->id]);
+        $this->assertDatabaseMissing('bank_statement_uploads', ['id' => $import->id]);
         $this->assertDatabaseCount('transactions', 0);
         $this->assertDatabaseCount('analytics_events', 0);
     }
@@ -105,7 +105,7 @@ class OnboardingSandboxTest extends TestCase
 
         $importId = (int) $response->json('import.id');
 
-        $this->assertDatabaseHas('bank_statement_imports', [
+        $this->assertDatabaseHas('bank_statement_uploads', [
             'id' => $importId,
             'user_id' => $user->id,
             'source' => 'onboarding_demo',

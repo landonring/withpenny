@@ -14,6 +14,7 @@ class Transaction extends Model
 
     protected $fillable = [
         'user_id',
+        'upload_id',
         'receipt_id',
         'amount',
         'category',
@@ -35,5 +36,10 @@ class Transaction extends Model
     public function receipt(): BelongsTo
     {
         return $this->belongsTo(Receipt::class);
+    }
+
+    public function upload(): BelongsTo
+    {
+        return $this->belongsTo(BankStatementImport::class, 'upload_id');
     }
 }

@@ -98,10 +98,11 @@ class TransactionNormalizationService
      * @param array<string, mixed> $normalized
      * @return array<string, mixed>
      */
-    public function toTransactionInsert(array $normalized, int $userId, ?int $receiptId = null): array
+    public function toTransactionInsert(array $normalized, int $userId, ?int $receiptId = null, ?int $uploadId = null): array
     {
         return [
             'user_id' => $userId,
+            'upload_id' => $uploadId,
             'receipt_id' => $receiptId,
             'amount' => (float) ($normalized['amount'] ?? 0),
             'category' => (string) ($normalized['category'] ?? 'Misc'),
@@ -134,7 +135,15 @@ class TransactionNormalizationService
     {
         $rowConfidence = (float) ($row['confidence_score'] ?? 0);
         if ($rowConfidence > 0) {
+            if ($rowConfidence <= 1) {
+                $rowConfidence *= 100;
+            }
+
             return round(max(0, min(100, $rowConfidence)), 2);
+        }
+
+        if ($uploadConfidence <= 1) {
+            $uploadConfidence *= 100;
         }
 
         return round(max(0, min(100, $uploadConfidence)), 2);

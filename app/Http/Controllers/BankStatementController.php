@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\ProcessBankStatementImportJob;
+use App\Jobs\ProcessBankStatementJob;
 use App\Models\BankStatementImport;
 use App\Models\Transaction;
 use App\Services\DemoDataService;
@@ -11,6 +11,7 @@ use App\Services\Ingestion\TransactionNormalizationService;
 use App\Services\OnboardingService;
 use App\Services\PlanUsageService;
 use App\Services\Statements\StatementParser;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -226,6 +227,13 @@ class BankStatementController extends Controller
                 ], 409);
             }
 
+            $meta = is_array($lockedImport->meta) ? $lockedImport->meta : [];
+            if (! empty($meta['confirmed_at'])) {
+                return response()->json([
+                    'status' => 'already_imported',
+                ], 409);
+            }
+
             $toCreate = [];
             $dates = array_map(fn ($item) => $item['date'] ?? null, $validated['transactions']);
             $dates = array_values(array_filter($dates));
@@ -274,7 +282,12 @@ class BankStatementController extends Controller
                     'type' => $type,
                 ];
 
-                $toCreate[] = $this->normalizer->toTransactionInsert($normalized, $request->user()->id);
+                $toCreate[] = $this->normalizer->toTransactionInsert(
+                    $normalized,
+                    $request->user()->id,
+                    null,
+                    $lockedImport->id,
+                );
             }
 
             if (! empty($toCreate)) {
@@ -282,7 +295,11 @@ class BankStatementController extends Controller
                 analytics_track('statement_uploaded', ['mode' => 'confirm']);
             }
 
-            $lockedImport->delete();
+            $meta['confirmed_at'] = now()->toIso8601String();
+            $meta['confirmed_transaction_count'] = count($toCreate);
+            $lockedImport->update([
+                'meta' => $meta,
+            ]);
 
             return response()->json([
                 'status' => 'imported',
@@ -359,7 +376,13 @@ class BankStatementController extends Controller
     {
         $pendingFiles = [];
         foreach ($files as $file) {
-            $storedPath = $file->store('tmp/statement-ingest');
+            $extension = strtolower((string) $file->getClientOriginalExtension());
+            $name = Str::slug(pathinfo((string) $file->getClientOriginalName(), PATHINFO_FILENAME));
+            $name = $name !== '' ? $name : 'statement';
+            $storedPath = $file->storeAs(
+                'statements/'.$request->user()->id.'/'.Str::uuid(),
+                $name.'.'.($extension !== '' ? $extension : 'pdf')
+            );
             $pendingFiles[] = [
                 'name' => (string) $file->getClientOriginalName(),
                 'mime' => (string) $file->getClientMimeType(),
@@ -393,21 +416,25 @@ class BankStatementController extends Controller
             'masked_account' => null,
             'source' => 'pending',
             'file_name' => $firstName,
+            'file_path' => (string) ($pendingFiles[0]['storage_path'] ?? ''),
             'file_format' => $fileFormat,
-            'processing_status' => 'processing',
-            'processing_started_at' => now(),
+            'status' => 'pending',
+            'processing_status' => 'pending',
+            'processing_started_at' => null,
             'extraction_confidence' => null,
             'balance_mismatch' => false,
             'extraction_method' => null,
-            'confidence_score' => null,
+            'confidence_score' => 0,
+            'ai_fallback_used' => false,
             'flagged_rows' => 0,
             'total_rows' => 0,
+            'detected_transactions' => 0,
         ]);
 
         if ($this->shouldProcessInline()) {
-            ProcessBankStatementImportJob::dispatchSync($import->id, $pendingFiles);
+            ProcessBankStatementJob::dispatchSync($import->id);
         } else {
-            ProcessBankStatementImportJob::dispatch($import->id, $pendingFiles);
+            ProcessBankStatementJob::dispatch($import->id);
         }
 
         return $import->refresh();
@@ -427,11 +454,10 @@ class BankStatementController extends Controller
         }
 
         $status = (string) $import->processing_status;
-        if ($status !== 'queued') {
+        if (! in_array($status, ['pending', 'queued', 'processing'], true)) {
             if (
                 $status !== 'processing'
-                || ! $import->processing_started_at
-                || $import->processing_started_at->gt(now()->subMinutes(3))
+                || ($import->processing_started_at && $import->processing_started_at->gt(now()->subMinutes(3)))
             ) {
                 return $import;
             }
@@ -461,7 +487,7 @@ class BankStatementController extends Controller
         }
 
         if (! empty($pendingFiles)) {
-            ProcessBankStatementImportJob::dispatchSync($import->id, $pendingFiles);
+            ProcessBankStatementJob::dispatchSync($import->id);
             return $import->fresh() ?? $import;
         }
 
@@ -487,7 +513,7 @@ class BankStatementController extends Controller
             return $import;
         }
 
-        ProcessBankStatementImportJob::dispatchSync($import->id, $fallbackFiles);
+        ProcessBankStatementJob::dispatchSync($import->id);
 
         return $import->fresh() ?? $import;
     }
@@ -514,10 +540,14 @@ class BankStatementController extends Controller
             'meta' => $import->meta,
             'source' => $import->source,
             'file_name' => $import->file_name,
+            'file_path' => $import->file_path,
             'file_format' => $import->file_format,
+            'status' => $import->status,
             'processing_status' => $import->processing_status,
             'processing_error' => $import->processing_error,
             'confidence_score' => $import->confidence_score,
+            'transaction_count' => count($import->transactions ?? []),
+            'ai_fallback_used' => (bool) $import->ai_fallback_used,
             'flagged_rows' => (int) $import->flagged_rows,
             'total_rows' => (int) $import->total_rows,
             'extraction_confidence' => $import->extraction_confidence,
@@ -537,16 +567,20 @@ class BankStatementController extends Controller
             'masked_account' => 'Demo account',
             'source' => 'onboarding_demo',
             'file_name' => 'demo-statement.pdf',
+            'file_path' => null,
             'file_format' => 'pdf',
+            'status' => 'completed',
             'processing_status' => 'completed',
             'processing_started_at' => now(),
             'processing_completed_at' => now(),
             'extraction_confidence' => $payload['extraction_confidence'] ?? 'high',
             'balance_mismatch' => (bool) ($payload['balance_mismatch'] ?? false),
             'extraction_method' => $payload['extraction_method'] ?? 'ai_pdf',
-            'confidence_score' => 99,
+            'confidence_score' => 0.99,
+            'ai_fallback_used' => false,
             'flagged_rows' => 0,
             'total_rows' => count($payload['transactions'] ?? []),
+            'detected_transactions' => count($payload['transactions'] ?? []),
         ]);
     }
 }

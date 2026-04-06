@@ -69,7 +69,15 @@ class BankStatementUsageTest extends TestCase
             ->assertJsonPath('status', 'imported')
             ->assertJsonPath('count', 2);
 
-        $this->assertDatabaseMissing('bank_statement_imports', ['id' => $import->id]);
+        $this->assertDatabaseHas('bank_statement_uploads', [
+            'id' => $import->id,
+            'user_id' => $user->id,
+        ]);
+        $this->assertDatabaseHas('transactions', [
+            'user_id' => $user->id,
+            'upload_id' => $import->id,
+            'note' => 'PAYROLL DEPOSIT',
+        ]);
         $this->assertDatabaseCount('analytics_events', 1);
         $this->assertDatabaseHas('analytics_events', [
             'user_id' => $user->id,
@@ -121,7 +129,7 @@ class BankStatementUsageTest extends TestCase
             ->assertStatus(429)
             ->assertJsonPath('message', "You've reached your monthly limit.");
 
-        $this->assertDatabaseHas('bank_statement_imports', ['id' => $import->id]);
+        $this->assertDatabaseHas('bank_statement_uploads', ['id' => $import->id]);
     }
 
     public function test_upload_requires_pdf_format(): void

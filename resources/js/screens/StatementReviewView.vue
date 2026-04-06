@@ -10,11 +10,13 @@
 
         <div class="card">
             <p class="card-sub">
-                Penny made a first pass. You're always in control.
+                {{ transactions.length ? `We found ${transactions.length} transactions.` : "We're analyzing your statement." }}
             </p>
-            <p class="ai-disclaimer">Penny AI can make mistakes. Check important info.</p>
             <p class="muted">
                 Nothing is added until you confirm. You can edit or remove any item.
+            </p>
+            <p v-if="confidencePercent !== null" class="muted">
+                Confidence: {{ confidencePercent }}%{{ confidenceLabel ? ` (${confidenceLabel})` : '' }}
             </p>
             <p v-if="planWindowNote" class="muted">
                 {{ planWindowNote }}
@@ -26,9 +28,9 @@
 
         <div v-if="summaryAvailable" class="card data-summary" data-onboarding="review-summary">
             <div class="card-title">Statement summary</div>
-            <div v-if="extractionConfidencePercent !== null" class="detail-row">
+            <div v-if="confidencePercent !== null" class="detail-row">
                 <span>Estimated extraction confidence</span>
-                <span>{{ extractionConfidencePercent }}% <span class="muted-inline">({{ extractionConfidenceLabel }})</span></span>
+                <span>{{ confidencePercent }}% <span v-if="confidenceLabel" class="muted-inline">({{ confidenceLabel }})</span></span>
             </div>
             <div v-if="summary?.opening_balance != null" class="detail-row">
                 <span>Opening balance</span>
@@ -64,7 +66,7 @@
             </div>
         </div>
 
-        <div v-if="loading" class="muted">Preparing your statement…</div>
+        <div v-if="loading" class="muted">We're analyzing your statement…</div>
         <div v-else-if="isProcessing" class="muted">Processing your upload…</div>
         <div v-else-if="!transactions.length" class="card">
             <div class="card-title">{{ processingError ? 'Import failed' : 'No transactions found' }}</div>
@@ -179,7 +181,7 @@ const maxPollAttempts = 40;
 let pollTimer = null;
 const categories = categoryLabels;
 const isProcessing = computed(() =>
-    processingStatus.value === 'queued' || processingStatus.value === 'processing'
+    ['pending', 'queued', 'processing'].includes(processingStatus.value)
 );
 const showNoIncomeNote = computed(() =>
     transactions.value.length > 0 && !transactions.value.some((item) => item.type === 'income')
@@ -201,11 +203,17 @@ const extractionConfidenceLabel = computed(() => {
     if (raw === 'low') return 'Low';
     return null;
 });
-const extractionConfidencePercent = computed(() => {
-    if (extractionConfidenceLabel.value === 'High') return 98;
-    if (extractionConfidenceLabel.value === 'Medium') return 90;
-    if (extractionConfidenceLabel.value === 'Low') return 75;
-    return null;
+const confidencePercent = computed(() => {
+    const raw = Number.parseFloat(summary.value?.confidence_score ?? 0);
+    if (Number.isNaN(raw)) return null;
+    const normalized = raw > 1 ? raw / 100 : raw;
+    return Math.round(Math.max(0, Math.min(1, normalized)) * 100);
+});
+const confidenceLabel = computed(() => {
+    if (confidencePercent.value === null) return extractionConfidenceLabel.value;
+    if (confidencePercent.value >= 85) return 'High';
+    if (confidencePercent.value >= 60) return 'Medium';
+    return 'Low';
 });
 const totals = computed(() => {
     const included = transactions.value.filter((item) => item.include !== false);
@@ -244,6 +252,7 @@ const loadImport = async () => {
         transactions.value = list;
         summary.value = {
             ...(data.meta || {}),
+            confidence_score: data.confidence_score ?? data.meta?.confidence_score ?? null,
             extraction_confidence:
                 data.extraction_confidence
                 ?? data.meta?.extraction_confidence

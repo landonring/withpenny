@@ -3,7 +3,7 @@
         <div class="screen-header">
             <div>
                 <p class="eyebrow">Import</p>
-                <h1 class="screen-title">Preparing your statement</h1>
+                <h1 class="screen-title">Analyzing your statement</h1>
             </div>
             <div class="accent-chip">Processing</div>
         </div>
@@ -11,7 +11,7 @@
         <div class="card statement-processing-card">
             <div class="statement-processing-spinner" aria-hidden="true"></div>
             <div class="statement-processing-copy">
-                <p class="card-sub">We are extracting transactions now. You will be taken to review as soon as it is ready.</p>
+                <p class="card-sub">We're analyzing your statement now. You will be taken to review as soon as it is ready.</p>
                 <p class="muted">Status: {{ statusLabel }}</p>
                 <p v-if="processingError" class="form-error">{{ processingError }}</p>
             </div>
@@ -53,9 +53,10 @@ let pollTimer = null;
 
 const importId = computed(() => String(route.params.id || ''));
 const isProcessing = computed(() =>
-    processingStatus.value === 'queued' || processingStatus.value === 'processing'
+    ['pending', 'queued', 'processing'].includes(processingStatus.value)
 );
 const statusLabel = computed(() => {
+    if (processingStatus.value === 'pending') return 'Pending';
     if (processingStatus.value === 'queued') return 'Queued';
     if (processingStatus.value === 'processing') return 'Processing';
     if (processingStatus.value === 'failed') return 'Needs review';
