@@ -41,6 +41,26 @@ class PlanUsageService
         $insightMonthlyUsed = $this->countEvents($user->id, 'reflection_generated', $monthStart, $monthEnd, 'monthly');
         $insightYearlyUsed = $this->countEvents($user->id, 'reflection_generated', $yearStart, $yearEnd, 'yearly');
 
+        $statementFeature = array_merge(
+            $this->buildState($limits['statement_uploads']['limit'], $statementUsed, 'month', $monthEnd),
+            [
+                'mode' => $limits['statement_uploads']['mode'],
+                'max_days_per_upload' => $limits['statement_uploads']['max_days_per_upload'],
+                'beta_enabled' => false,
+            ]
+        );
+
+        if ($this->statementBetaEnabled($user)) {
+            $statementFeature = array_merge(
+                $this->buildState(null, $statementUsed, 'month', $monthEnd),
+                [
+                    'mode' => 'full',
+                    'max_days_per_upload' => null,
+                    'beta_enabled' => true,
+                ]
+            );
+        }
+
         return [
             'plan' => $plan,
             'features' => [
@@ -48,13 +68,7 @@ class PlanUsageService
                     $this->buildState($limits['receipt_scans']['limit'], $receiptUsed, 'month', $monthEnd),
                     ['mode' => $limits['receipt_scans']['mode']]
                 ),
-                'statement_uploads' => array_merge(
-                    $this->buildState($limits['statement_uploads']['limit'], $statementUsed, 'month', $monthEnd),
-                    [
-                        'mode' => $limits['statement_uploads']['mode'],
-                        'max_days_per_upload' => $limits['statement_uploads']['max_days_per_upload'],
-                    ]
-                ),
+                'statement_uploads' => $statementFeature,
                 'spreadsheet_exports' => $this->buildState(
                     $limits['spreadsheet_exports']['limit'],
                     $spreadsheetUsed,
@@ -170,6 +184,10 @@ class PlanUsageService
 
     public function statementMaxDaysPerUpload(User $user): ?int
     {
+        if ($this->statementBetaEnabled($user)) {
+            return null;
+        }
+
         $plan = $this->resolvePlan($user);
         $limits = $this->limitsForPlan($plan);
         return $limits['statement_uploads']['max_days_per_upload'];
@@ -291,7 +309,11 @@ class PlanUsageService
             'onboarding_mode' => true,
             'features' => [
                 'receipt_scans' => array_merge($unlimitedMonth, ['mode' => 'full']),
-                'statement_uploads' => array_merge($unlimitedMonth, ['mode' => 'full', 'max_days_per_upload' => null]),
+                'statement_uploads' => array_merge($unlimitedMonth, [
+                    'mode' => 'full',
+                    'max_days_per_upload' => null,
+                    'beta_enabled' => $this->statementBetaEnabled($user),
+                ]),
                 'spreadsheet_exports' => $unlimitedMonth,
             ],
             'insights' => [
@@ -304,5 +326,29 @@ class PlanUsageService
                 'messages' => array_merge($unlimitedMonth, ['mode' => 'full', 'memory_days' => null]),
             ],
         ];
+    }
+
+    private function statementBetaEnabled(User $user): bool
+    {
+        $email = strtolower(trim((string) $user->email));
+        if ($email === '') {
+            return false;
+        }
+
+        $localPart = strstr($email, '@', true);
+        $localPart = $localPart !== false ? $localPart : $email;
+
+        foreach ((array) config('statements.beta_users', []) as $value) {
+            $candidate = strtolower(trim((string) $value));
+            if ($candidate === '') {
+                continue;
+            }
+
+            if ($candidate === $email || $candidate === $localPart) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

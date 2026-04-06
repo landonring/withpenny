@@ -105,8 +105,13 @@
             <div class="card account-card statement-card">
                 <div>
                     <div class="card-title">Bank statements</div>
-                    <p class="card-sub">bank statmants unavailible will be availible in next update</p>
+                    <p class="card-sub">
+                        {{ statementBetaEnabled ? 'Upload a statement and let Penny pull out the transactions.' : 'Statement upload is currently limited to the statement beta.' }}
+                    </p>
                 </div>
+                <router-link v-if="statementBetaEnabled" class="home-button" :to="{ name: 'statements-scan' }">
+                    Upload statement
+                </router-link>
             </div>
 
             <div class="card list-card">
@@ -212,6 +217,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authState } from '../stores/auth';
+import { ensureUsageStatus, usageState } from '../stores/usage';
 import {
     biometricsState,
     checkBiometricSupport,
@@ -229,10 +235,12 @@ import {
 } from '../stores/transactions';
 
 const router = useRouter();
+const statementBetaEnabled = computed(() => !!usageState.data?.features?.statement_uploads?.beta_enabled);
 
 onMounted(() => {
     initTransactions();
     initBiometrics();
+    ensureUsageStatus();
 });
 
 const displayName = computed(() => {
