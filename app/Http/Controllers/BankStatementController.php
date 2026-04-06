@@ -432,7 +432,7 @@ class BankStatementController extends Controller
         ]);
 
         if ($this->shouldProcessInline()) {
-            ProcessBankStatementJob::dispatchSync($import->id);
+            ProcessBankStatementJob::dispatchSync($import->id, true);
         } else {
             ProcessBankStatementJob::dispatch($import->id);
         }
@@ -449,18 +449,13 @@ class BankStatementController extends Controller
 
     private function processInlineIfQueueWorkerUnavailable(BankStatementImport $import): BankStatementImport
     {
-        if (! $this->shouldProcessInline()) {
+        if (! $this->shouldProcessInline() && ! $this->shouldRecoverInline($import)) {
             return $import;
         }
 
         $status = (string) $import->processing_status;
         if (! in_array($status, ['pending', 'queued', 'processing'], true)) {
-            if (
-                $status !== 'processing'
-                || ($import->processing_started_at && $import->processing_started_at->gt(now()->subMinutes(3)))
-            ) {
-                return $import;
-            }
+            return $import;
         }
 
         $meta = is_array($import->meta) ? $import->meta : [];
@@ -487,7 +482,7 @@ class BankStatementController extends Controller
         }
 
         if (! empty($pendingFiles)) {
-            ProcessBankStatementJob::dispatchSync($import->id);
+            ProcessBankStatementJob::dispatchSync($import->id, true);
             return $import->fresh() ?? $import;
         }
 
@@ -513,9 +508,32 @@ class BankStatementController extends Controller
             return $import;
         }
 
-        ProcessBankStatementJob::dispatchSync($import->id);
+        ProcessBankStatementJob::dispatchSync($import->id, true);
 
         return $import->fresh() ?? $import;
+    }
+
+    private function shouldRecoverInline(BankStatementImport $import): bool
+    {
+        $status = (string) $import->processing_status;
+        if (! in_array($status, ['pending', 'queued', 'processing'], true)) {
+            return false;
+        }
+
+        if ($status === 'processing' && $import->processing_started_at) {
+            return $import->processing_started_at->lte(now()->subSeconds(20));
+        }
+
+        $queuedAt = $import->meta['queued_at'] ?? null;
+        if (is_string($queuedAt) && $queuedAt !== '') {
+            try {
+                return now()->diffInSeconds(\Illuminate\Support\Carbon::parse($queuedAt), true) >= 10;
+            } catch (\Throwable) {
+                return true;
+            }
+        }
+
+        return true;
     }
 
     private function cleanupPendingFiles(BankStatementImport $import): void

@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Models\BankStatementImport;
 use App\Services\Ingestion\AiStructuredExtractionService;
 use App\Services\Statements\PdfTextExtractor;
 use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -129,5 +131,65 @@ class UniversalStatementUploadTest extends TestCase
             'extraction_method' => 'generic_pdf_ai_fallback',
             'detected_transactions' => 2,
         ]);
+    }
+
+    public function test_polling_recovers_stale_processing_upload_inline_when_queue_worker_is_missing(): void
+    {
+        config()->set('queue.default', 'redis');
+
+        $user = User::factory()->create();
+        Storage::disk('local')->put('statements/'.$user->id.'/stale/sample.pdf', 'fake');
+
+        $this->app->instance(PdfTextExtractor::class, new class extends PdfTextExtractor {
+            public function extract(string $path): array
+            {
+                return [
+                    'text' => implode("\n", [
+                        '03/10 PAYROLL DEPOSIT +1200.00',
+                        '03/11 GROCERY STORE 42.55',
+                        '03/12 STARBUCKS 6.45',
+                        '03/13 AMAZON 24.99',
+                        '03/14 GAS STATION 35.12',
+                        '03/15 ELECTRIC BILL 88.20',
+                    ]),
+                    'method' => 'fake_pdf_text',
+                    'ocr_used' => false,
+                ];
+            }
+        });
+
+        $upload = BankStatementImport::query()->create([
+            'user_id' => $user->id,
+            'transactions' => [],
+            'meta' => [
+                'queued_at' => Carbon::now()->subMinute()->toIso8601String(),
+                'queued_files' => ['statements/'.$user->id.'/stale/sample.pdf'],
+                'queued_file_entries' => [
+                    [
+                        'name' => 'sample.pdf',
+                        'mime' => 'application/pdf',
+                        'storage_path' => 'statements/'.$user->id.'/stale/sample.pdf',
+                    ],
+                ],
+            ],
+            'masked_account' => null,
+            'source' => 'pending',
+            'file_name' => 'sample.pdf',
+            'file_path' => 'statements/'.$user->id.'/stale/sample.pdf',
+            'file_format' => 'pdf',
+            'status' => 'pending',
+            'processing_status' => 'pending',
+            'confidence_score' => 0,
+            'ai_fallback_used' => false,
+            'flagged_rows' => 0,
+            'total_rows' => 0,
+            'detected_transactions' => 0,
+        ]);
+
+        $this->actingAs($user)
+            ->getJson("/api/statements/{$upload->id}")
+            ->assertOk()
+            ->assertJsonPath('import.processing_status', 'completed')
+            ->assertJsonCount(6, 'import.transactions');
     }
 }
