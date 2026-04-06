@@ -14,14 +14,18 @@ class AdminMiddleware
             return $this->deny($request);
         }
 
-        $adminEmails = $this->adminEmails();
-        $isAdmin = ($user->role === 'admin') || (in_array($user->email, $adminEmails, true));
-
-        if (! $isAdmin) {
+        if (! $this->isAdmin($user->role, $user->email)) {
             return $this->deny($request);
         }
 
         return $next($request);
+    }
+
+    private function isAdmin(?string $role, ?string $email): bool
+    {
+        $normalizedEmail = strtolower(trim((string) $email));
+
+        return $role === 'admin' || in_array($normalizedEmail, $this->adminEmails(), true);
     }
 
     private function adminEmails(): array
@@ -30,7 +34,11 @@ class AdminMiddleware
         if ($raw === '') {
             return [];
         }
-        return array_values(array_filter(array_map('trim', explode(',', $raw))));
+
+        return array_values(array_filter(array_map(
+            static fn (string $value) => strtolower(trim($value)),
+            explode(',', $raw)
+        )));
     }
 
     private function deny(Request $request)

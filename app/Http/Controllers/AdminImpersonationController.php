@@ -13,7 +13,7 @@ class AdminImpersonationController extends Controller
     {
         $admin = $request->user();
 
-        if (! $admin || $admin->role !== 'admin') {
+        if (! $admin || ! $this->isAdmin($admin)) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -45,7 +45,7 @@ class AdminImpersonationController extends Controller
         }
 
         $admin = User::query()->where('id', $impersonatorId)->first();
-        if (! $admin || $admin->role !== 'admin') {
+        if (! $admin || ! $this->isAdmin($admin)) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Forbidden.'], 403);
             }
@@ -64,5 +64,24 @@ class AdminImpersonationController extends Controller
         }
 
         return redirect('/admin/users');
+    }
+
+    private function isAdmin(User $user): bool
+    {
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        $email = strtolower(trim((string) $user->email));
+        if ($email === '') {
+            return false;
+        }
+
+        $allowed = array_values(array_filter(array_map(
+            static fn (string $value) => strtolower(trim($value)),
+            explode(',', (string) config('services.admin.email', ''))
+        )));
+
+        return in_array($email, $allowed, true);
     }
 }
