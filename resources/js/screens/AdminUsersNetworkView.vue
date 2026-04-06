@@ -58,7 +58,7 @@
 
             <div class="admin-users__footer">
                 <p>Admin Dashboard v2.4</p>
-                <p>© 2023 Penny Health</p>
+                <p>© 2023 Penny Budgeting</p>
             </div>
         </aside>
 
@@ -83,7 +83,7 @@
                     </button>
                 </div>
                 <div class="admin-users__breadcrumbs">
-                    Penny Health <span>/</span> Admin <span>/</span> Network Visualization
+                    Penny Budgeting <span>/</span> Admin <span>/</span> Network Visualization
                 </div>
                 <h1>Penny User Network Visualization</h1>
             </header>
@@ -116,7 +116,7 @@
                     <div class="admin-users__center-core">
                         <img alt="Penny" :src="pennyLogo" />
                     </div>
-                    <div class="admin-users__center-label">Penny Health</div>
+                    <div class="admin-users__center-label">Penny Budgeting</div>
                 </div>
 
                 <div class="admin-users__nodes" ref="nodesLayerRef">

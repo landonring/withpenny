@@ -276,7 +276,7 @@ class AdminAnalyticsController extends Controller
 
         return response()->json([
             'center' => [
-                'label' => 'Penny Health',
+                'label' => 'Penny Budgeting',
             ],
             'users' => $users,
         ]);

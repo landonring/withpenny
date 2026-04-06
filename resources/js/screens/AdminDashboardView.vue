@@ -2,7 +2,7 @@
     <section class="admin-dashboard admin-dashboard--revamp">
         <main class="dashboard-container">
             <header class="dashboard-header">
-                <h1 class="dashboard-title">Penny Health</h1>
+                <h1 class="dashboard-title">Penny Budgeting</h1>
                 <div class="dashboard-actions">
                     <button class="dashboard-ghost" type="button" @click="goToUsers">
                         Users
