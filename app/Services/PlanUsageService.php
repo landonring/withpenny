@@ -46,20 +46,9 @@ class PlanUsageService
             [
                 'mode' => $limits['statement_uploads']['mode'],
                 'max_days_per_upload' => $limits['statement_uploads']['max_days_per_upload'],
-                'beta_enabled' => false,
+                'beta_enabled' => true,
             ]
         );
-
-        if ($this->statementBetaEnabled($user)) {
-            $statementFeature = array_merge(
-                $this->buildState(null, $statementUsed, 'month', $monthEnd),
-                [
-                    'mode' => 'full',
-                    'max_days_per_upload' => null,
-                    'beta_enabled' => true,
-                ]
-            );
-        }
 
         return [
             'plan' => $plan,
@@ -184,10 +173,6 @@ class PlanUsageService
 
     public function statementMaxDaysPerUpload(User $user): ?int
     {
-        if ($this->statementBetaEnabled($user)) {
-            return null;
-        }
-
         $plan = $this->resolvePlan($user);
         $limits = $this->limitsForPlan($plan);
         return $limits['statement_uploads']['max_days_per_upload'];
@@ -312,7 +297,7 @@ class PlanUsageService
                 'statement_uploads' => array_merge($unlimitedMonth, [
                     'mode' => 'full',
                     'max_days_per_upload' => null,
-                    'beta_enabled' => $this->statementBetaEnabled($user),
+                    'beta_enabled' => true,
                 ]),
                 'spreadsheet_exports' => $unlimitedMonth,
             ],
@@ -328,27 +313,4 @@ class PlanUsageService
         ];
     }
 
-    private function statementBetaEnabled(User $user): bool
-    {
-        $email = strtolower(trim((string) $user->email));
-        if ($email === '') {
-            return false;
-        }
-
-        $localPart = strstr($email, '@', true);
-        $localPart = $localPart !== false ? $localPart : $email;
-
-        foreach ((array) config('statements.beta_users', []) as $value) {
-            $candidate = strtolower(trim((string) $value));
-            if ($candidate === '') {
-                continue;
-            }
-
-            if ($candidate === $email || $candidate === $localPart) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

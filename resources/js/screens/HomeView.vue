@@ -105,11 +105,9 @@
             <div class="card account-card statement-card">
                 <div>
                     <div class="card-title">Bank statements</div>
-                    <p class="card-sub">
-                        {{ statementBetaEnabled ? 'Upload a statement and let Penny pull out the transactions.' : 'Statement upload is currently limited to the statement beta.' }}
-                    </p>
+                    <p class="card-sub">Upload a statement and let Penny pull out the transactions.</p>
                 </div>
-                <router-link v-if="statementBetaEnabled" class="home-button" :to="{ name: 'statements-scan' }">
+                <router-link class="home-button" :to="{ name: 'statements-scan' }">
                     Upload statement
                 </router-link>
             </div>
@@ -235,8 +233,6 @@ import {
 } from '../stores/transactions';
 
 const router = useRouter();
-const statementBetaEnabled = computed(() => !!usageState.data?.features?.statement_uploads?.beta_enabled);
-
 onMounted(() => {
     initTransactions();
     initBiometrics();

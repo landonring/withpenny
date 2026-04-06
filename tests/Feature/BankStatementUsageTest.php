@@ -207,20 +207,19 @@ class BankStatementUsageTest extends TestCase
             ->assertJsonPath('message', 'This statement is still processing. Please wait before confirming.');
     }
 
-    public function test_statement_beta_user_gets_unlimited_statement_access(): void
+    public function test_statement_uploads_are_available_to_every_user_with_plan_limits(): void
     {
-        config()->set('statements.beta_users', ['landonringeisen']);
-
         $user = User::factory()->create([
-            'email' => 'landonringeisen@example.com',
+            'email' => 'anyone@example.com',
         ]);
 
         $this->actingAs($user)
             ->getJson('/api/usage')
             ->assertOk()
-            ->assertJsonPath('features.statement_uploads.unlimited', true)
+            ->assertJsonPath('features.statement_uploads.unlimited', false)
+            ->assertJsonPath('features.statement_uploads.limit', 2)
             ->assertJsonPath('features.statement_uploads.beta_enabled', true)
-            ->assertJsonPath('features.statement_uploads.max_days_per_upload', null);
+            ->assertJsonPath('features.statement_uploads.max_days_per_upload', 30);
     }
 
     private function createImport(User $user): BankStatementImport
